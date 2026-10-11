@@ -56,6 +56,32 @@ class UITests(unittest.TestCase):
         self.assertEqual(self.app.run_work('確認', lambda: 42), 42)
         self.assertIsNone(self.app.active_work)
 
+    def test_filtered_reload_removes_detached_rows(self):
+        folders = self.root / 'folders'; folders.mkdir()
+        for name in ['作品[タグ]', '変更なし']:
+            (folders / name).mkdir()
+        self.app.root_path = folders
+        self.app.load()
+        self.app.list_filter.set('変更あり')
+        self.app.refresh()
+        self.assertEqual(len(self.app.tree.get_children()), 1)
+        self.app.load()
+        self.app.list_filter.set('全件')
+        self.app.refresh()
+        self.assertEqual(len(self.app.tree.get_children()), 2)
+
+    def test_cancelled_or_failed_load_clears_previous_rows(self):
+        from work import Cancelled
+        folders = self.root / 'folders'; folders.mkdir()
+        (folders / '作品[タグ]').mkdir()
+        self.app.root_path = folders
+        self.app.load()
+        for error in (Cancelled('中止'), OSError('読めません')):
+            with patch.object(self.app, 'run_work', side_effect=error):
+                self.app.load()
+            self.assertFalse(self.app.rows)
+            self.assertFalse(self.app.tree.get_children())
+
     def test_tabs_keep_independent_paths_and_query_across_restart(self):
         folders = self.root / 'folders'
         books = self.root / 'books'

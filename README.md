@@ -4,7 +4,9 @@ Windows用の日本語デスクトップツールです。Python 3.10以上（�
 
 ## 起動
 
-EXE版はZIPを展開して `FolderAdjuster.exe` を実行します。Pythonのインストールは不要です。
+EXE版はonedir形式です。ZIPをすべて展開し、`FolderAdjuster/FolderAdjuster.exe` を実行します。Pythonのインストールは不要です。`_internal` は必須の実行環境なので、EXEと同じ場所に保持してください。EXE単体を移動しないでください。
+
+既存版から更新する場合は、アプリを終了して新しいZIPを別フォルダに展開し、旧EXEと同じ場所にある `settings.json` と `operation-history` を新しいEXEと同じ場所へコピーしてください。整理対象にある `.folder-tool-trash` も履歴復元に必要です。
 
 以下はソース版の起動方法です。
 
@@ -117,4 +119,4 @@ Pythonをインストールして `start.bat` をダブルクリックします�
 
 ## Windows EXEを作る
 
-WindowsでPython 3.12を用意し、`build-windows.bat` を実行すると `dist/FolderAdjuster.exe` を作成します。ビルド時のみPyInstallerをインストールします。GitHub Actionsの「Build Windows application」でもテスト・EXE作成・起動確認・ZIP配布を実行します。
+WindowsでPython 3.12を用意し、`build-windows.bat` を実行すると `dist/FolderAdjuster/FolderAdjuster.exe` を作成します。ビルド時のみPyInstallerをインストールします。GitHub Actionsの「Build Windows application」でもテスト・EXE作成・起動確認・ZIP配布を実行します。

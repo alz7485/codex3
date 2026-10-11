@@ -3,7 +3,7 @@ name: Build Windows application
 on:
   push:
     branches: [main]
-    paths: ['*.py', 'tests/**', 'assets/**', '.github/workflows/windows-build.yml']
+    paths: ['build-windows.bat', '*.py', 'tests/**', 'assets/**', '.github/workflows/windows-build.yml']
   workflow_dispatch:
 
 permissions:
@@ -40,19 +40,28 @@ jobs:
       - name: Install build dependency
         run: python -m pip install --disable-pip-version-check pyinstaller==6.11.1
       - name: Build portable executable
-        run: python -m PyInstaller --noconfirm --clean --onefile --windowed --name FolderAdjuster --icon assets/FolderAdjuster.ico --add-data "assets;assets" app.py
-      - name: Package executable
+        run: python -m PyInstaller --noconfirm --clean --onedir --windowed --name FolderAdjuster --icon assets/FolderAdjuster.ico --add-data "assets;assets" app.py
+      - name: Package onedir executable
         shell: pwsh
         run: |
-          Copy-Item README.md dist/README.md
-          Copy-Item AUDIT.md dist/AUDIT.md
-          Compress-Archive -Path dist/FolderAdjuster.exe,dist/README.md,dist/AUDIT.md -DestinationPath FolderAdjuster-Windows.zip
-      - name: Check packaged application starts
+          Copy-Item README.md dist/FolderAdjuster/README.md
+          Copy-Item AUDIT.md dist/FolderAdjuster/AUDIT.md
+          if (-not (Test-Path dist/FolderAdjuster/_internal/python312.dll)) { throw 'Runtime DLL missing' }
+          if (-not (Test-Path dist/FolderAdjuster/_internal/assets/FolderAdjuster.ico)) { throw 'Bundled icon missing' }
+          Compress-Archive -Path dist/FolderAdjuster -DestinationPath FolderAdjuster-Windows.zip
+      - name: Check extracted onedir application starts
+        timeout-minutes: 2
         shell: pwsh
         run: |
-          $process = Start-Process -FilePath dist/FolderAdjuster.exe -ArgumentList '--smoke-test' -Wait -PassThru
+          $extracted = Join-Path $env:RUNNER_TEMP 'FolderAdjuster 展開テスト'
+          Expand-Archive FolderAdjuster-Windows.zip -DestinationPath $extracted
+          $appFolder = Join-Path $extracted 'FolderAdjuster'
+          $exe = Join-Path $appFolder 'FolderAdjuster.exe'
+          $process = Start-Process -FilePath $exe -ArgumentList '--smoke-test' -WorkingDirectory $env:RUNNER_TEMP -PassThru
+          if (-not $process.WaitForExit(60000)) { $process.Kill(); throw 'Startup timed out' }
           if ($process.ExitCode -ne 0) { throw 'Application startup failed' }
-          if (-not (Test-Path dist/FolderAdjuster.smoke-test.txt)) { throw 'Startup confirmation missing' }
+          if (-not (Test-Path (Join-Path $appFolder 'FolderAdjuster.smoke-test.txt'))) { throw 'Startup confirmation missing' }
+          if (Test-Path (Join-Path $appFolder '_internal/settings.json')) { throw 'Settings were stored in bundled runtime' }
       - uses: actions/upload-artifact@v4
         with:
           name: FolderAdjuster-Windows

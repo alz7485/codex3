@@ -50,3 +50,12 @@ Windows実機では未検証。Windowsのジャンクション属性は模擬テ
 Windows検証完了：GitHub ActionsのWindows/Python 3.12で75件すべて成功。PyInstallerでFolderAdjuster.exeを作成し、`--smoke-test` によるTk画面初期化・タイトル・起動完了マーカーを確認しました。
 検証実行：https://github.com/alz7485/codex3/actions/runs/38143703085
 EXEのソースコミット：c6eefd491d00364509d58ff56eb60199dee81677
+
+## onedir対応の監査・修正
+
+- PyInstallerをonefileからonedirへ変更。EXE・`_internal`・説明書を含むFolderAdjusterフォルダ一式をZIPに同梱。ローカルbuild-windows.batとGitHub Actionsを統一。
+- ZIP展開後のEXEを、日本語と空白を含むパスから、別の作業ディレクトリで起動して検証。DLL・アイコン同梱、Tk初期化、EXE横の設定・履歴保存先、設定JSONの書き込みと読み戻しを確認。起動検証にはタイムアウトを設定。
+- 絞り込みで非表示にした行が再読み込みで残る不具合を修正。表示外の行も削除して一覧を再構築。
+- 読み込み中止・失敗で古い対象一覧が残る不具合を修正。古い行をクリアし、キャンセルを処理。
+- Windowsの8.3形式パスによる比較差異を避けるため、選択パスを正規化。
+- 上記の再読み込み・中止・失敗を回帰テストに追加。既存の削除・移動・復元・画像連番・巻数・ハイライトも検証。

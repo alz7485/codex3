@@ -418,7 +418,7 @@ class App(tk.Tk):
     def choose(self):
         directory = filedialog.askdirectory(initialdir=self.settings.initial_directory('folder_path'), title='フォルダ操作用の親フォルダを選択')
         if directory:
-            self.root_path = Path(directory)
+            self.root_path = Path(directory).resolve()
             self.path_label.config(text=directory)
             self.remember_path('folder_path', self.root_path)
             self.load()
@@ -426,7 +426,7 @@ class App(tk.Tk):
     def choose_books(self):
         directory = filedialog.askdirectory(title='本の整理専用：タイトルフォルダが入っている親フォルダを選択', initialdir=self.settings.initial_directory('book_path'))
         if directory:
-            self.book_root = Path(directory)
+            self.book_root = Path(directory).resolve()
             self.remember_path('book_path', self.book_root)
             self.book_path_label.config(text=str(self.book_root))
             self.book_rename_button.config(state='normal')
@@ -678,15 +678,23 @@ class App(tk.Tk):
             self.editor.destroy()
             self.editor = None
             self.editor_finish = None
+        # Detached filter rows still exist in Treeview and must be removed too.
+        for iid in tuple(self.rows):
+            if self.tree.exists(iid):
+                self.tree.delete(iid)
+        self.rows, self.protected, self.manual = {}, {}, {}
+        self.overrides, self.group_names = {}, {}
+        self.tree.set_highlights({})
+        self.show_parts()
         try:
             root = self.root_path
             names = self.run_work('フォルダの読み込み', lambda: sorted(p.name for p in root.iterdir() if p.is_dir() and not is_link(p) and p.name.casefold() != '.folder-tool-trash'))
+        except Cancelled:
+            return
         except OSError as error:
+            self.status.config(text='読み込み失敗。一覧を再読み込みしてください。')
             messagebox.showerror('読み込み失敗', str(error))
             return
-        self.tree.delete(*self.tree.get_children())
-        self.rows, self.protected, self.manual = {}, {}, {}
-        self.overrides, self.group_names = {}, {}
         for index, name in enumerate(names):
             iid = str(index)
             self.rows[iid] = [name, True]
@@ -972,6 +980,17 @@ if __name__ == '__main__':
         if app.title() != 'FolderAdjuster':
             raise RuntimeError('Unexpected application title')
         destination = Path(sys.executable).resolve().parent if getattr(sys, 'frozen', False) else Path(__file__).resolve().parent
+        if app.settings.path != destination / 'settings.json':
+            raise RuntimeError('Settings must be beside executable')
+        if app.history.directory != destination / 'operation-history':
+            raise RuntimeError('History must be beside executable')
+        if not hasattr(app, 'app_icon'):
+            raise RuntimeError('Application icon was not loaded')
+        probe = Settings(destination / 'FolderAdjuster.smoke-settings.json')
+        probe.save_value('probe', '設定の保存')
+        if Settings(probe.path).data.get('probe') != '設定の保存':
+            raise RuntimeError('Settings persistence failed')
+        probe.path.unlink()
         (destination / 'FolderAdjuster.smoke-test.txt').write_text('Tk startup completed', encoding='utf-8')
         app.close_app()
     else:
