@@ -46,3 +46,7 @@ Windows実機では未検証。Windowsのジャンクション属性は模擬テ
 強制終了の自動復旧とファイル内容のハッシュ比較は実装していません。状態照合はファイルサイズ・更新日時等によります。
 
 追加検証：75件をLinuxのTk 8.6・Tk 9で実行し成功。Windowsでは一時フォルダの8.3形式パスをテスト側で正規化し、ダイアログ待ちを防ぐ診断設定を追加しました。
+
+Windows検証完了：GitHub ActionsのWindows/Python 3.12で75件すべて成功。PyInstallerでFolderAdjuster.exeを作成し、`--smoke-test` によるTk画面初期化・タイトル・起動完了マーカーを確認しました。
+検証実行：https://github.com/alz7485/codex3/actions/runs/38143703085
+EXEのソースコミット：c6eefd491d00364509d58ff56eb60199dee81677
