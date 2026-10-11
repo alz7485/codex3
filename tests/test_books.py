@@ -35,7 +35,7 @@ class BookTests(unittest.TestCase):
 
     def test_rename_preserves_contents_and_works_with_image_cleanup(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             title = root / '作品'
             book = title / 'name_v05s_more'
             book.mkdir(parents=True)
@@ -51,7 +51,7 @@ class BookTests(unittest.TestCase):
 
     def test_backup_folders_excluded_from_all_discovery(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             backup = root / '作品/.folder-tool-trash/backup1'
             backup.mkdir(parents=True)
             (backup / 'old.jpg').write_text('image')

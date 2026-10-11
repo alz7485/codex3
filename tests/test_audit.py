@@ -13,8 +13,8 @@ from safety import is_link, move_no_replace
 class AuditTests(unittest.TestCase):
     def test_recovery_symlink_never_moves_data_outside(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory) / 'root'
-            outside = Path(directory) / 'outside'
+            root = Path(directory).resolve() / 'root'
+            outside = Path(directory).resolve() / 'outside'
             root.mkdir(); outside.mkdir()
             (root / '.folder-tool-trash').symlink_to(outside, target_is_directory=True)
             file = root / 'a.txt'
@@ -26,7 +26,7 @@ class AuditTests(unittest.TestCase):
 
     def test_folder_recovery_info_written_before_move(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             for name in ['a', 'b']:
                 (root / name).mkdir()
             with patch('core.write_recovery', side_effect=OSError('disk full')), self.assertRaises(RuntimeError):
@@ -36,7 +36,7 @@ class AuditTests(unittest.TestCase):
 
     def test_restore_json_file_can_itself_be_quarantined(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             (root / 'restore.json').write_text('original data')
             backup = delete_files(root, search_files(root, '.json'))
             self.assertEqual((backup / 'data/restore.json').read_text(), 'original data')
@@ -50,7 +50,7 @@ class AuditTests(unittest.TestCase):
 
     def test_case_only_folder_rename_and_rollback(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             (root / 'abc').mkdir()
             (root / 'def').mkdir()
             ops, groups = plan(root, [('abc', 'ABC'), ('def', 'DEF')])
@@ -67,7 +67,7 @@ class AuditTests(unittest.TestCase):
 
     def test_virtual_plan_and_source_traversal(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             (root / 'a').mkdir(); (root / 'b').mkdir()
             self.assertEqual(len(plan(root, [('a', 'b')], deleted={root / 'b'})[0]), 1)
             with self.assertRaises(ValueError):
@@ -77,7 +77,7 @@ class AuditTests(unittest.TestCase):
 
     def test_destination_dangling_link_and_case_collision(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             file = root / 'source.txt'
             file.write_text('keep')
             (root / 'dest.txt').symlink_to(root / 'missing')
@@ -102,7 +102,7 @@ class AuditTests(unittest.TestCase):
 
     def test_nested_recovery_data_excluded_from_image_cleanup(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             book = root / 'title/book'
             backup = book / '.Folder-Tool-Trash/backup'
             backup.mkdir(parents=True)
@@ -111,10 +111,10 @@ class AuditTests(unittest.TestCase):
 
     def test_image_cleanup_symlink_recovery_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory) / 'root'
+            root = Path(directory).resolve() / 'root'
             book = root / 'title/book'
             book.mkdir(parents=True)
-            outside = Path(directory) / 'outside'
+            outside = Path(directory).resolve() / 'outside'
             outside.mkdir()
             (root / '.folder-tool-trash').symlink_to(outside, target_is_directory=True)
             (book / 'a.jpg').write_text('image')
@@ -127,7 +127,7 @@ class AuditTests(unittest.TestCase):
 
     def test_corrupt_settings_preserved_when_saving(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             file = root / 'settings.json'
             file.write_text('corrupt original')
             Settings(file).save_value('delete_query', '.txt')

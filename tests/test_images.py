@@ -8,7 +8,7 @@ from images import plan_images, execute_images, plan_non_images, execute_image_c
 class ImageTests(unittest.TestCase):
     def test_cleanup_preserves_images_and_outside_files(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             book = self.make_book(root)
             (book / 'page.jpg').write_text('image')
             (book / 'notes.txt').write_text('notes')
@@ -29,7 +29,7 @@ class ImageTests(unittest.TestCase):
 
     def test_cleanup_failure_restores_non_images(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             book = self.make_book(root)
             (book / 'page.jpg').write_text('image')
             (book / 'notes.txt').write_text('notes')
@@ -41,7 +41,7 @@ class ImageTests(unittest.TestCase):
 
     def test_new_non_image_invalidates_preview(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             book = self.make_book(root)
             (book / 'page.jpg').write_text('image')
             images, others = plan_images(root), plan_non_images(root)
@@ -57,7 +57,7 @@ class ImageTests(unittest.TestCase):
 
     def test_natural_order_and_each_book_starts_at_one(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             for name in ['book1', 'book2']:
                 book = self.make_book(root, name)
                 for image in ['page10.JPG', 'page2.JPG', 'page1.JPG']:
@@ -75,7 +75,7 @@ class ImageTests(unittest.TestCase):
 
     def test_existing_numbered_source_does_not_get_overwritten(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             book = self.make_book(root)
             (book / '000.jpg').write_text('first')
             (book / '001.jpg').write_text('second')
@@ -85,7 +85,7 @@ class ImageTests(unittest.TestCase):
 
     def test_collision_with_directory(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             book = self.make_book(root)
             (book / 'page.jpg').write_text('data')
             (book / '001.jpg').mkdir()
@@ -94,7 +94,7 @@ class ImageTests(unittest.TestCase):
 
     def test_changed_image_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             book = self.make_book(root)
             (book / 'page.jpg').write_text('data')
             items = plan_images(root)
@@ -104,7 +104,7 @@ class ImageTests(unittest.TestCase):
 
     def test_failure_restores_all_names_and_contents(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             book = self.make_book(root)
             for name in ['000.jpg', '001.jpg']:
                 (book / name).write_text(name)
@@ -122,7 +122,7 @@ class ImageTests(unittest.TestCase):
 
     def test_depth_and_extension_are_preserved(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             book = self.make_book(root)
             (root / 'outside.jpg').write_text('ignore')
             (book.parent / 'cover.jpg').write_text('ignore')

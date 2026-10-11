@@ -18,7 +18,7 @@ class FileCleanupTests(unittest.TestCase):
 
     def test_recursive_search_and_individual_exclusion(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             (root / 'nested/deep').mkdir(parents=True)
             for relative in ['a.txt', 'nested/b.txt', 'nested/deep/広告.jpg', 'keep.png']:
                 (root / relative).write_text(relative)
@@ -36,7 +36,7 @@ class FileCleanupTests(unittest.TestCase):
 
     def test_empty_query_and_modified_candidate_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             with self.assertRaises(ValueError):
                 search_files(root, '  ')
             file = root / 'a.txt'
@@ -49,9 +49,9 @@ class FileCleanupTests(unittest.TestCase):
 
     def test_outside_scope_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory) / 'root'
+            root = Path(directory).resolve() / 'root'
             root.mkdir()
-            outside = Path(directory) / 'outside.txt'
+            outside = Path(directory).resolve() / 'outside.txt'
             outside.write_text('keep')
             with self.assertRaises(ValueError):
                 delete_files(root, [Candidate(outside, signature(outside))])
@@ -59,7 +59,7 @@ class FileCleanupTests(unittest.TestCase):
 
     def test_failure_rolls_back(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             for name in ['a.txt', 'b.txt']:
                 (root / name).write_text(name)
             candidates = search_files(root, '.txt')
@@ -75,7 +75,7 @@ class FileCleanupTests(unittest.TestCase):
 
     def test_query_remembered_separately_from_paths(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             settings = Settings(root / 'settings.json')
             settings.save_path('folder_path', root)
             settings.save_value('delete_query', '広告 .txt *.url')

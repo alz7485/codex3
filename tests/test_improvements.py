@@ -13,10 +13,10 @@ from comparison import summarize
 class ImprovementTests(unittest.TestCase):
     def test_folder_operation_can_be_undone_after_restart(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory) / 'data'; root.mkdir()
+            root = Path(directory).resolve() / 'data'; root.mkdir()
             original = root / '作品(A)'; original.mkdir()
             (original / 'page.jpg').write_text('keep')
-            history = History(Path(directory) / 'history')
+            history = History(Path(directory).resolve() / 'history')
             history.run('整理', lambda: execute_with_deletions(root, [('作品(A)', '作品')], True, True, set()))
             self.assertTrue((root / 'A/作品/page.jpg').exists())
             restarted = History(history.directory)
@@ -27,9 +27,9 @@ class ImprovementTests(unittest.TestCase):
 
     def test_file_deletion_undo(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory) / 'data'; root.mkdir()
+            root = Path(directory).resolve() / 'data'; root.mkdir()
             (root / 'a.txt').write_text('keep')
-            history = History(Path(directory) / 'history')
+            history = History(Path(directory).resolve() / 'history')
             history.run('削除', lambda: delete_files(root, search_files(root, '.txt')))
             self.assertFalse((root / 'a.txt').exists())
             history.undo(history.entries()[0][0])
@@ -37,11 +37,11 @@ class ImprovementTests(unittest.TestCase):
 
     def test_image_rename_and_cleanup_undo(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory) / 'data'
+            root = Path(directory).resolve() / 'data'
             book = root / 'title/book'; book.mkdir(parents=True)
             for name in ['000.jpg', '001.jpg', 'note.txt']:
                 (book / name).write_text(name)
-            history = History(Path(directory) / 'history')
+            history = History(Path(directory).resolve() / 'history')
             history.run('画像整理', lambda: execute_image_cleanup(root, plan_images(root), plan_non_images(root)))
             history.undo(history.entries()[0][0])
             self.assertEqual(sorted(p.name for p in book.iterdir()), ['000.jpg', '001.jpg', 'note.txt'])
@@ -50,9 +50,9 @@ class ImprovementTests(unittest.TestCase):
 
     def test_undo_refuses_modified_contents(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory) / 'data'; root.mkdir()
+            root = Path(directory).resolve() / 'data'; root.mkdir()
             (root / 'a').mkdir(); (root / 'a/file').write_text('old')
-            history = History(Path(directory) / 'history')
+            history = History(Path(directory).resolve() / 'history')
             history.run('rename', lambda: execute_with_deletions(root, [('a', 'b')], False, False, set()))
             (root / 'b/file').write_text('modified')
             with self.assertRaises(ValueError):
@@ -61,11 +61,11 @@ class ImprovementTests(unittest.TestCase):
 
     def test_cancel_restores_completed_folder_moves(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory) / 'data'; root.mkdir()
+            root = Path(directory).resolve() / 'data'; root.mkdir()
             for name in ['a', 'b']:
                 (root / name).mkdir()
             token = WorkToken()
-            history = History(Path(directory) / 'history')
+            history = History(Path(directory).resolve() / 'history')
             original = Path.rename
             def cancel_after_first(path, target):
                 result = original(path, target)
@@ -81,9 +81,9 @@ class ImprovementTests(unittest.TestCase):
 
     def test_undo_collision_preserves_both_sides(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory) / 'data'; root.mkdir()
+            root = Path(directory).resolve() / 'data'; root.mkdir()
             (root / 'a').mkdir()
-            history = History(Path(directory) / 'history')
+            history = History(Path(directory).resolve() / 'history')
             history.run('rename', lambda: execute_with_deletions(root, [('a', 'b')], False, False, set()))
             (root / 'a').mkdir()
             (root / 'a/new').write_text('keep')
@@ -99,7 +99,7 @@ class ImprovementTests(unittest.TestCase):
 
     def test_comparison_counts_images_and_files(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             (root / 'sub').mkdir()
             (root / 'a.JPG').write_bytes(b'123')
             (root / 'sub/b.png').write_bytes(b'12')
@@ -109,7 +109,7 @@ class ImprovementTests(unittest.TestCase):
 
     def test_cancel_search_before_any_mutation(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             (root / 'a.txt').write_text('keep')
             token = WorkToken(); token.cancelled.set()
             with working(token), self.assertRaises(Cancelled):

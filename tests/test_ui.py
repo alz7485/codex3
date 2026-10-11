@@ -14,16 +14,19 @@ from settings import Settings
 class UITests(unittest.TestCase):
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory()
-        self.root = Path(self.directory.name)
+        self.root = Path(self.directory.name).resolve()
         self.settings = Settings(self.root / 'settings.json')
         self.patcher = patch('app.Settings', lambda: self.settings)
         self.patcher.start()
+        self.messages = patch('app.messagebox.showerror')
+        self.messages.start()
         self.app = App()
         self.app.update()
 
     def tearDown(self):
         self.app.close_app()
         self.patcher.stop()
+        self.messages.stop()
         self.directory.cleanup()
 
     def test_preset_restore_and_display_filter_keep_checks(self):

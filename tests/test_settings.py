@@ -13,13 +13,13 @@ class SettingsTests(unittest.TestCase):
 
     def test_packaged_settings_beside_executable(self):
         with tempfile.TemporaryDirectory() as directory:
-            executable = Path(directory) / 'portable/app.exe'
+            executable = Path(directory).resolve() / 'portable/app.exe'
             with patch('settings.sys.frozen', True, create=True), patch('settings.sys.executable', str(executable)):
                 self.assertEqual(settings_path(), executable.parent / 'settings.json')
 
     def test_independent_paths_survive_restart(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             file = root / 'config/settings.json'
             settings = Settings(file)
             settings.save_path('folder_path', root / 'フォルダ操作')
@@ -31,7 +31,7 @@ class SettingsTests(unittest.TestCase):
 
     def test_missing_path_retained_and_dialog_uses_existing_parent(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             settings = Settings(root / 'settings.json')
             missing = root / 'missing/nested'
             settings.save_path('folder_path', missing)
@@ -41,7 +41,7 @@ class SettingsTests(unittest.TestCase):
 
     def test_corrupt_and_wrong_type_settings_do_not_crash(self):
         with tempfile.TemporaryDirectory() as directory:
-            file = Path(directory) / 'settings.json'
+            file = Path(directory).resolve() / 'settings.json'
             for contents in ['bad json', '[]']:
                 file.write_text(contents)
                 settings = Settings(file)
@@ -52,7 +52,7 @@ class SettingsTests(unittest.TestCase):
 
     def test_failed_save_keeps_previous_settings(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             settings = Settings(root / 'settings.json')
             settings.save_path('folder_path', root / 'old')
             with patch.object(Path, 'replace', side_effect=OSError('disk full')), self.assertRaises(OSError):

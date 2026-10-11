@@ -15,7 +15,7 @@ class FolderTests(unittest.TestCase):
 
     def test_punctuation_after_deletion_and_filesystem(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             original = '作品![タグ]！'
             (root / original).mkdir()
             new = normalize_punctuation(name_from_mask(original, deletion_mask(original)))
@@ -39,7 +39,7 @@ class FolderTests(unittest.TestCase):
 
     def test_custom_group_used_for_collision_and_execution(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             name = '[タグ]作品(副題)(作者)'
             (root / name).mkdir()
             groups = {name: '自分で選択[分類](補足)'}
@@ -55,7 +55,7 @@ class FolderTests(unittest.TestCase):
 
     def test_duplicate_size_and_selected_deletion(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             for name, contents in [('作品(A)', 'large data'), ('作品', 'small')]:
                 (root / name).mkdir()
                 (root / name / 'data').write_text(contents)
@@ -69,7 +69,7 @@ class FolderTests(unittest.TestCase):
 
     def test_duplicate_sources_larger_removed(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             for name in ['a(A)', 'a(B)']:
                 (root / name).mkdir()
             rows = [('a(A)', 'a'), ('a(B)', 'a')]
@@ -79,7 +79,7 @@ class FolderTests(unittest.TestCase):
 
     def test_deletion_restored_when_plan_fails(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             for name in ['a', 'b', 'c']:
                 (root / name).mkdir()
             with self.assertRaises(RuntimeError):
@@ -92,7 +92,7 @@ class FolderTests(unittest.TestCase):
 
     def test_group_and_rename(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             for name in ['作品(A)[タグ]', '別作品(A)']:
                 (root / name).mkdir()
                 (root / name / 'data.txt').write_text('keep')
@@ -105,7 +105,7 @@ class FolderTests(unittest.TestCase):
 
     def test_collision(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             (root / 'a').mkdir()
             (root / 'b').mkdir()
             with self.assertRaises(ValueError):
@@ -115,7 +115,7 @@ class FolderTests(unittest.TestCase):
 
     def test_create_without_move(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             (root / '作品(A)').mkdir()
             ops, groups = plan(root, [('作品(A)', '作品(A)')], True)
             execute(ops, groups)
@@ -124,7 +124,7 @@ class FolderTests(unittest.TestCase):
 
     def test_rollback(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
+            root = Path(directory).resolve()
             for name in ['a(A)', 'b(A)']:
                 (root / name).mkdir()
             ops, groups = plan(root, [('a(A)', 'a'), ('b(A)', 'b')], True, True)
