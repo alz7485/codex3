@@ -21,7 +21,7 @@ class FileCleanupTests(unittest.TestCase):
             root = Path(directory).resolve()
             (root / 'nested/deep').mkdir(parents=True)
             for relative in ['a.txt', 'nested/b.txt', 'nested/deep/広告.jpg', 'keep.png']:
-                (root / relative).write_text(relative)
+                (root / relative).write_text(relative, encoding='utf-8')
             candidates = search_files(root, '広告 .txt')
             self.assertEqual(len(candidates), 3)
             excluded = root / 'nested/b.txt'
