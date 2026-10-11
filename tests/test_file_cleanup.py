@@ -30,7 +30,7 @@ class FileCleanupTests(unittest.TestCase):
             self.assertTrue(excluded.exists())
             self.assertTrue((root / 'keep.png').exists())
             self.assertFalse((root / 'a.txt').exists())
-            self.assertEqual((backup / 'data/nested/deep/広告.jpg').read_text(), 'nested/deep/広告.jpg')
+            self.assertEqual((backup / 'data/nested/deep/広告.jpg').read_text(encoding='utf-8'), 'nested/deep/広告.jpg')
             self.assertTrue((backup / 'restore.json').exists())
             self.assertEqual([c.source for c in search_files(root, '広告 .txt')], [excluded])
 
