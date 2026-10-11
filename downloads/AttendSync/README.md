@@ -20,3 +20,9 @@ Linux/Qt offscreenで検証しています。Windows Explorerからの実ドラ�
 
 ZIP：376ファイル / 10,872,248バイト  
 SHA256：`e58133163d7c93e1a17cda32546fcc45a4e73f56738c9321d3b91d457d13dce2`
+
+## Trial47追加監査
+
+全40テストスクリプト、追加の境界試験8件、メイン画面の全84ウィジェットでの実Qtイベント配送が合格しました。修正が必要な問題は見つかりませんでした。ZIPの375ファイルのSHA256と作業ソースが一致し、GitHub掲載ZIPのサイズ・Git blob SHAも一致しています。ZIPは変更していません。
+
+[追加監査報告](AUDIT_TRIAL47.md) / [全40本の実行記録](audits/Trial47/All_Test_Results.json) / [追加試験コード](audits/Trial47/Boundary_Audit.py) / [追加試験ログ](audits/Trial47/Boundary_Audit.log)

@@ -1,0 +1,18 @@
+audit_copy_and_move_actions (__main__.Audit47.audit_copy_and_move_actions) ... /tmp/attendsync_audit47_boundaries.py:29: DeprecationWarning: Function: 'QDragEnterEvent.QDragEnterEvent(const QPoint &pos, QFlags<Qt.DropAction> actions, const QMimeData *data, QFlags<Qt.MouseButton> buttons, QFlags<Qt.KeyboardModifier> modifiers)' is marked as deprecated, please check the documentation for more information.
+  events=[QDragEnterEvent(QPoint(5,5),actions,mime,Qt.LeftButton,Qt.NoModifier),QDropEvent(QPointF(5,5),actions,mime,Qt.LeftButton,Qt.NoModifier)]
+ok
+audit_deleted_between_enter_and_drop (__main__.Audit47.audit_deleted_between_enter_and_drop) ... /tmp/attendsync_audit47_boundaries.py:37: DeprecationWarning: Function: 'QDragEnterEvent.QDragEnterEvent(const QPoint &pos, QFlags<Qt.DropAction> actions, const QMimeData *data, QFlags<Qt.MouseButton> buttons, QFlags<Qt.KeyboardModifier> modifiers)' is marked as deprecated, please check the documentation for more information.
+  enter=QDragEnterEvent(QPoint(5,5),Qt.CopyAction,mime,Qt.LeftButton,Qt.NoModifier)
+ok
+audit_disabled_path (__main__.Audit47.audit_disabled_path) ... ok
+audit_every_widget (__main__.Audit47.audit_every_widget) ... ok
+audit_malformed_local_url (__main__.Audit47.audit_malformed_local_url) ... ok
+audit_polished_reparented_widget (__main__.Audit47.audit_polished_reparented_widget) ... ok
+audit_real_thread_running (__main__.Audit47.audit_real_thread_running) ... ok
+audit_separate_main_windows (__main__.Audit47.audit_separate_main_windows) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 1.370s
+
+OK
+Audited native event targets: 84

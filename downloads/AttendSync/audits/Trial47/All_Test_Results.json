@@ -1,0 +1,287 @@
+{
+  "python": "3.12.14 (main, Aug 25 2026, 14:00:49) [Clang 22.1.3 ]",
+  "platform": "Linux-6.18.44-x86_64-with-glibc2.41",
+  "syntax": "PASS",
+  "results": [
+    {
+      "script": "test_120_performance.py",
+      "passed": true,
+      "seconds": 4.38,
+      "stdout": "trial12-120: 120 XLSX + 2 CSV, cache_hits=0/122, elapsed=3.81s; 一致=10797 不一致=3\ntrial12-120: 120 XLSX + 2 CSV, cache_hits=122/122, elapsed=0.25s; 一致=10797 不一致=3\nPASS: 120人、3600勤怠日、10800照合、3不一致、キャッシュ再利用\n",
+      "stderr": ""
+    },
+    {
+      "script": "test_cache_tags.py",
+      "passed": true,
+      "seconds": 0.23,
+      "stdout": "PASS: 10 settings/cache signature checks\n",
+      "stderr": ""
+    },
+    {
+      "script": "test_comparison_extensions.py",
+      "passed": true,
+      "seconds": 0.41,
+      "stdout": "PASS: 追加した照合項目120件・キー保持・照合結果\n",
+      "stderr": ""
+    },
+    {
+      "script": "test_coverage_trial16.py",
+      "passed": true,
+      "seconds": 3.23,
+      "stdout": "PASS Trial16: 3600日整合、CSV欠落、XLSX欠落を検出\n",
+      "stderr": ""
+    },
+    {
+      "script": "test_engine.py",
+      "passed": true,
+      "seconds": 0.26,
+      "stdout": "PASS: 時刻正規化、XLSXの日付、CSV照合、欠落データの4系列\nPASS: XLSX同日重複、XLSX日付欠落、他社員CSV無視\n",
+      "stderr": ""
+    },
+    {
+      "script": "test_excel_jump.py",
+      "passed": true,
+      "seconds": 0.05,
+      "stdout": "PASS: XLSX元セル番地・不正列検出\n",
+      "stderr": ""
+    },
+    {
+      "script": "test_final_validation.py",
+      "passed": true,
+      "seconds": 0.23,
+      "stdout": "PASS: config validation checks\n",
+      "stderr": ""
+    },
+    {
+      "script": "test_month_spacers_trial19.py",
+      "passed": true,
+      "seconds": 0.29,
+      "stdout": "PASS: 3 blank month-border rows skipped; 30 days intact; Excel source row preserved\n",
+      "stderr": ""
+    },
+    {
+      "script": "test_sample_integration.py",
+      "passed": true,
+      "seconds": 0.47,
+      "stdout": "PASS: XLSX 4件 / CSV 2件 / CSV 120行\nPASS: 一致 357項目 / 不一致 3項目 / 要確認 0件\nPASS: 同姓同名2人の候補選択・対象年月チェック・期待不一致3項目\n",
+      "stderr": ""
+    },
+    {
+      "script": "test_stable_read.py",
+      "passed": true,
+      "seconds": 0.05,
+      "stdout": "PASS: stable file accepted; modified file rejected\n",
+      "stderr": ""
+    },
+    {
+      "script": "test_trial15.py",
+      "passed": true,
+      "seconds": 0.24,
+      "stdout": "PASS Trial15: malformed XLSX day, invalid CSV date, cache reuse/invalidation\n",
+      "stderr": ""
+    },
+    {
+      "script": "test_trial21.py",
+      "passed": true,
+      "seconds": 0.24,
+      "stdout": "PASS Trial21 CSV all-time-field validation\n",
+      "stderr": ""
+    },
+    {
+      "script": "test_trial22_static.py",
+      "passed": true,
+      "seconds": 0.06,
+      "stdout": "trial22 static checks OK\n",
+      "stderr": ""
+    },
+    {
+      "script": "test_trial23_static.py",
+      "passed": true,
+      "seconds": 0.05,
+      "stdout": "trial23 worker/diagnostics static checks OK\n",
+      "stderr": ""
+    },
+    {
+      "script": "test_trial24_integrity.py",
+      "passed": true,
+      "seconds": 0.05,
+      "stdout": "Trial24 diagnostic guard checks OK\n",
+      "stderr": ""
+    },
+    {
+      "script": "test_trial27_toggle_static.py",
+      "passed": true,
+      "seconds": 0.05,
+      "stdout": "Trial27 toggle-label static test OK\n",
+      "stderr": ""
+    },
+    {
+      "script": "test_trial28_input_review.py",
+      "passed": true,
+      "seconds": 0.22,
+      "stdout": "Trial28 invalid input review OK\n",
+      "stderr": ""
+    },
+    {
+      "script": "test_trial29_completion.py",
+      "passed": true,
+      "seconds": 0.09,
+      "stdout": "Trial29 completion guard static OK\n",
+      "stderr": ""
+    },
+    {
+      "script": "test_trial30_dynamic_failures.py",
+      "passed": true,
+      "seconds": 0.5,
+      "stdout": "PASS Trial30: corrupted XLSX, cache reuse, injected stat error, consistent file counts\n",
+      "stderr": ""
+    },
+    {
+      "script": "test_trial31_excel_mock.py",
+      "passed": true,
+      "seconds": 0.23,
+      "stdout": "PASS: Excel COM mock success/failure, no close existing, cleanup new\n",
+      "stderr": ""
+    },
+    {
+      "script": "test_trial32_gui_print.py",
+      "passed": true,
+      "seconds": 3.61,
+      "stdout": "PASS: real Qt filters/detail/empty/theme/settings/log/Excel failure; PDF 21 pages; preview, cancel, no printer, print error\n",
+      "stderr": "This plugin does not support propagateSizeHints()\n"
+    },
+    {
+      "script": "test_trial32_sessions_mapping.py",
+      "passed": true,
+      "seconds": 13.44,
+      "stdout": "PASS: real QThread repeated stop/restart, 10800 rows, stale signals ignored; mapping labels, unsaved edits, name priority, duplicate rejection\n",
+      "stderr": ""
+    },
+    {
+      "script": "test_trial33_ui.py",
+      "passed": true,
+      "seconds": 18.49,
+      "stdout": "",
+      "stderr": "test_detail_minimum_layout_and_source_header_contrast (__main__.Trial33UI.test_detail_minimum_layout_and_source_header_contrast) ... ok\ntest_empty_states_distinguish_unloaded_and_no_matches (__main__.Trial33UI.test_empty_states_distinguish_unloaded_and_no_matches) ... ok\ntest_filters_japanese_search_and_clear_action (__main__.Trial33UI.test_filters_japanese_search_and_clear_action) ... ok\ntest_long_status_cannot_push_actions_outside_window (__main__.Trial33UI.test_long_status_cannot_push_actions_outside_window) ... ok\ntest_main_layout_keeps_result_rows_and_actions_visible (__main__.Trial33UI.test_main_layout_keeps_result_rows_and_actions_visible) ... ok\ntest_palette_text_contrast (__main__.Trial33UI.test_palette_text_contrast) ... ok\ntest_period_hint_handles_january_and_year_changes (__main__.Trial33UI.test_period_hint_handles_january_and_year_changes) ... ok\ntest_settings_minimum_keeps_save_cancel_available_on_every_tab (__main__.Trial33UI.test_settings_minimum_keeps_save_cancel_available_on_every_tab) ... ok\ntest_theme_toggle_preserves_results_and_renders_status_pills (__main__.Trial33UI.test_theme_toggle_preserves_results_and_renders_status_pills) ... ok\n\n----------------------------------------------------------------------\nRan 9 tests in 17.657s\n\nOK\n"
+    },
+    {
+      "script": "test_trial34_settings.py",
+      "passed": true,
+      "seconds": 18.98,
+      "stdout": "",
+      "stderr": "...........................\n----------------------------------------------------------------------\nRan 27 tests in 18.237s\n\nOK\n"
+    },
+    {
+      "script": "test_trial38_audit.py",
+      "passed": true,
+      "seconds": 12.55,
+      "stdout": "",
+      "stderr": "test_cancelled_read_keeps_previous_period_and_source_columns (__main__.Audit38.test_cancelled_read_keeps_previous_period_and_source_columns) ... ok\ntest_completion_reconciles_with_worker_settings_snapshot (__main__.Audit38.test_completion_reconciles_with_worker_settings_snapshot) ... ok\ntest_detail_uses_completed_comparisons_not_pending_settings (__main__.Audit38.test_detail_uses_completed_comparisons_not_pending_settings) ... ok\ntest_detail_visibility_save_preserves_unknown_keys_and_pending_settings (__main__.Audit38.test_detail_visibility_save_preserves_unknown_keys_and_pending_settings) ... This plugin does not support propagateSizeHints()\nok\ntest_enabled_comparison_controls_detail_label_and_format (__main__.Audit38.test_enabled_comparison_controls_detail_label_and_format) ... ok\ntest_excel_jump_uses_columns_from_completed_read (__main__.Audit38.test_excel_jump_uses_columns_from_completed_read) ... ok\ntest_failed_detail_write_does_not_change_visibility_or_pending_config (__main__.Audit38.test_failed_detail_write_does_not_change_visibility_or_pending_config) ... This plugin does not support propagateSizeHints()\nok\ntest_failed_settings_write_does_not_replace_active_config (__main__.Audit38.test_failed_settings_write_does_not_replace_active_config) ... ok\ntest_list_and_detail_print_tables_use_available_paper_width (__main__.Audit38.test_list_and_detail_print_tables_use_available_paper_width) ... ok\ntest_mapping_displays_name_from_info_for_employee_without_records (__main__.Audit38.test_mapping_displays_name_from_info_for_employee_without_records) ... ok\ntest_multiple_enabled_comparisons_do_not_hide_mismatch (__main__.Audit38.test_multiple_enabled_comparisons_do_not_hide_mismatch) ... ok\ntest_null_detail_visibility_remains_show_all (__main__.Audit38.test_null_detail_visibility_remains_show_all) ... ok\ntest_print_uses_completed_period_after_controls_change (__main__.Audit38.test_print_uses_completed_period_after_controls_change) ... ok\ntest_real_excel_duration_over_24_hours_survives_cache_and_comparison (__main__.Audit38.test_real_excel_duration_over_24_hours_survives_cache_and_comparison) ... ok\ntest_renamed_source_label_survives_selection_of_comparison_result (__main__.Audit38.test_renamed_source_label_survives_selection_of_comparison_result) ... ok\ntest_runtime_rejects_layout_outside_excel_bounds_and_missing_required_keys (__main__.Audit38.test_runtime_rejects_layout_outside_excel_bounds_and_missing_required_keys) ... ok\n\n----------------------------------------------------------------------\nRan 16 tests in 11.849s\n\nOK\n"
+    },
+    {
+      "script": "test_trial39_manual.py",
+      "passed": true,
+      "seconds": 9.74,
+      "stdout": "",
+      "stderr": "test_browser_exception_is_reported (__main__.Manual39.test_browser_exception_is_reported) ... ok\ntest_browser_failure_keeps_application_usable (__main__.Manual39.test_browser_failure_keeps_application_usable) ... ok\ntest_build_rejects_missing_manual (__main__.Manual39.test_build_rejects_missing_manual) ... ok\ntest_button_opens_local_url_with_spaces_and_japanese (__main__.Manual39.test_button_opens_local_url_with_spaces_and_japanese) ... ok\ntest_f1_opens_same_manual (__main__.Manual39.test_f1_opens_same_manual) ... ok\ntest_future_columns_names_and_comparisons_persist_in_json (__main__.Manual39.test_future_columns_names_and_comparisons_persist_in_json) ... ok\ntest_manual_all_images_and_navigation_are_local_and_present (__main__.Manual39.test_manual_all_images_and_navigation_are_local_and_present) ... ok\ntest_missing_manual_reports_error_without_starting_browser (__main__.Manual39.test_missing_manual_reports_error_without_starting_browser) ... ok\ntest_onedir_distribution_copies_complete_manual (__main__.Manual39.test_onedir_distribution_copies_complete_manual) ... ok\ntest_startup_does_not_import_manual_or_read_input_folder (__main__.Manual39.test_startup_does_not_import_manual_or_read_input_folder) ... ok\n\n----------------------------------------------------------------------\nRan 10 tests in 9.175s\n\nOK\n"
+    },
+    {
+      "script": "test_trial40_completion.py",
+      "passed": true,
+      "seconds": 4.06,
+      "stdout": "",
+      "stderr": "test_blank_folder_does_not_scan_working_directory (__main__.CompletionAudit.test_blank_folder_does_not_scan_working_directory) ... ok\ntest_directory_permission_error_is_reported (__main__.CompletionAudit.test_directory_permission_error_is_reported) ... ok\ntest_failed_automatic_mapping_save_still_finishes_with_review (__main__.CompletionAudit.test_failed_automatic_mapping_save_still_finishes_with_review) ... ok\ntest_failed_manual_mapping_save_preserves_previous_assignments (__main__.CompletionAudit.test_failed_manual_mapping_save_preserves_previous_assignments) ... ok\ntest_failed_mapping_dialog_save_preserves_previous_mapping (__main__.CompletionAudit.test_failed_mapping_dialog_save_preserves_previous_mapping) ... ok\ntest_failed_read_settings_save_does_not_start_worker_or_commit (__main__.CompletionAudit.test_failed_read_settings_save_does_not_start_worker_or_commit) ... ok\ntest_failed_theme_save_preserves_config_and_visual_state (__main__.CompletionAudit.test_failed_theme_save_preserves_config_and_visual_state) ... ok\ntest_unsafe_json_values_rejected_without_overwriting_extensions (__main__.CompletionAudit.test_unsafe_json_values_rejected_without_overwriting_extensions) ... ok\n\n----------------------------------------------------------------------\nRan 8 tests in 3.347s\n\nOK\n"
+    },
+    {
+      "script": "test_trial41_engine.py",
+      "passed": true,
+      "seconds": 0.51,
+      "stdout": "",
+      "stderr": "...........\n----------------------------------------------------------------------\nRan 11 tests in 0.283s\n\nOK\n"
+    },
+    {
+      "script": "test_trial41_runtime.py",
+      "passed": true,
+      "seconds": 8.27,
+      "stdout": "",
+      "stderr": "test_all_comparisons_off_is_explicit_in_status_and_empty_view (__main__.RuntimeAudit.test_all_comparisons_off_is_explicit_in_status_and_empty_view) ... ok\ntest_bom_settings_and_mapping_start_normally_and_preserve_extensions (__main__.RuntimeAudit.test_bom_settings_and_mapping_start_normally_and_preserve_extensions) ... ok\ntest_concurrent_startup_write_probes_keep_same_portable_directory (__main__.RuntimeAudit.test_concurrent_startup_write_probes_keep_same_portable_directory) ... ok\ntest_corrupt_database_reports_failure_and_preserves_completed_results (__main__.RuntimeAudit.test_corrupt_database_reports_failure_and_preserves_completed_results) ... ok\ntest_corrupt_or_invalid_settings_reports_failure_and_preserves_original (__main__.RuntimeAudit.test_corrupt_or_invalid_settings_reports_failure_and_preserves_original) ... ok\ntest_failed_json_serialization_retains_previous_file_and_cleans_temporary (__main__.RuntimeAudit.test_failed_json_serialization_retains_previous_file_and_cleans_temporary) ... ok\ntest_first_fatal_read_reports_diagnostic_without_inventing_results (__main__.RuntimeAudit.test_first_fatal_read_reports_diagnostic_without_inventing_results) ... ok\ntest_folder_stat_permission_error_is_reported_without_mutating_settings (__main__.RuntimeAudit.test_folder_stat_permission_error_is_reported_without_mutating_settings) ... ok\ntest_invalid_mapping_reports_failure_and_does_not_overwrite (__main__.RuntimeAudit.test_invalid_mapping_reports_failure_and_does_not_overwrite) ... ok\ntest_json_period_folder_changes_update_controls_but_keep_result_snapshot (__main__.RuntimeAudit.test_json_period_folder_changes_update_controls_but_keep_result_snapshot) ... ok\ntest_normal_settings_save_keeps_unsaved_main_controls (__main__.RuntimeAudit.test_normal_settings_save_keeps_unsaved_main_controls) ... ok\ntest_parallel_json_saves_have_unique_temporary_files_and_both_succeed (__main__.RuntimeAudit.test_parallel_json_saves_have_unique_temporary_files_and_both_succeed) ... ok\ntest_unknown_enabled_comparison_is_reviewed_without_rewriting_metadata (__main__.RuntimeAudit.test_unknown_enabled_comparison_is_reviewed_without_rewriting_metadata) ... ok\ntest_unsupported_reserved_type_can_be_preserved_by_normal_form (__main__.RuntimeAudit.test_unsupported_reserved_type_can_be_preserved_by_normal_form) ... ok\n\n----------------------------------------------------------------------\nRan 14 tests in 7.576s\n\nOK\n"
+    },
+    {
+      "script": "test_trial41_settings.py",
+      "passed": true,
+      "seconds": 1.58,
+      "stdout": "",
+      "stderr": "test_ambiguous_column_ids_are_rejected_before_any_form_change (__main__.FinalSettingsAudit.test_ambiguous_column_ids_are_rejected_before_any_form_change) ... ok\ntest_current_unsaved_comparison_references_reserve_ids (__main__.FinalSettingsAudit.test_current_unsaved_comparison_references_reserve_ids) ... ok\ntest_direct_form_save_rejects_ambiguous_existing_id (__main__.FinalSettingsAudit.test_direct_form_save_rejects_ambiguous_existing_id) ... ok\ntest_disabled_comparison_cannot_import_ambiguous_source_id (__main__.FinalSettingsAudit.test_disabled_comparison_cannot_import_ambiguous_source_id) ... ok\ntest_display_names_can_include_separator_without_changing_identity (__main__.FinalSettingsAudit.test_display_names_can_include_separator_without_changing_identity) ... ok\ntest_generated_field_does_not_overwrite_reserved_extension_identity (__main__.FinalSettingsAudit.test_generated_field_does_not_overwrite_reserved_extension_identity) ... ok\ntest_instance_validator_preserves_gui_error_control (__main__.FinalSettingsAudit.test_instance_validator_preserves_gui_error_control) ... ok\ntest_shared_validator_runs_without_a_qt_application (__main__.FinalSettingsAudit.test_shared_validator_runs_without_a_qt_application) ... ok\n\n----------------------------------------------------------------------\nRan 8 tests in 1.095s\n\nOK\n"
+    },
+    {
+      "script": "test_trial42_totals.py",
+      "passed": true,
+      "seconds": 11.44,
+      "stdout": "",
+      "stderr": "test_all_match_and_missing_data_ui (__main__.Totals42.test_all_match_and_missing_data_ui) ... ok\ntest_all_off_and_zero_employees_never_claim_all_matched (__main__.Totals42.test_all_off_and_zero_employees_never_claim_all_matched) ... ok\ntest_cancel_or_fatal_error_preserves_previous_total (__main__.Totals42.test_cancel_or_fatal_error_preserves_previous_total) ... ok\ntest_duplicate_csv_and_unmapped_employee_leave_slots_uncompared (__main__.Totals42.test_duplicate_csv_and_unmapped_employee_leave_slots_uncompared) ... ok\ntest_duplicate_labels_and_pairs_are_distinct_comparisons (__main__.Totals42.test_duplicate_labels_and_pairs_are_distinct_comparisons) ... ok\ntest_duplicate_result_cannot_inflate_matches_and_period_outside_is_detected (__main__.Totals42.test_duplicate_result_cannot_inflate_matches_and_period_outside_is_detected) ... ok\ntest_extra_enabled_item_changes_total_off_item_does_not (__main__.Totals42.test_extra_enabled_item_changes_total_off_item_does_not) ... ok\ntest_formula_and_result_rows_fit_minimum_window_with_data (__main__.Totals42.test_formula_and_result_rows_fit_minimum_window_with_data) ... ok\ntest_full_sample_total_and_identity (__main__.Totals42.test_full_sample_total_and_identity) ... ok\ntest_invalid_comparison_slot_is_review_not_match (__main__.Totals42.test_invalid_comparison_slot_is_review_not_match) ... ok\ntest_loading_failure_prevents_all_match_claim (__main__.Totals42.test_loading_failure_prevents_all_match_claim) ... ok\ntest_minimum_window_with_loading_failure_and_large_totals (__main__.Totals42.test_minimum_window_with_loading_failure_and_large_totals) ... ok\ntest_missing_csv_day_counts_each_uncompared_item (__main__.Totals42.test_missing_csv_day_counts_each_uncompared_item) ... ok\ntest_missing_xlsx_day_keeps_full_calendar_denominator (__main__.Totals42.test_missing_xlsx_day_keeps_full_calendar_denominator) ... ok\ntest_period_includes_both_endpoints_and_leap_year (__main__.Totals42.test_period_includes_both_endpoints_and_leap_year) ... ok\ntest_results_formula_uses_snapshot_and_ignores_filters (__main__.Totals42.test_results_formula_uses_snapshot_and_ignores_filters) ... ok\n\n----------------------------------------------------------------------\nRan 16 tests in 10.858s\n\nOK\n"
+    },
+    {
+      "script": "test_trial43_mapping_default.py",
+      "passed": true,
+      "seconds": 2.65,
+      "stdout": "",
+      "stderr": "test_blank_saved_id_is_unlinked (__main__.MappingDefault43.test_blank_saved_id_is_unlinked) ... ok\ntest_empty_mapping_with_loaded_employees_shows_unlinked (__main__.MappingDefault43.test_empty_mapping_with_loaded_employees_shows_unlinked) ... ok\ntest_fully_mapped_opens_all (__main__.MappingDefault43.test_fully_mapped_opens_all) ... ok\ntest_manual_toggle_still_switches_between_modes (__main__.MappingDefault43.test_manual_toggle_still_switches_between_modes) ... ok\ntest_no_employees_chooses_all_mode (__main__.MappingDefault43.test_no_employees_chooses_all_mode) ... ok\ntest_partial_mapping_opens_unlinked_only (__main__.MappingDefault43.test_partial_mapping_opens_unlinked_only) ... ok\ntest_saved_mapping_without_reading_opens_all (__main__.MappingDefault43.test_saved_mapping_without_reading_opens_all) ... ok\n\n----------------------------------------------------------------------\nRan 7 tests in 2.097s\n\nOK\n"
+    },
+    {
+      "script": "test_trial43_startup_period.py",
+      "passed": true,
+      "seconds": 3.03,
+      "stdout": "",
+      "stderr": "test_15th_16th_boundaries_for_every_month (__main__.StartupPeriod43.test_15th_16th_boundaries_for_every_month) ... ok\ntest_date_is_read_once_and_does_not_replace_manual_selection (__main__.StartupPeriod43.test_date_is_read_once_and_does_not_replace_manual_selection) ... ok\ntest_first_start_without_settings_file (__main__.StartupPeriod43.test_first_start_without_settings_file) ... ok\ntest_manual_change_survives_until_next_start_and_is_used_by_worker (__main__.StartupPeriod43.test_manual_change_survives_until_next_start_and_is_used_by_worker) ... ok\ntest_month_end_and_leap_year (__main__.StartupPeriod43.test_month_end_and_leap_year) ... ok\ntest_startup_overrides_stored_month_in_ui_and_runtime_config (__main__.StartupPeriod43.test_startup_overrides_stored_month_in_ui_and_runtime_config) ... ok\n\n----------------------------------------------------------------------\nRan 6 tests in 2.334s\n\nOK\n"
+    },
+    {
+      "script": "test_trial44_audit.py",
+      "passed": true,
+      "seconds": 3.77,
+      "stdout": "",
+      "stderr": "test_added_employee_filter_updates_when_candidate_is_selected (__main__.Audit44.test_added_employee_filter_updates_when_candidate_is_selected) ... ok\ntest_added_employee_filter_updates_when_staff_is_entered (__main__.Audit44.test_added_employee_filter_updates_when_staff_is_entered) ... ok\ntest_blank_or_trailing_csv_name_does_not_enter_saved_id (__main__.Audit44.test_blank_or_trailing_csv_name_does_not_enter_saved_id) ... ok\ntest_new_employee_save_uses_typed_id_and_omits_unlinked_employee (__main__.Audit44.test_new_employee_save_uses_typed_id_and_omits_unlinked_employee) ... ok\ntest_normalized_duplicate_staff_id_is_rejected (__main__.Audit44.test_normalized_duplicate_staff_id_is_rejected) ... ok\ntest_normalized_existing_staff_id_is_not_offered_to_another_employee (__main__.Audit44.test_normalized_existing_staff_id_is_not_offered_to_another_employee) ... ok\ntest_saved_mapping_without_csv_names_can_be_saved_without_changing_ids (__main__.Audit44.test_saved_mapping_without_csv_names_can_be_saved_without_changing_ids) ... ok\ntest_whitespace_saved_staff_is_visible_as_unlinked (__main__.Audit44.test_whitespace_saved_staff_is_visible_as_unlinked) ... ok\n\n----------------------------------------------------------------------\nRan 8 tests in 3.133s\n\nOK\n"
+    },
+    {
+      "script": "test_trial46_dialog_lifecycle.py",
+      "passed": true,
+      "seconds": 3.78,
+      "stdout": "",
+      "stderr": "test_context_menu_three_times (__main__.Recheck46.test_context_menu_three_times) ... This plugin does not support raise()\nThis plugin does not support grabbing the keyboard\nThis plugin does not support raise()\nThis plugin does not support grabbing the keyboard\nThis plugin does not support raise()\nThis plugin does not support grabbing the keyboard\nok\ntest_detail_cancel_three_times (__main__.Recheck46.test_detail_cancel_three_times) ... ok\ntest_detail_fields_save_three_times (__main__.Recheck46.test_detail_fields_save_three_times) ... This plugin does not support propagateSizeHints()\nThis plugin does not support propagateSizeHints()\nThis plugin does not support propagateSizeHints()\nok\ntest_diagnostics_cancel_three_times (__main__.Recheck46.test_diagnostics_cancel_three_times) ... This plugin does not support propagateSizeHints()\nThis plugin does not support propagateSizeHints()\nThis plugin does not support propagateSizeHints()\nok\ntest_logs_cancel_three_times (__main__.Recheck46.test_logs_cancel_three_times) ... This plugin does not support propagateSizeHints()\nThis plugin does not support propagateSizeHints()\nThis plugin does not support propagateSizeHints()\nok\ntest_mapping_cancel_three_times (__main__.Recheck46.test_mapping_cancel_three_times) ... ok\ntest_read_done_mapping_cancel_three_times (__main__.Recheck46.test_read_done_mapping_cancel_three_times) ... ok\ntest_read_done_mapping_save_three_times (__main__.Recheck46.test_read_done_mapping_save_three_times) ... ok\ntest_settings_cancel_three_times (__main__.Recheck46.test_settings_cancel_three_times) ... ok\ntest_settings_success_and_failure_three_times (__main__.Recheck46.test_settings_success_and_failure_three_times) ... ok\n\n----------------------------------------------------------------------\nRan 10 tests in 3.150s\n\nOK\n"
+    },
+    {
+      "script": "test_trial46_engine.py",
+      "passed": true,
+      "seconds": 4.43,
+      "stdout": "",
+      "stderr": "test_added_field_keeps_integrity_when_enabled_after_cache_read (__main__.FinalEngine46.test_added_field_keeps_integrity_when_enabled_after_cache_read) ... ok\ntest_cached_formula_error_cannot_match_equal_text (__main__.FinalEngine46.test_cached_formula_error_cannot_match_equal_text) ... ok\ntest_cached_period_headers_are_checked_without_false_formula_warnings (__main__.FinalEngine46.test_cached_period_headers_are_checked_without_false_formula_warnings) ... ok\ntest_formula_cache_values_and_completed_summary (__main__.FinalEngine46.test_formula_cache_values_and_completed_summary) ... ok\ntest_invalid_calendar_rows_block_completion_but_valid_outside_does_not (__main__.FinalEngine46.test_invalid_calendar_rows_block_completion_but_valid_outside_does_not) ... ok\ntest_off_to_on_retains_formula_integrity_through_cache (__main__.FinalEngine46.test_off_to_on_retains_formula_integrity_through_cache) ... ok\ntest_optional_header_formula_missing_and_cached_empty_are_distinguished (__main__.FinalEngine46.test_optional_header_formula_missing_and_cached_empty_are_distinguished) ... ok\ntest_previous_parser_cache_is_invalidated (__main__.FinalEngine46.test_previous_parser_cache_is_invalidated) ... ok\ntest_shared_formula_empty_element_is_checked (__main__.FinalEngine46.test_shared_formula_empty_element_is_checked) ... ok\ntest_uncalculated_period_header_before_and_after_data_range_blocks_completion (__main__.FinalEngine46.test_uncalculated_period_header_before_and_after_data_range_blocks_completion) ... ok\n\n----------------------------------------------------------------------\nRan 10 tests in 3.861s\n\nOK\n"
+    },
+    {
+      "script": "test_trial46_keyboard.py",
+      "passed": true,
+      "seconds": 1.05,
+      "stdout": "",
+      "stderr": "test_double_click_opens_detail_once (__main__.Keyboard46.test_double_click_opens_detail_once) ... ok\ntest_f1_from_search_opens_manual_once (__main__.Keyboard46.test_f1_from_search_opens_manual_once) ... ok\ntest_native_keyboard_context_dispatch_and_menu_cleanup (__main__.Keyboard46.test_native_keyboard_context_dispatch_and_menu_cleanup) ... ok\ntest_real_detail_closes_is_deleted_and_main_remains_usable (__main__.Keyboard46.test_real_detail_closes_is_deleted_and_main_remains_usable) ... ok\ntest_return_opens_detail_once (__main__.Keyboard46.test_return_opens_detail_once) ... ok\n\n----------------------------------------------------------------------\nRan 5 tests in 0.532s\n\nOK\n"
+    },
+    {
+      "script": "test_trial46_startup.py",
+      "passed": true,
+      "seconds": 1.04,
+      "stdout": "",
+      "stderr": "test_double_denied_actual_files_reports_error_and_preserves_originals (__main__.StartupDistribution46.test_double_denied_actual_files_reports_error_and_preserves_originals) ... ok\ntest_existing_fallback_flush_denied_is_reported_at_startup (__main__.StartupDistribution46.test_existing_fallback_flush_denied_is_reported_at_startup) ... ok\ntest_existing_fallback_write_denied_is_reported_at_startup (__main__.StartupDistribution46.test_existing_fallback_write_denied_is_reported_at_startup) ... ok\ntest_frozen_application_dir_is_executable_parent_with_unicode_and_spaces (__main__.StartupDistribution46.test_frozen_application_dir_is_executable_parent_with_unicode_and_spaces) ... ok\ntest_normal_fallback_when_portable_has_file_collision (__main__.StartupDistribution46.test_normal_fallback_when_portable_has_file_collision) ... ok\ntest_normal_portable_does_not_initialize_localappdata_or_save_settings (__main__.StartupDistribution46.test_normal_portable_does_not_initialize_localappdata_or_save_settings) ... ok\n\n----------------------------------------------------------------------\nRan 6 tests in 0.663s\n\nOK\n"
+    },
+    {
+      "script": "test_trial47_folder_drop.py",
+      "passed": true,
+      "seconds": 0.95,
+      "stdout": "",
+      "stderr": "test_all_native_drop_targets (__main__.FolderDrop47.test_all_native_drop_targets) ... /workspace/attendsync-trial47/AttendSync/test_trial47_folder_drop.py:38: DeprecationWarning: Function: 'QDragEnterEvent.QDragEnterEvent(const QPoint &pos, QFlags<Qt.DropAction> actions, const QMimeData *data, QFlags<Qt.MouseButton> buttons, QFlags<Qt.KeyboardModifier> modifiers)' is marked as deprecated, please check the documentation for more information.\n  events = [QDragEnterEvent(QPoint(5,5), Qt.CopyAction|Qt.MoveAction, mime, Qt.LeftButton, Qt.NoModifier),\n/workspace/attendsync-trial47/AttendSync/test_trial47_folder_drop.py:39: DeprecationWarning: Function: 'QDragMoveEvent.QDragMoveEvent(const QPoint &pos, QFlags<Qt.DropAction> actions, const QMimeData *data, QFlags<Qt.MouseButton> buttons, QFlags<Qt.KeyboardModifier> modifiers, QEvent.Type type)' is marked as deprecated, please check the documentation for more information.\n  QDragMoveEvent(QPoint(5,5), Qt.CopyAction|Qt.MoveAction, mime, Qt.LeftButton, Qt.NoModifier),\nok\ntest_busy_read_rejects_even_programmatic_drop (__main__.FolderDrop47.test_busy_read_rejects_even_programmatic_drop) ... ok\ntest_dynamic_child_routes_to_main (__main__.FolderDrop47.test_dynamic_child_routes_to_main) ... ok\ntest_invalid_payload_never_replaces_fields (__main__.FolderDrop47.test_invalid_payload_never_replaces_fields) ... ok\ntest_separate_dialog_is_not_intercepted (__main__.FolderDrop47.test_separate_dialog_is_not_intercepted) ... ok\n\n----------------------------------------------------------------------\nRan 5 tests in 0.415s\n\nOK\n"
+    },
+    {
+      "script": "test_ui_static.py",
+      "passed": true,
+      "seconds": 0.15,
+      "stdout": "PASS: 3表示モード、社員検索、表示件数、印刷ボタン制御、UI構造\n",
+      "stderr": ""
+    }
+  ]
+}
