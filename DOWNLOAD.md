@@ -1,8 +1,10 @@
-# FolderAdjuster（Windows）
+# FolderAdjuster（Windows・onedir版）
 
-[Windows EXE版ZIPをダウンロード（Python不要）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/FolderAdjuster/FolderAdjuster-Windows.zip)
+[onedir版ZIPをダウンロード（Python不要）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/FolderAdjuster/FolderAdjuster-Windows.zip)
 
-展開して `FolderAdjuster.exe` を実行してください。Windowsで75件のテストとEXE起動確認が成功しました。
+ZIP全体を展開して `FolderAdjuster/FolderAdjuster.exe` を起動してください。`_internal` フォルダも必要です。EXE単体を移動しないでください。
+
+監査で再読み込み・キャンセル時の一覧不整合を修正。LinuxとWindowsで77件のテストが成功し、展開後の起動と設定保存も確認しました。
 
 [ソース版ZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/folder-tool-windows.zip)
 
@@ -14,4 +16,4 @@
 
 履歴からの復元、進捗・キャンセル、削除プリセット、絞り込み、巻数表示、同名比較を追加しました。詳しくはREADME.mdをご覧ください。
 
-ソース版ZIP SHA256: `b3a5c699f332def6906c5ff371ff719ccf2ababe0af8263996a739cb3df45a8f`
+ソース版ZIP SHA256: `82ef83368bd79a36a92db8013b7c111ae5a8e1a6bb5e7bfbebba99223fbdbf01`
