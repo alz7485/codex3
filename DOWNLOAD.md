@@ -1,9 +1,13 @@
-# フォルダ整理ツール（Windows）
+# FolderAdjuster（Windows）
 
-[最新版ZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/folder-tool-windows.zip)
+[ソース版ZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/folder-tool-windows.zip)
 
-ZIPを展開して `start.bat` を実行してください。Python 3.10以上（Tkinter含む）が必要です。
+ソース版は展開して `start.bat` を実行します。Python 3.10以上が必要です。
 
-フォルダ名の整理と本データの整理は別タブです。選択パスと削除検索条件は、アプリと同じフォルダの `settings.json` に保存します。削除対象は復元用に退避します。詳しい操作・検証結果はZIP内のREADME.md、AUDIT.mdを参照してください。
+[Windows EXEのビルドとダウンロード](https://github.com/alz7485/codex3/actions/workflows/windows-build.yml)
 
-SHA256: `7fc369170266ddcf5c5b5db71cf08d4c0be4d2c224c2e31a923218fd002269db`
+成功した実行の `FolderAdjuster-Windows` をダウンロードしてください。EXE版はPython不要です。
+
+履歴からの復元、進捗・キャンセル、削除プリセット、絞り込み、巻数表示、同名比較を追加しました。詳しくはREADME.mdをご覧ください。
+
+ソース版ZIP SHA256: `f94e75fc4e120dcc398f0336f91a44e086fe6349bacde2098783f6f37a71643f`

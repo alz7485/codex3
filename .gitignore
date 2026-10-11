@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.venv/
+settings.json
+settings.invalid-*.json
+operation-history/
+.build-venv/
+build/
+dist/
+*.spec

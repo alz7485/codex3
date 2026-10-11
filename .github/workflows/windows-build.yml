@@ -1,0 +1,52 @@
+name: Build Windows application
+
+on:
+  push:
+    branches: [main]
+    paths: ['*.py', 'tests/**', 'assets/**', '.github/workflows/windows-build.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run tests
+        run: python -m unittest discover -s tests -v
+      - name: Install build dependency
+        run: python -m pip install --disable-pip-version-check pyinstaller==6.11.1
+      - name: Build portable executable
+        run: python -m PyInstaller --noconfirm --clean --onefile --windowed --name FolderAdjuster --icon assets/FolderAdjuster.ico --add-data "assets;assets" app.py
+      - name: Package executable
+        shell: pwsh
+        run: |
+          Copy-Item README.md dist/README.md
+          Copy-Item AUDIT.md dist/AUDIT.md
+          Compress-Archive -Path dist/FolderAdjuster.exe,dist/README.md,dist/AUDIT.md -DestinationPath FolderAdjuster-Windows.zip
+      - name: Check packaged application starts
+        shell: pwsh
+        run: |
+          $process = Start-Process -FilePath dist/FolderAdjuster.exe -ArgumentList '--smoke-test' -Wait -PassThru
+          if ($process.ExitCode -ne 0) { throw 'Application startup failed' }
+          if (-not (Test-Path dist/FolderAdjuster.smoke-test.txt)) { throw 'Startup confirmation missing' }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FolderAdjuster-Windows
+          path: FolderAdjuster-Windows.zip
+          if-no-files-found: error
+      - name: Publish GitHub download branch
+        shell: pwsh
+        run: |
+          git checkout --orphan windows-build-${{ github.sha }}
+          git rm -r --cached .
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add FolderAdjuster-Windows.zip
+          git commit -m 'Add tested Windows executable package'
+          git push origin HEAD:refs/heads/windows-build-${{ github.sha }}
