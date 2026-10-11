@@ -1,30 +1,22 @@
-# AttendSync Trial46 — 最終専門レビュー版
+# AttendSync Trial47
 
-[最新版ZIPをダウンロード（約10.4MB）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial46_Final_Reviewed_Complete.zip)
+[最新版ZIPをダウンロード（約10.4MB）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial47_Window_Folder_Drop_Complete.zip)
 
-4人のレビュー専門エージェントが、照合処理・設定と社員ID・UIとマニュアル・配布構成を独立監査しました。指摘を修正して再確認し、全39テストスクリプトと最終追試5本が合格しています。新規の回帰テストは4本・31メソッドです。4人の監査報告と画像付き操作マニュアルをZIPに同梱しています。
+メイン画面内のどこにでも、勤怠データのフォルダ1個をドロップできます。結果表・検索欄・年月入力・ログ欄・ボタンの上も対応します。ドロップ後はフォルダ欄が更新され、「読み込み・照合」で開始します。読み込み中は変更を受け付けません。
 
-[最終監査報告](AUDIT_TRIAL46.md) / [完成ZIPの独立検査](PACKAGE_CHECK_TRIAL46.md)
+フォルダのみ受け付け、ファイル単体・複数フォルダ・Web URL・通常テキストは拒否します。元のフォルダは移動しません。後から追加するメイン画面の子ウィジェットにも対応します。
 
-今回の修正：
+今回の関連5テストスクリプトが合格しました。新規5メソッドは11か所への実Qtイベント配送・無効データ・読み込み中・別ダイアログ・動的な項目追加を検証しています。キーボード5件と画面解放10件も合格。ZIPのCRCと同梱SHA256を確認しています。
 
-- XLSXの不正な日・月・日付を要確認にし、誤って全数一致と表示する問題を修正。
-- 計算結果を保存していない数式を検出。日別項目と対象年月のセルを確認し、計算済みの数値・0・空文字と区別。
-- 保存先が両方とも使用できない場合、起動時に原因と保存先を表示。
-- Enterキーで詳細を開けるようにし、ダブルクリックとの重複起動を防止。
-- 設定・社員ID管理・詳細・診断などを閉じた後の画面オブジェクト残留を解消。
+[Trial47の変更と検証](VALIDATION_TRIAL47.md)
 
-採用済みの枠線UI、読み込み速度・範囲を先頭に置く設定配置、XLSX設定末尾の月度処理、JSONによる項目拡張を維持しています。初期月度はPCの日付の月です（10月16日でも10月度）。社員ID管理は未紐づけがあれば未紐づけ、なければすべてを表示します。全数は「有効な照合項目数 × 読み込めた人数 × 対象期間の日数」で確認できます。
+Trial46で完了した4人の専門監査と修正を継承しています。照合処理・枠線UI・設定配置・JSONによる項目拡張・画像付き操作マニュアル・onedir構成は維持しています。
 
-![メイン画面](Trial46_Main.png)
+[Trial46専門監査](AUDIT_TRIAL46.md) / [Trial46配布物の独立検査](PACKAGE_CHECK_TRIAL46.md)
 
-![設定画面](Trial46_Settings.png)
+このZIPはソース版で、Windows用EXEは含みません。Windowsで同梱のEXE化手順に従いbuild_onedir.pyを実行し、生成された dist\AttendSync フォルダ全体（_internalとManualを含む）を渡してください。受取側にPythonは不要です。ExcelジャンプにはMicrosoft Excelが必要です。
 
-数式の計算結果が未保存の場合は、Excelで再計算して保存してください。更新後は旧キャッシュを再解析します。設定と社員IDの紐づけは維持します。
+Linux/Qt offscreenで検証しています。Windows Explorerからの実ドラッグ、Windows EXE起動、実Excel・プリンター・会社の実データでの確認は未実施です。更新前に既存userdataをバックアップしてください。
 
-このZIPはソース・マニュアル・監査報告の配布物です。Windows用EXEは含みません。Windows上でZIP内の「EXE化手順.txt」に従い、build_onedir.pyで生成してください。会社に渡すものは dist\AttendSync フォルダ全体（_internalとManualを含む）です。受取側にPythonは不要です。ExcelへのジャンプにはMicrosoft Excelが必要です。
-
-ソース版の監査は完了しています。Windows実機でのEXE生成・起動速度・Excel連携・プリンター・会社の実データでの確認は未実施です。既存環境を更新する前に、ユーザーデータをバックアップしてください。
-
-ZIP：372ファイル / 10,861,458バイト  
-SHA256：`fbf4257dc6ebc1ec2db67b6b907e523c37c829ce6dccf729c4b2f54445711cc8`
+ZIP：376ファイル / 10,872,248バイト  
+SHA256：`e58133163d7c93e1a17cda32546fcc45a4e73f56738c9321d3b91d457d13dce2`
