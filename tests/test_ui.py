@@ -56,6 +56,44 @@ class UITests(unittest.TestCase):
         self.assertEqual(self.app.run_work('確認', lambda: 42), 42)
         self.assertIsNone(self.app.active_work)
 
+    def test_book_tab_loads_persistent_list_and_unknown_filter(self):
+        books = self.root / 'books'
+        for name in ['book_v05s', 'no_volume']:
+            (books / 'タイトル' / name).mkdir(parents=True)
+        with patch('app.filedialog.askdirectory', return_value=str(books)):
+            self.app.choose_books()
+        self.app.tabs.select(self.app.books_tab)
+        self.app.update()
+        tree = self.app.book_tree
+        self.assertEqual(len(tree.get_children()), 2)
+        self.assertEqual(tree.set('0', 'volume'), '第05巻相当')
+        self.assertEqual(tree.item('1', 'text'), '☐')
+        self.assertFalse(any(isinstance(w, tk.Toplevel) for w in self.app.winfo_children()))
+        self.app.book_filter.set('巻数不明')
+        self.app.book_filter_rows()
+        self.assertEqual(tree.get_children(), ('1',))
+        self.assertTrue(self.app.book_enabled['0'])
+        self.app.load_books()
+        self.assertEqual(len(self.app.book_tree.get_children()), 2)
+
+    def test_book_list_rename_refresh_and_undo_preserve_contents(self):
+        books = self.root / 'books'
+        original = books / 'Title/book_v02'
+        original.mkdir(parents=True)
+        (original / 'page.jpg').write_text('keep')
+        self.app.book_root = books
+        self.app.load_books()
+        self.app.book_names['0'] = 'Title 第03巻'
+        self.app.book_tree.set('0', 'new', 'Title 第03巻')
+        with patch('app.messagebox.askokcancel', return_value=True), patch('app.messagebox.showinfo'):
+            self.app.rename_books()
+        self.assertEqual(self.app.book_tree.set('0', 'old'), 'Title 第03巻')
+        self.assertEqual((books / 'Title/Title 第03巻/page.jpg').read_text(), 'keep')
+        self.app.history.undo(self.app.history.entries()[0][0])
+        self.app.load_books()
+        self.assertEqual(self.app.book_tree.set('0', 'old'), 'book_v02')
+        self.assertEqual((original / 'page.jpg').read_text(), 'keep')
+
     def test_filtered_reload_removes_detached_rows(self):
         folders = self.root / 'folders'; folders.mkdir()
         for name in ['作品[タグ]', '変更なし']:
@@ -279,8 +317,10 @@ class UITests(unittest.TestCase):
         books = self.root / 'books'
         (books / 'title/book_v02').mkdir(parents=True)
         self.app.book_root = books
-        self.app.rename_books(); self.app.update()
-        dialog = next(w for w in self.app.winfo_children() if isinstance(w, tk.Toplevel))
+        self.app.load_books()
+        self.app.tabs.select(self.app.books_tab)
+        self.app.update()
+        dialog = self.app.book_panel
         frame = next(w for w in dialog.winfo_children() if isinstance(w, ttk.Frame) and any(isinstance(c, ttk.Treeview) for c in w.winfo_children()))
         tree = next(w for w in frame.winfo_children() if isinstance(w, ttk.Treeview))
         x, y, _, height = tree.bbox('0', 'new')

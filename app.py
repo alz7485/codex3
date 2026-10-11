@@ -50,20 +50,33 @@ class App(tk.Tk):
         tabs = ttk.Notebook(self)
         tabs.pack(fill='both', expand=True)
         folders_tab = ttk.Frame(tabs)
-        books_tab = ttk.Frame(tabs, padding=20)
+        books_tab = ttk.Frame(tabs, padding=12)
+        self.books_tab = books_tab
+        self.tabs = tabs
+        self.book_panel = None
+        self.book_confirm = None
+        self.book_commit = None
+        self.book_tree = None
         tabs.add(folders_tab, text='フォルダ名変更・作成・移動')
         tabs.add(books_tab, text='本の整理・リネーム')
         ttk.Label(books_tab, text='本の整理・リネーム', font=('', 18)).pack(anchor='w', pady=(0, 12))
-        ttk.Label(books_tab, text='本の整理専用の対象フォルダを選択してください。\n選択したフォルダ → タイトル → 本データ の構成を対象にします。').pack(anchor='w', pady=(0, 16))
-        ttk.Button(books_tab, text='本の整理用フォルダを選択', command=self.choose_books).pack(anchor='w')
+        ttk.Label(books_tab, text='本の整理専用の対象フォルダを選択してください。\n選択したフォルダ → タイトル → 本データ の構成を対象にします。').pack(anchor='w', pady=(0, 6))
+        book_controls = ttk.Frame(books_tab)
+        book_controls.pack(fill='x')
+        ttk.Button(book_controls, text='本の整理用フォルダを選択', command=self.choose_books).pack(side='left')
+        ttk.Button(book_controls, text='一覧を再読み込み', command=self.load_books).pack(side='left', padx=8)
         self.book_path_label = ttk.Label(books_tab, text='未選択', wraplength=1000)
-        self.book_path_label.pack(anchor='w', pady=12)
-        self.book_rename_button = ttk.Button(books_tab, text='1. 本フォルダにタイトル・巻数を付ける', command=self.rename_books, state='disabled')
-        self.book_rename_button.pack(anchor='w', pady=8)
-        self.book_images_button = ttk.Button(books_tab, text='2. 画像を自然順で連番化・画像以外を削除', command=self.number_images, state='disabled')
-        self.book_images_button.pack(anchor='w', pady=8)
-        ttk.Label(books_tab, text='各処理で変更内容を確認してから実行します。\n巻数リネームは本フォルダ名を変更します。\n画像整理は各本データフォルダ内の画像名を変更し、画像以外を復元用に退避します。', wraplength=1000).pack(anchor='w', pady=20)
-        ttk.Button(books_tab, text='操作履歴・元に戻す', command=self.show_history).pack(anchor='w', pady=8)
+        self.book_path_label.pack(anchor='w', pady=6)
+        self.book_rename_button = ttk.Button(book_controls, text='1. 本フォルダにタイトル・巻数を付ける', command=self.rename_books, state='disabled')
+        self.book_rename_button.pack(side='left', padx=8)
+        self.book_images_button = ttk.Button(book_controls, text='2. 画像を自然順で連番化・画像以外を削除', command=self.number_images, state='disabled')
+        self.book_images_button.pack(side='left', padx=8)
+        ttk.Label(books_tab, text='各処理で変更内容を確認してから実行します。\n巻数リネームは本フォルダ名を変更します。\n画像整理は各本データフォルダ内の画像名を変更し、画像以外を復元用に退避します。', wraplength=1200).pack(anchor='w', pady=6)
+        ttk.Button(books_tab, text='操作履歴・元に戻す', command=self.show_history).pack(anchor='w', pady=4)
+        self.book_list_host = ttk.Frame(books_tab)
+        self.book_list_host.pack(fill='both', expand=True)
+        self.book_list_status = ttk.Label(books_tab, text='本の整理用フォルダを選択すると一覧を表示します。')
+        self.book_list_status.pack(anchor='w', pady=4)
         top = ttk.Frame(folders_tab, padding=12)
         top.pack(fill='x')
         ttk.Button(top, text='フォルダ操作用の親フォルダを選択', command=self.choose).pack(side='left')
@@ -261,6 +274,8 @@ class App(tk.Tk):
             data['status'] = 'undone'
             tree.set(selection[0], 'status', '復元済み')
             self.load()
+            if self.book_root:
+                self.load_books()
             messagebox.showinfo('復元完了', '元の名前・場所に戻しました。', parent=dialog)
         buttons = ttk.Frame(dialog, padding=12)
         buttons.pack(fill='x')
@@ -404,6 +419,7 @@ class App(tk.Tk):
                 self.book_path_label.config(text=str(books))
                 self.book_rename_button.config(state='normal')
                 self.book_images_button.config(state='normal')
+                self.load_books()
             else:
                 self.book_path_label.config(text=f'{books}（見つかりません。再選択してください）')
         if self.settings.warning:
@@ -431,6 +447,7 @@ class App(tk.Tk):
             self.book_path_label.config(text=str(self.book_root))
             self.book_rename_button.config(state='normal')
             self.book_images_button.config(state='normal')
+            self.load_books()
 
     def number_images(self):
         from images import plan_images, plan_non_images, execute_image_cleanup
@@ -480,6 +497,8 @@ class App(tk.Tk):
                 messagebox.showerror('連番変更失敗', str(error), parent=preview)
                 return
             preview.destroy()
+            if self.book_root:
+                self.load_books()
             messagebox.showinfo('画像整理完了', f'{count} 件の画像名を変更し、画像以外 {len(non_images)} 件を削除しました。' + (f'\n復元用の退避先：\n{backup}\n元の場所は restore.json に記録しています。' if backup else ''))
         buttons = ttk.Frame(preview, padding=12)
         buttons.pack(fill='x')
@@ -488,25 +507,51 @@ class App(tk.Tk):
         preview.transient(self)
         preview.grab_set()
 
-    def rename_books(self):
+    def load_books(self):
+        if self.book_panel is not None and self.book_panel.winfo_exists():
+            self.book_panel.destroy()
+        self.book_panel = self.book_tree = self.book_confirm = self.book_commit = None
+        self.rename_books(embedded=True)
+
+    def rename_books(self, embedded=False):
+        if not embedded:
+            if self.book_confirm is None:
+                self.load_books()
+            else:
+                self.book_confirm()
+            return
         from books import discover_books
         if not self.book_root:
             return
+        if embedded:
+            self.book_list_status.config(text='本フォルダを読み込んでいます…')
         root = self.book_root.resolve()
         try:
             books = self.run_work('巻数の推測', lambda: discover_books(root))
         except Cancelled:
+            if embedded:
+                self.book_list_status.config(text='読み込みを中止しました。一覧を再読み込みしてください。')
             return
         except (OSError, ValueError) as error:
+            if embedded:
+                self.book_list_status.config(text='読み込み失敗。一覧を再読み込みしてください。')
             messagebox.showerror('読み込み失敗', str(error))
             return
         if not books:
-            messagebox.showinfo('対象なし', 'タイトルフォルダ内に本データフォルダがありません。')
+            if embedded:
+                self.book_list_status.config(text='タイトルフォルダ内に本データフォルダがありません。')
+            else:
+                messagebox.showinfo('対象なし', 'タイトルフォルダ内に本データフォルダがありません。')
             return
-        dialog = tk.Toplevel(self)
-        dialog.title('本フォルダ名：タイトル・巻数の確認')
-        dialog.geometry('1100x620')
-        ttk.Label(dialog, text=f'本の整理対象: {root}\n右端の数字を巻数として推測。直後がsなら「相当」。変更後の名前はダブルクリックで編集できます。\n実行欄をクリックで対象から除外。数字なし・0巻は初期状態で対象外です。内容・画像名は変更しません。', padding=12).pack(anchor='w')
+        if embedded:
+            dialog = ttk.Frame(self.book_list_host)
+            dialog.pack(fill='both', expand=True)
+            self.book_panel = dialog
+        else:
+            dialog = tk.Toplevel(self)
+            dialog.title('本フォルダ名：タイトル・巻数の確認')
+            dialog.geometry('1100x620')
+        ttk.Label(dialog, text=f'本の整理対象: {root}\n右端の数字を巻数として推測。直後がsなら「相当」。変更後の名前はダブルクリックで編集できます。\n実行欄をクリックで対象から除外。数字なし・0巻は初期状態で対象外です。内容・画像名は変更しません。', padding=6, wraplength=1200).pack(anchor='w')
         book_filter = tk.StringVar(value='全件')
         filters = ttk.Frame(dialog, padding=(12, 0))
         filters.pack(fill='x')
@@ -516,12 +561,12 @@ class App(tk.Tk):
         ttk.Label(filters, text='黄色の部分が推測した巻数です。絞り込みは表示のみで、実行対象のチェックは維持します。').pack(side='left')
         frame = ttk.Frame(dialog, padding=12)
         frame.pack(fill='both', expand=True)
-        tree = HighlightTree(frame, columns=('title', 'old', 'new'), show='tree headings', selectmode='browse', highlight_column='old', highlight_color='#ffe9a3', highlight_foreground='#674200')
+        tree = HighlightTree(frame, columns=('title', 'old', 'new', 'volume'), show='tree headings', selectmode='browse', highlight_column='old', highlight_color='#ffe9a3', highlight_foreground='#674200')
         tree.heading('#0', text='実行')
         tree.column('#0', width=50, stretch=False)
-        for column, title in [('title', '親タイトル'), ('old', '現在の本フォルダ名'), ('new', '変更後の名前（編集可）')]:
+        for column, title in [('title', '親タイトル'), ('old', '現在の本フォルダ名'), ('new', '変更後の名前（編集可）'), ('volume', '推測した巻数')]:
             tree.heading(column, text=title)
-            tree.column(column, width=330)
+            tree.column(column, width=120 if column == 'volume' else 300)
         scroll = ttk.Scrollbar(frame, orient='vertical', command=tree.yview)
         horizontal = ttk.Scrollbar(frame, orient='horizontal', command=tree.xview)
         horizontal.pack(side='bottom', fill='x')
@@ -531,7 +576,7 @@ class App(tk.Tk):
         names = {str(i): book.suggested or book.source.name for i, book in enumerate(books)}
         enabled = {str(i): book.suggested is not None for i, book in enumerate(books)}
         for i, book in enumerate(books):
-            tree.insert('', 'end', iid=str(i), text='☑' if enabled[str(i)] else '☐', values=(book.source.parent.name, book.source.name, names[str(i)]))
+            tree.insert('', 'end', iid=str(i), text='☑' if enabled[str(i)] else '☐', values=(book.source.parent.name, book.source.name, names[str(i)], ('第' + book.suggested.rsplit(' 第', 1)[-1]) if book.suggested else '不明'))
         inferred = {}
         for i, book in enumerate(books):
             mask = [False] * len(book.source.name)
@@ -614,7 +659,7 @@ class App(tk.Tk):
                 if enabled[str(i)]:
                     by_title.setdefault(book.source.parent, []).append((book.source.name, names[str(i)]))
             if not by_title:
-                messagebox.showinfo('対象なし', '実行する行を選んでください。', parent=dialog)
+                messagebox.showinfo('対象なし', '実行する行を選んでください。', parent=self if embedded else dialog)
                 return
             batches = []
             try:
@@ -626,7 +671,8 @@ class App(tk.Tk):
                             break
                         first, second, destination = pairs[0]
                         choice = self.choose_duplicate(first, second, destination)
-                        dialog.grab_set()
+                        if not embedded:
+                            dialog.grab_set()
                         if choice is None:
                             return
                         deleted.add(choice)
@@ -642,11 +688,11 @@ class App(tk.Tk):
             except Cancelled:
                 return
             except (OSError, ValueError) as error:
-                messagebox.showerror('実行できません', str(error), parent=dialog)
+                messagebox.showerror('実行できません', str(error), parent=self if embedded else dialog)
                 return
             deletions = [path for _, _, deleted in batches for path in deleted]
             summary = f'{sum(len(rows) for _, rows, _ in batches)} 行を処理します。\n削除（復元用に退避）: {len(deletions)} 件\n' + '\n'.join(str(p) for p in deletions)
-            if not messagebox.askokcancel('最終確認', summary + '\n一覧の名前へ変更しますか？', parent=dialog):
+            if not messagebox.askokcancel('最終確認', summary + '\n一覧の名前へ変更しますか？', parent=self if embedded else dialog):
                 return
             count, completed, backups = 0, [], []
             try:
@@ -657,19 +703,37 @@ class App(tk.Tk):
                     if backup:
                         backups.append(str(backup))
             except Cancelled:
+                if embedded:
+                    self.load_books()
                 return
             except (OSError, ValueError, RuntimeError) as error:
-                messagebox.showerror('処理失敗', f'{error}\n完了済みタイトル: ' + ('、'.join(completed) or 'なし') + '\n完了済みタイトルの変更は保持されています。', parent=dialog)
-                dialog.destroy()
+                messagebox.showerror('処理失敗', f'{error}\n完了済みタイトル: ' + ('、'.join(completed) or 'なし') + '\n完了済みタイトルの変更は保持されています。', parent=self if embedded else dialog)
+                if embedded:
+                    self.load_books()
+                else:
+                    dialog.destroy()
                 return
-            dialog.destroy()
+            if embedded:
+                self.load_books()
+            else:
+                dialog.destroy()
             messagebox.showinfo('本フォルダ名の変更完了', f'{count} 件のフォルダ名を変更しました。' + ('\n削除対象の退避先:\n' + '\n'.join(backups) if backups else ''))
         buttons = ttk.Frame(dialog, padding=12)
         buttons.pack(fill='x')
-        ttk.Button(buttons, text='キャンセル', command=dialog.destroy).pack(side='left')
+        ttk.Button(buttons, text='一覧を再読み込み' if embedded else 'キャンセル', command=self.load_books if embedded else dialog.destroy).pack(side='left')
         ttk.Button(buttons, text='確認して本フォルダ名を変更', command=confirm).pack(side='right')
-        dialog.transient(self)
-        dialog.grab_set()
+        if embedded:
+            self.book_tree = tree
+            self.book_names = names
+            self.book_enabled = enabled
+            self.book_filter = book_filter
+            self.book_filter_rows = filter_rows
+            self.book_confirm = confirm
+            self.book_commit = lambda: commit[0]() if commit[0] is not None else None
+            self.book_list_status.config(text=f'{len(books)} 本フォルダ / {len({book.source.parent for book in books})} タイトル。実行チェックは巻数リネーム用です。画像整理は対象フォルダ全体を確認します。')
+        else:
+            dialog.transient(self)
+            dialog.grab_set()
 
     def load(self):
         if not self.root_path:
