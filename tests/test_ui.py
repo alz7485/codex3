@@ -76,6 +76,80 @@ class UITests(unittest.TestCase):
         self.app.load_books()
         self.assertEqual(len(self.app.book_tree.get_children()), 2)
 
+    def test_book_conflict_filter_ignores_disabled_plan(self):
+        books = self.root / 'books'
+        for name in ['a_v02', 'b_v02']:
+            (books / 'Title' / name).mkdir(parents=True)
+        self.app.book_root = books
+        self.app.load_books()
+        self.app.book_enabled['1'] = False
+        self.app.book_filter.set('同名衝突')
+        self.app.book_filter_rows()
+        self.assertFalse(self.app.book_tree.get_children())
+        self.app.book_enabled['1'] = True
+        self.app.book_filter_rows()
+        self.assertEqual(len(self.app.book_tree.get_children()), 2)
+
+    def test_book_filter_commits_active_editor_before_detaching(self):
+        books = self.root / 'books'
+        (books / 'Title/book_v02').mkdir(parents=True)
+        self.app.book_root = books
+        self.app.load_books()
+        self.app.tabs.select(self.app.books_tab)
+        self.app.update()
+        tree = self.app.book_tree
+        x, y, _, height = tree.bbox('0', 'new')
+        for _ in range(2):
+            tree.event_generate('<ButtonPress-1>', x=x+10, y=y+height//2)
+            tree.event_generate('<ButtonRelease-1>', x=x+10, y=y+height//2)
+        self.app.update()
+        entry = next(w for w in tree.winfo_children() if isinstance(w, ttk.Entry))
+        entry.delete(0, 'end'); entry.insert(0, 'book_v02')
+        self.app.book_filter.set('変更あり')
+        self.app.book_filter_rows()
+        self.app.update()
+        self.assertEqual(self.app.book_names['0'], 'book_v02')
+        self.assertFalse(tree.get_children())
+        self.assertFalse(any(isinstance(w, ttk.Entry) for w in tree.winfo_children()))
+
+    def test_failed_book_reload_clears_old_execution_state(self):
+        from work import Cancelled
+        books = self.root / 'books'
+        (books / 'Title/book_v02').mkdir(parents=True)
+        self.app.book_root = books
+        for error in (Cancelled('中止'), OSError('読み込み失敗')):
+            self.app.load_books()
+            self.assertTrue(self.app.book_names)
+            with patch.object(self.app, 'run_work', side_effect=error):
+                self.app.load_books()
+            self.assertIsNone(self.app.book_confirm)
+            self.assertIsNone(self.app.book_tree)
+            self.assertFalse(self.app.book_names)
+            self.assertFalse(self.app.book_enabled)
+            self.assertTrue((books / 'Title/book_v02').is_dir())
+
+    def test_partial_book_cancel_reports_completed_titles(self):
+        from core import execute_with_deletions
+        from work import Cancelled
+        books = self.root / 'books'
+        for title in ['A', 'B']:
+            (books / title / 'book_v02').mkdir(parents=True)
+        self.app.book_root = books
+        self.app.load_books()
+        real_execute = execute_with_deletions
+        def cancel_second(root, *args, **kwargs):
+            if root.name == 'B':
+                raise Cancelled('中止')
+            return real_execute(root, *args, **kwargs)
+        with patch('app.execute_with_deletions', side_effect=cancel_second), patch('app.messagebox.askokcancel', return_value=True), patch('app.messagebox.showinfo'):
+            self.app.rename_books()
+        self.assertTrue((books / 'A/A 第02巻').is_dir())
+        self.assertTrue((books / 'B/book_v02').is_dir())
+        status = self.app.book_list_status.cget('text')
+        self.assertIn('キャンセル', status)
+        self.assertIn('完了済み: A', status)
+
+
     def test_book_list_rename_refresh_and_undo_preserve_contents(self):
         books = self.root / 'books'
         original = books / 'Title/book_v02'

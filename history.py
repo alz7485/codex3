@@ -5,6 +5,7 @@ from pathlib import Path
 from datetime import datetime, timezone
 import tempfile
 import uuid
+import stat
 from safety import is_link, move_no_replace, destination_exists
 from work import current, checkpoint, Cancelled
 
@@ -44,6 +45,46 @@ def fingerprint(path):
     return result
 
 
+def states_match(actual, expected):
+    # Directory size/mtime also change during a later operation and its undo.
+    # Names, type, identity and every descendant are still compared; file size
+    # and mtime remain mandatory. Normalize both sides for older histories too.
+    def normalize(state):
+        result = []
+        for item in state:
+            record = list(item)
+            if stat.S_ISDIR(record[1]):
+                record[2:4] = [0, 0]
+            result.append(record)
+        return result
+    return normalize(actual) == normalize(expected)
+
+
+def validate_record(data):
+    """Reject malformed JSON before display or any reverse replay."""
+    if not isinstance(data, dict):
+        raise ValueError('履歴データの形式が不正です')
+    for key in ('label', 'time', 'status'):
+        if not isinstance(data.get(key), str):
+            raise ValueError('履歴データの形式が不正です')
+    for key in ('moves', 'created', 'final'):
+        if not isinstance(data.get(key), list):
+            raise ValueError('履歴データの形式が不正です')
+    def valid_path(value):
+        return isinstance(value, str) and bool(value)
+    if any(not isinstance(move, list) or len(move) != 2 or not all(valid_path(p) for p in move) for move in data['moves']):
+        raise ValueError('履歴の移動記録が不正です')
+    if not all(valid_path(p) for p in data['created']):
+        raise ValueError('履歴の作成記録が不正です')
+    for item in data['final']:
+        if not isinstance(item, dict) or not valid_path(item.get('path')) or not valid_path(item.get('original')) or not isinstance(item.get('state'), list) or not item['state']:
+            raise ValueError('履歴の状態記録が不正です')
+        for record in item['state']:
+            if not isinstance(record, list) or len(record) != 5 or not isinstance(record[0], str) or not all(isinstance(value, int) for value in record[1:]):
+                raise ValueError('履歴の状態記録が不正です')
+    return data
+
+
 class Journal:
     def __init__(self, path, label):
         self.path = path
@@ -81,7 +122,7 @@ class Journal:
         self.save()
 
     def finish(self, status):
-        self.data['final'] = [{'original': str(origin), 'path': str(location), 'state': fingerprint(location)} for origin, location in self.owners.items() if origin != location]
+        self.data['final'] = [{'original': str(origin), 'path': str(location), 'state': fingerprint(location)} for origin, location in self.owners.items() if str(origin) != str(location)]
         self.data['status'] = status
         self.data.pop('pending', None)
         self.save()
@@ -101,9 +142,8 @@ class History:
             if is_link(file):
                 continue
             try:
-                value = json.loads(file.read_text(encoding='utf-8'))
-                if isinstance(value, dict) and 'status' in value and 'moves' in value:
-                    result.append((file, value))
+                value = validate_record(json.loads(file.read_text(encoding='utf-8')))
+                result.append((file, value))
             except (ValueError, OSError):
                 result.append((file, {'label': file.name, 'time': '', 'status': 'unreadable', 'moves': []}))
         return sorted(result, key=lambda entry: entry[1].get('time', ''), reverse=True)
@@ -132,7 +172,7 @@ class History:
             # Core routines already attempt rollback; replaying their successful
             # forward AND rollback moves reverses any remaining changes safely.
             token.journal = None
-            unresolved = {origin for origin, location in journal.owners.items() if origin != location}
+            unresolved = {origin for origin, location in journal.owners.items() if str(origin) != str(location)}
             remaining_moves = [move for move, origin in zip(journal.data['moves'], journal.move_origins) if origin in unresolved]
             failures = self._reverse(remaining_moves, rollback=True)
             for path in reversed(journal.data['created']):
@@ -176,13 +216,28 @@ class History:
         path = Path(path)
         if path.parent != self.directory or is_link(path):
             raise ValueError('無効な履歴です')
-        data = json.loads(path.read_text(encoding='utf-8'))
+        data = validate_record(json.loads(path.read_text(encoding='utf-8')))
         if data['status'] != 'completed':
             raise ValueError('完了した操作だけを元に戻せます')
+        paths = [p for move in data['moves'] for p in move] + data['created'] + [item['path'] for item in data['final']]
+        if not all(Path(p).is_absolute() for p in paths):
+            raise ValueError('履歴に相対パスが含まれています')
+        moves = data['moves']
+        if not data['final']:
+            # Older Windows case-only histories omitted their final state.
+            # A true no-op needs no replay; an unprotected change must stop.
+            locations = {}
+            for source, destination in moves:
+                source, destination = Path(source), Path(destination)
+                origin = next((owner for owner, location in locations.items() if location == source), source)
+                locations[origin] = destination
+            if any(str(origin) != str(location) for origin, location in locations.items()):
+                raise ValueError('復元用の状態記録が不足しているため、安全に復元できません')
+            moves = []
         for item in data['final']:
-            if fingerprint(Path(item['path'])) != item['state']:
+            if not states_match(fingerprint(Path(item['path'])), item['state']):
                 raise ValueError(f'操作後に変更されたため復元できません: {item["path"]}')
-        failures = self._reverse(data['moves'])
+        failures = self._reverse(moves)
         if failures:
             token = current.get()
             if token is not None and token.cancelled.is_set() and len(failures) == 1:

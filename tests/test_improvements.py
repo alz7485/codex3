@@ -11,6 +11,92 @@ from comparison import summarize
 
 
 class ImprovementTests(unittest.TestCase):
+    def test_malformed_history_is_visible_but_cannot_change_files(self):
+        import json
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            history = History(root / 'history'); history.directory.mkdir()
+            (root / 'data').write_text('keep')
+            malformed = [
+                {'status': 'completed', 'moves': None, 'time': None},
+                {'status': 'completed', 'label': 'bad', 'time': '', 'moves': [], 'created': [], 'final': None},
+                {'status': 'completed', 'label': 'bad', 'time': '', 'moves': [], 'created': [], 'final': [{'path': str(root / 'data'), 'original': str(root / 'old'), 'state': [['.', 1]]}]},
+            ]
+            for i, value in enumerate(malformed):
+                path = history.directory / f'{i}.json'
+                path.write_text(json.dumps(value), encoding='utf-8')
+                with self.assertRaises(ValueError):
+                    history.undo(path)
+            self.assertEqual(len(history.entries()), 3)
+            self.assertTrue(all(data['status'] == 'unreadable' for _, data in history.entries()))
+            self.assertEqual((root / 'data').read_text(), 'keep')
+
+    def test_legacy_history_missing_final_state_cannot_replay(self):
+        import json
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve() / 'data'; root.mkdir()
+            (root / 'abc').mkdir()
+            history = History(Path(directory).resolve() / 'history')
+            history.run('case', lambda: execute_with_deletions(root, [('abc', 'ABC')], False, False, set()))
+            path, data = history.entries()[0]
+            data['final'] = []
+            path.write_text(json.dumps(data), encoding='utf-8')
+            with self.assertRaises(ValueError):
+                history.undo(path)
+            self.assertEqual([p.name for p in root.iterdir()], ['ABC'])
+
+    def test_related_operations_can_be_undone_newest_first(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve() / 'data'
+            original = root / 'Title/book_v02'; original.mkdir(parents=True)
+            (original / 'page2.jpg').write_text('keep')
+            history = History(Path(directory).resolve() / 'history')
+            history.run('巻数', lambda: execute_with_deletions(root / 'Title', [('book_v02', 'Title 第02巻')], False, False, set()))
+            first = history.entries()[0][0]
+            history.run('画像', lambda: execute_image_cleanup(root, plan_images(root), plan_non_images(root)))
+            second = history.entries()[0][0]
+            history.undo(second)
+            history.undo(first)
+            self.assertEqual((original / 'page2.jpg').read_text(), 'keep')
+
+    def test_case_only_history_checks_contents_before_undo(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve() / 'data'; root.mkdir()
+            (root / 'abc').mkdir(); (root / 'abc/page').write_text('before')
+            history = History(Path(directory).resolve() / 'history')
+            history.run('case', lambda: execute_with_deletions(root, [('abc', 'ABC')], False, False, set()))
+            path, data = history.entries()[0]
+            self.assertEqual(len(data['final']), 1)
+            (root / 'ABC/page').write_text('edited')
+            with self.assertRaises(ValueError):
+                history.undo(path)
+            self.assertEqual((root / 'ABC/page').read_text(), 'edited')
+
+    def test_undo_still_rejects_added_empty_directory(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve() / 'data'; root.mkdir()
+            (root / 'a').mkdir()
+            history = History(Path(directory).resolve() / 'history')
+            history.run('rename', lambda: execute_with_deletions(root, [('a', 'b')], False, False, set()))
+            (root / 'b/new').mkdir()
+            with self.assertRaises(ValueError):
+                history.undo(history.entries()[0][0])
+            self.assertTrue((root / 'b/new').is_dir())
+
+    def test_book_scan_can_cancel_between_books(self):
+        from books import discover_books, volume_name
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            for name in ['a_v01', 'b_v02']:
+                (root / 'Title' / name).mkdir(parents=True)
+            token = WorkToken()
+            def first_then_cancel(*args):
+                result = volume_name(*args)
+                token.cancelled.set()
+                return result
+            with working(token), patch('books.volume_name', side_effect=first_then_cancel), self.assertRaises(Cancelled):
+                discover_books(root)
+
     def test_folder_operation_can_be_undone_after_restart(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve() / 'data'; root.mkdir()

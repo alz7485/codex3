@@ -50,6 +50,7 @@ def discover_books(root):
         if not title.is_dir() or is_link(title) or title.name.casefold() == '.folder-tool-trash':
             continue
         for book in sorted(title.iterdir()):
+            checkpoint(f'巻数を推測: {book.name}')
             if book.is_dir() and not is_link(book) and book.name.casefold() != '.folder-tool-trash':
                 result.append(BookFolder(book, volume_name(title.name, book.name)))
     return result

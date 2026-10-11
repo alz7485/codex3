@@ -57,6 +57,9 @@ class App(tk.Tk):
         self.book_confirm = None
         self.book_commit = None
         self.book_tree = None
+        self.book_names = {}
+        self.book_enabled = {}
+        self.book_filter = self.book_filter_rows = None
         tabs.add(folders_tab, text='フォルダ名変更・作成・移動')
         tabs.add(books_tab, text='本の整理・リネーム')
         ttk.Label(books_tab, text='本の整理・リネーム', font=('', 18)).pack(anchor='w', pady=(0, 12))
@@ -404,8 +407,8 @@ class App(tk.Tk):
             except OSError:
                 available = False
             if available:
-                self.root_path = folder
-                self.path_label.config(text=str(folder))
+                self.root_path = folder.resolve()
+                self.path_label.config(text=str(self.root_path))
                 self.load()
             else:
                 self.path_label.config(text=f'{folder}（見つかりません。再選択してください）')
@@ -415,8 +418,8 @@ class App(tk.Tk):
             except OSError:
                 available = False
             if available:
-                self.book_root = books
-                self.book_path_label.config(text=str(books))
+                self.book_root = books.resolve()
+                self.book_path_label.config(text=str(self.book_root))
                 self.book_rename_button.config(state='normal')
                 self.book_images_button.config(state='normal')
                 self.load_books()
@@ -511,6 +514,8 @@ class App(tk.Tk):
         if self.book_panel is not None and self.book_panel.winfo_exists():
             self.book_panel.destroy()
         self.book_panel = self.book_tree = self.book_confirm = self.book_commit = None
+        self.book_names, self.book_enabled = {}, {}
+        self.book_filter = self.book_filter_rows = None
         self.rename_books(embedded=True)
 
     def rename_books(self, embedded=False):
@@ -585,12 +590,24 @@ class App(tk.Tk):
                 mask[start:end] = [True] * (end-start)
             inferred[str(i)] = (book.source.name, mask)
         tree.set_highlights(inferred)
+        editor = [None]
+        commit = [None]
         def filter_rows(event=None):
+            if commit[0] is not None:
+                commit[0]()
+                return
             mode = book_filter.get()
             conflicts = set()
             if mode == '同名衝突':
                 targets = {}
                 for i, book in enumerate(books):
+                    if not enabled[str(i)]:
+                        continue
+                    from core import validate_name
+                    try:
+                        validate_name(names[str(i)])
+                    except ValueError:
+                        continue
                     key = str(book.source.parent / names[str(i)]).casefold()
                     targets.setdefault(key, []).append(str(i))
                     destination = book.source.parent / names[str(i)]
@@ -609,8 +626,6 @@ class App(tk.Tk):
                     tree.selection_remove(iid)
             tree.schedule_redraw()
         selector.bind('<<ComboboxSelected>>', filter_rows)
-        editor = [None]
-        commit = [None]
         def scroll_books(scrollbar, *args):
             scrollbar.set(*args)
             tree.schedule_redraw()
@@ -622,6 +637,7 @@ class App(tk.Tk):
             if row and tree.identify_column(event.x) == '#0':
                 enabled[row] = not enabled[row]
                 tree.item(row, text='☑' if enabled[row] else '☐')
+                filter_rows()
         def edit(event):
             row = tree.identify_row(event.y)
             if not row or tree.identify_column(event.x) != '#3' or editor[0]:
@@ -638,13 +654,14 @@ class App(tk.Tk):
             def finish(event=None, save=True):
                 if editor[0] is not entry:
                     return
-                if save:
-                    names[row] = normalize_punctuation(entry.get())
-                    tree.set(row, 'new', names[row])
-                    filter_rows()
+                value = entry.get()
                 editor[0] = None
                 commit[0] = None
                 entry.destroy()
+                if save:
+                    names[row] = normalize_punctuation(value)
+                    tree.set(row, 'new', names[row])
+                    filter_rows()
             commit[0] = finish
             entry.bind('<Return>', finish)
             entry.bind('<FocusOut>', finish)
@@ -705,6 +722,10 @@ class App(tk.Tk):
             except Cancelled:
                 if embedded:
                     self.load_books()
+                    notice = 'キャンセルしました。完了済み: ' + ('、'.join(completed) or 'なし')
+                    notice += '。完了済みの変更は保持され、操作履歴から戻せます。'
+                    self.book_list_status.config(text=notice)
+                    messagebox.showinfo('本フォルダ名変更をキャンセル', notice, parent=self)
                 return
             except (OSError, ValueError, RuntimeError) as error:
                 messagebox.showerror('処理失敗', f'{error}\n完了済みタイトル: ' + ('、'.join(completed) or 'なし') + '\n完了済みタイトルの変更は保持されています。', parent=self if embedded else dialog)
