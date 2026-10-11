@@ -1,27 +1,31 @@
-# AttendSync Trial48 — 採用アイコン更新
+# AttendSync Trial49 — 詳細操作マニュアル
 
-[最新版ZIPをダウンロード（約10.7MB）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial48_Approved_Icon_Complete.zip)
+[詳細操作マニュアルPDF（59ページ）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial49_%E8%A9%B3%E7%B4%B0%E6%93%8D%E4%BD%9C%E3%83%9E%E3%83%8B%E3%83%A5%E3%82%A2%E3%83%AB.pdf)  
+[単独HTML版をダウンロード（画像・PDF内蔵）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial49_%E8%A9%B3%E7%B4%B0%E6%93%8D%E4%BD%9C%E3%83%9E%E3%83%8B%E3%83%A5%E3%82%A2%E3%83%AB.html)  
+[マニュアル同梱の最新版ZIP（約9.8MB）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial49_Detailed_Manual_Complete.zip)
 
-ユーザーが採用したアイコンをアプリへ反映しました。
+18章・画面画像22箇所（21種類）の詳しいマニュアルです。初回の準備から、毎月の照合、全数確認、項目追加、診断、保存先、会社への配布と更新まで説明しています。
 
-- 元の青・緑のデザインを引き継ぎ、書類・時計・チェックの外形を明瞭にして大きく配置。
-- 時計の枠・針・目盛りは黒に近い焦げ茶色。
-- XLSX/CSV内の四角いセルは薄い枠線。
-- アイコンの外側は透過。PNG・Windows ICO・Base64を一致させています。
+- 入力フォルダの中身、2か月CSV、XLSX・CSVの標準列。
+- PCの起動日と月度、年またぎ・うるう年、全画面フォルダドロップ。
+- 読み込み／完全再読み込み／中止、社員番号とスタッフIDの対応。
+- 全数＝項目数×人数×日数、未照合・追加要確認、完了チェックリスト。
+- 詳細対比表、Excelへの移動、検索、結果印刷・PDF保存。
+- 読み込み速度・範囲、休憩の照合ON、未開示の列の追加、改名・削除。
+- 比較方法、表示と照合の独立、JSON保存、数式・エラーの対処表。
+- バックアップ・復元、保存先の切替、Windows onedirビルド・会社への配布、FAQ。
 
-<img src="Trial48_Icon.png" alt="採用されたAttendSyncアイコン" width="320">
+アプリの右上「操作マニュアル」またはF1からHTMLを開き、上部「PDFで読む」で同梱PDFも開けます。PDFにはページ番号付き目次、クリック可能な章リンクと18章のしおりがあります。
 
-Windows ICOは16/24/32/48/64/128/256pxの7サイズです。Qtで各サイズを読み込み、ライト・ダーク・最小サイズを含む主要メイン5画面を撮影しました。今回のUI静的確認とマニュアル10件は合格しています。本番Python・照合・設定・onedirビルドに変更はありません。
+単独HTMLは保存してブラウザーで開いてください。画像とPDFを内蔵し、インターネット不要です。検索・画像拡大・PDF保存も使えます。
 
-[Trial48の変更・検証](VALIDATION_TRIAL48.md)
+既存onedir版はアプリ終了後に Manual フォルダ全体を更新すれば、新マニュアルを利用できます。本番Python、照合・設定・キャッシュ、採用アイコンに変更はありません。Trial47の全画面ドロップを維持しています。
 
-メイン画面全体へのフォルダドロップ、枠線UI、JSONによる項目追加、画像付きマニュアルを維持しています。Trial47の全40テストと追加境界8件の監査を継承し、その記録もZIPに同梱しました。
+[今回の変更と検証](VALIDATION_TRIAL49.md) / [Trial47の監査](AUDIT_TRIAL47.md) / [Trial46専門監査](AUDIT_TRIAL46.md)
 
-[Trial47の監査](AUDIT_TRIAL47.md) / [Trial46専門レビュー](AUDIT_TRIAL46.md)
+マニュアル関連10テストが合格。ブラウザーレンダリングで画像読込、検索・Enter、画像拡大・Esc、狭い画面、印刷時の説明展開を確認。単独HTMLのPDF保存、最終PDFと内蔵データの一致、PDF全ページ・目次・しおり・空白ページなし、ZIPのCRC・SHA256を確認しています。実画面の撮影版はマニュアルに明記しています。
 
-このZIPはソース版で、Windows EXEは含みません。Windowsで同梱の手順に従い build_onedir.py を実行してください。EXE内のアイコンは再ビルドで更新されます。会社へは生成した dist\AttendSync フォルダ全体（_internal・Manual等を含む）を渡してください。受取側にPythonは不要です。ExcelへのジャンプにはMicrosoft Excelが必要です。
+最新版ZIPはソース版で、Windows EXEは含みません。新規配布はWindowsで build_onedir.py を実行して生成した dist\AttendSync フォルダ全体を渡します。受取側にPythonは不要です。ExcelジャンプにはMicrosoft Excelが必要です。Windows実機のEXE・実Excel・プリンター・会社の未開示帳票は未確認です。
 
-Windows Explorerやタスクバーでの実表示、Windows EXEビルド、実Excel・プリンターは未確認です。更新前に既存userdataをバックアップしてください。
-
-ZIP：382ファイル / 11,235,796バイト  
-SHA256：`f1bc5682335f20ea4e09bc46f3776d4dc17cc229b2a5e010170ae4e04eac807f`
+ZIP：390ファイル / 10,262,760バイト  
+SHA256：`d28abd4677243af8e8f0237eb435132f8932d84b9c66b3d35e32a086d702d5f1`
