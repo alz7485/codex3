@@ -1,28 +1,27 @@
-# AttendSync Trial47
+# AttendSync Trial48 — 採用アイコン更新
 
-[最新版ZIPをダウンロード（約10.4MB）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial47_Window_Folder_Drop_Complete.zip)
+[最新版ZIPをダウンロード（約10.7MB）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial48_Approved_Icon_Complete.zip)
 
-メイン画面内のどこにでも、勤怠データのフォルダ1個をドロップできます。結果表・検索欄・年月入力・ログ欄・ボタンの上も対応します。ドロップ後はフォルダ欄が更新され、「読み込み・照合」で開始します。読み込み中は変更を受け付けません。
+ユーザーが採用したアイコンをアプリへ反映しました。
 
-フォルダのみ受け付け、ファイル単体・複数フォルダ・Web URL・通常テキストは拒否します。元のフォルダは移動しません。後から追加するメイン画面の子ウィジェットにも対応します。
+- 元の青・緑のデザインを引き継ぎ、書類・時計・チェックの外形を明瞭にして大きく配置。
+- 時計の枠・針・目盛りは黒に近い焦げ茶色。
+- XLSX/CSV内の四角いセルは薄い枠線。
+- アイコンの外側は透過。PNG・Windows ICO・Base64を一致させています。
 
-今回の関連5テストスクリプトが合格しました。新規5メソッドは11か所への実Qtイベント配送・無効データ・読み込み中・別ダイアログ・動的な項目追加を検証しています。キーボード5件と画面解放10件も合格。ZIPのCRCと同梱SHA256を確認しています。
+<img src="Trial48_Icon.png" alt="採用されたAttendSyncアイコン" width="320">
 
-[Trial47の変更と検証](VALIDATION_TRIAL47.md)
+Windows ICOは16/24/32/48/64/128/256pxの7サイズです。Qtで各サイズを読み込み、ライト・ダーク・最小サイズを含む主要メイン5画面を撮影しました。今回のUI静的確認とマニュアル10件は合格しています。本番Python・照合・設定・onedirビルドに変更はありません。
 
-Trial46で完了した4人の専門監査と修正を継承しています。照合処理・枠線UI・設定配置・JSONによる項目拡張・画像付き操作マニュアル・onedir構成は維持しています。
+[Trial48の変更・検証](VALIDATION_TRIAL48.md)
 
-[Trial46専門監査](AUDIT_TRIAL46.md) / [Trial46配布物の独立検査](PACKAGE_CHECK_TRIAL46.md)
+メイン画面全体へのフォルダドロップ、枠線UI、JSONによる項目追加、画像付きマニュアルを維持しています。Trial47の全40テストと追加境界8件の監査を継承し、その記録もZIPに同梱しました。
 
-このZIPはソース版で、Windows用EXEは含みません。Windowsで同梱のEXE化手順に従いbuild_onedir.pyを実行し、生成された dist\AttendSync フォルダ全体（_internalとManualを含む）を渡してください。受取側にPythonは不要です。ExcelジャンプにはMicrosoft Excelが必要です。
+[Trial47の監査](AUDIT_TRIAL47.md) / [Trial46専門レビュー](AUDIT_TRIAL46.md)
 
-Linux/Qt offscreenで検証しています。Windows Explorerからの実ドラッグ、Windows EXE起動、実Excel・プリンター・会社の実データでの確認は未実施です。更新前に既存userdataをバックアップしてください。
+このZIPはソース版で、Windows EXEは含みません。Windowsで同梱の手順に従い build_onedir.py を実行してください。EXE内のアイコンは再ビルドで更新されます。会社へは生成した dist\AttendSync フォルダ全体（_internal・Manual等を含む）を渡してください。受取側にPythonは不要です。ExcelへのジャンプにはMicrosoft Excelが必要です。
 
-ZIP：376ファイル / 10,872,248バイト  
-SHA256：`e58133163d7c93e1a17cda32546fcc45a4e73f56738c9321d3b91d457d13dce2`
+Windows Explorerやタスクバーでの実表示、Windows EXEビルド、実Excel・プリンターは未確認です。更新前に既存userdataをバックアップしてください。
 
-## Trial47追加監査
-
-全40テストスクリプト、追加の境界試験8件、メイン画面の全84ウィジェットでの実Qtイベント配送が合格しました。修正が必要な問題は見つかりませんでした。ZIPの375ファイルのSHA256と作業ソースが一致し、GitHub掲載ZIPのサイズ・Git blob SHAも一致しています。ZIPは変更していません。
-
-[追加監査報告](AUDIT_TRIAL47.md) / [全40本の実行記録](audits/Trial47/All_Test_Results.json) / [追加試験コード](audits/Trial47/Boundary_Audit.py) / [追加試験ログ](audits/Trial47/Boundary_Audit.log)
+ZIP：382ファイル / 11,235,796バイト  
+SHA256：`f1bc5682335f20ea4e09bc46f3776d4dc17cc229b2a5e010170ae4e04eac807f`
