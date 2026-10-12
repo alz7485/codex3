@@ -1,3 +1,14 @@
+# 勤怠チェッカー Trial51
+
+- [必要ファイル版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial51_Essentials.zip)
+- [完全版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial51_Visual_Guide_Complete.zip)
+- [図解操作ガイドPDF（14ページ）](AttendSync_Trial51_図解操作ガイド.pdf) / [単独HTML](AttendSync_Trial51_図解操作ガイド.html)
+- [メイン画面](Trial51_Main.png) / [変更内容](CHANGES_TRIAL51.md) / [検証結果](VALIDATION_TRIAL51.md)
+
+タイトル下の説明削除、名称変更、アイコンの水色背景透過、右上ボタン間隔6px。マニュアルは画面別1〜2ページの図解へ簡略化しました。全41テスト成功。ソース版ZIPで、Windows EXEは未同梱です。
+
+以下は過去版の説明です。
+
 # AttendSync Trial50 — 監査6件の修正版
 
 ## GitHubからダウンロード
