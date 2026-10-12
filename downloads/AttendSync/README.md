@@ -1,3 +1,22 @@
+# AttendSync Trial50 — 監査6件の修正版
+
+## GitHubからダウンロード
+
+- [必要ファイル版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial50_Essentials.zip)：実行/ビルド用ソース・アイコン・操作マニュアル。テスト・監査資料・サンプルを省略。
+- [完全版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial50_All_Fixes_Complete.zip)：検証ログ・テスト・監査/引き継ぎ資料を含む。
+
+両方とも同じTrial50アプリソースです。Windows EXEを含む配布版はWindowsでビルドして作成します。
+
+最新版: [AttendSync_Trial50_All_Fixes_Complete.zip](AttendSync_Trial50_All_Fixes_Complete.zip) / [SHA256](AttendSync_Trial50_All_Fixes_Complete.zip.sha256)
+
+同姓同名の自動誤対応、キャッシュ保存失敗時のデータ脱落、構造不正キャッシュ、社員番号重複検査、テーマ即時反映、印刷ダイアログ残留を修正しました。既存40本＋追加1本の計41本成功。実Qtの補足試験も成功。
+
+[変更内容](CHANGES_TRIAL50.md) / [検証結果](VALIDATION_TRIAL50.md)。旧版の自動対応に同姓同名があれば元社員番号・スタッフIDを確認し、社員ID管理から訂正してください。既存対応は自動削除しません。
+
+ソース版ZIPです。Windowsでbuild_onedir.pyを実行してdist/AttendSync全体を配布します。Windows実機・実Excel・実プリンターは未検証。
+
+以下は同梱を継承したTrial49マニュアルの説明です。
+
 # AttendSync Trial49 — 詳細操作マニュアル
 
 [詳細操作マニュアルPDF（59ページ）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial49_%E8%A9%B3%E7%B4%B0%E6%93%8D%E4%BD%9C%E3%83%9E%E3%83%8B%E3%83%A5%E3%82%A2%E3%83%AB.pdf)  
