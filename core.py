@@ -86,7 +86,9 @@ def execute_with_deletions(root, rows, create_groups, move_groups, deleted, grou
         records = []
         if deleted:
             backup = recovery_folder(root, 'folders')
-            records = [(source, backup / f'{index:04d}_{source.name}') for index, source in enumerate(sorted(deleted))]
+            # Original names may already use the entire NTFS component limit.
+            # restore.json preserves their names; use short payload IDs here.
+            records = [(source, backup / f'{index:04d}') for index, source in enumerate(sorted(deleted))]
             write_recovery(backup, records)
         for source, target in records:
             confined(root, source)
@@ -136,6 +138,8 @@ def validate_name(name):
         raise ValueError(f'無効なフォルダ名: {name!r}')
     if any(c in '<>:"/\\|?*' or ord(c) < 32 for c in name):
         raise ValueError(f'Windowsで使用できない文字: {name!r}')
+    if len(name.encode('utf-16-le', 'surrogatepass')) // 2 > 255:
+        raise ValueError(f'フォルダ名がWindowsの上限（255文字分）を超えています。変更後の名前を短くしてください: {name!r}')
     stem = name.split('.')[0].rstrip(' ').upper()
     if stem in {'CON', 'PRN', 'AUX', 'NUL', 'CONIN$', 'CONOUT$', *(f'COM{i}' for i in '123456789¹²³'), *(f'LPT{i}' for i in '123456789¹²³')}:
         raise ValueError(f'Windowsの予約名: {name!r}')

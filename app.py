@@ -8,6 +8,8 @@ from work import WorkToken, working, Cancelled
 import queue
 import threading
 import sys
+import traceback
+from datetime import datetime
 from highlight_tree import HighlightTree
 from core import segments, suggested_name, plan, collisions, folder_size, execute_with_deletions, deletion_mask, name_from_mask, group_name, normalize_punctuation
 
@@ -308,6 +310,20 @@ class App(tk.Tk):
             self.save_query()
         self.destroy()
 
+    def report_operation_error(self, title, error, parent=None, context=''):
+        log = self.settings.path.parent / 'operation-errors.log'
+        details = str(error) + ('\n' + context if context else '')
+        try:
+            with log.open('a', encoding='utf-8') as file:
+                file.write(f'\n{datetime.now().astimezone().isoformat()} {title}\n')
+                file.write(''.join(traceback.format_exception(type(error), error, error.__traceback__)))
+                if context:
+                    file.write(context + '\n')
+            details += f'\n\n詳細ログ: {log}'
+        except OSError:
+            pass
+        messagebox.showerror(title, details, parent=parent or self)
+
     def preview_file_deletion(self):
         from file_cleanup import search_files, delete_files
         if not self.root_path:
@@ -497,7 +513,7 @@ class App(tk.Tk):
             except Cancelled:
                 return
             except (OSError, ValueError, RuntimeError) as error:
-                messagebox.showerror('連番変更失敗', str(error), parent=preview)
+                self.report_operation_error('連番変更・削除に失敗', error, parent=preview)
                 return
             preview.destroy()
             if self.book_root:
@@ -728,7 +744,7 @@ class App(tk.Tk):
                     messagebox.showinfo('本フォルダ名変更をキャンセル', notice, parent=self)
                 return
             except (OSError, ValueError, RuntimeError) as error:
-                messagebox.showerror('処理失敗', f'{error}\n完了済みタイトル: ' + ('、'.join(completed) or 'なし') + '\n完了済みタイトルの変更は保持されています。', parent=self if embedded else dialog)
+                self.report_operation_error('本フォルダ名変更・削除に失敗', error, parent=self if embedded else dialog, context='完了済みタイトル: ' + ('、'.join(completed) or 'なし') + '\n完了済みタイトルの変更は保持され、操作履歴から戻せます。')
                 if embedded:
                     self.load_books()
                 else:

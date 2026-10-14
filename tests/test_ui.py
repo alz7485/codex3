@@ -56,6 +56,21 @@ class UITests(unittest.TestCase):
         self.assertEqual(self.app.run_work('確認', lambda: 42), 42)
         self.assertIsNone(self.app.active_work)
 
+    def test_operation_failure_records_diagnostic_beside_app(self):
+        error = PermissionError('対象が使用中: Thumbs.db')
+        with patch('app.messagebox.showerror') as show:
+            self.app.report_operation_error('削除に失敗', error, context='完了済みタイトル: なし')
+        log = self.root / 'operation-errors.log'
+        self.assertIn('Thumbs.db', log.read_text(encoding='utf-8'))
+        self.assertIn('完了済みタイトル: なし', log.read_text(encoding='utf-8'))
+        self.assertIn(str(log), show.call_args.args[1])
+
+    def test_diagnostic_write_failure_preserves_original_error(self):
+        (self.root / 'operation-errors.log').mkdir()
+        with patch('app.messagebox.showerror') as show:
+            self.app.report_operation_error('削除に失敗', PermissionError('original denied'))
+        self.assertIn('original denied', show.call_args.args[1])
+
     def test_book_tab_loads_persistent_list_and_unknown_filter(self):
         books = self.root / 'books'
         for name in ['book_v05s', 'no_volume']:
