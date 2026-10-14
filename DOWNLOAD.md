@@ -1,10 +1,10 @@
-# FolderAdjuster（Windows・監査修正版onedir）
+# FolderAdjuster（Windows・名前変更／削除エラー対策版）
 
-[監査修正版ZIPをダウンロード（Python不要）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/FolderAdjuster/FolderAdjuster-Windows.zip)
+[最新版onedir ZIPをダウンロード（Python不要）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/FolderAdjuster/FolderAdjuster-Windows.zip)
 
 ZIP全体を展開して `FolderAdjuster/FolderAdjuster.exe` を起動してください。`_internal` フォルダも必要です。
 
-本整理の対象解除と同名衝突表示、編集中の絞り込み、途中キャンセル、連続した操作の復元、Windowsの大小文字だけの変更、壊れた履歴の読込を修正しました。LinuxとWindowsで89件のテストが成功し、展開後のEXE起動と設定保存も確認しました。
+長い名前や階層を退避先に重ねる問題を修正。共有ロックの短時間再試行、対象と原因の表示、アプリ横のoperation-errors.logを追加。Windowsの97件のテストと展開後のEXE起動確認が成功しました。
 
 [ソース版ZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/folder-tool-windows.zip)
 
@@ -16,4 +16,4 @@ ZIP全体を展開して `FolderAdjuster/FolderAdjuster.exe` を起動してく�
 
 履歴からの復元、進捗・キャンセル、削除プリセット、絞り込み、巻数表示、同名比較を追加しました。詳しくはREADME.mdをご覧ください。
 
-ソース版ZIP SHA256: `0c3b1c11e578b137393e95b1d02b489dd925e8fcb63f3b3d118c001f335d4660`
+ソース版ZIP SHA256: `b671cacc41ceeef609d148c1385caa4c8c85edaa05ae900210e1fe7b32a19c8c`
