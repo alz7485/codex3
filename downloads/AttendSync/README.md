@@ -3,8 +3,9 @@
 - [必要ファイル版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial53_Essentials.zip)
 - [完全版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial53_Email_Links_Complete.zip)
 - [変更内容](CHANGES_TRIAL53.md) / [検証結果](VALIDATION_TRIAL53.md)
+- [メール管理の画面](Trial53_Email_Management.png) / [CSV取込の画面](Trial53_Email_Import.png) / [図解PDF（16ページ）](AttendSync_Trial53_図解操作ガイド.pdf)
 
-社員ID・スタッフIDの両方を照合してメールを取込。4項目を列指定。未紐付けメールはプルダウンまたは直接入力で登録。全43テスト成功。Trial51のUIと更新した15ページ図解を継承。Windows EXEは未同梱です。
+社員ID・スタッフIDの両方を照合してメールを取込。4項目を列指定。未紐付けメールはプルダウンまたは直接入力で登録。全43テスト成功。Trial51のUIと更新した16ページ図解を継承。Windows EXEは未同梱です。
 
 以下は過去版の説明です。
 
