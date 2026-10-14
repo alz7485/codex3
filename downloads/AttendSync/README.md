@@ -1,3 +1,15 @@
+# 勤怠チェッカー Trial54 — 不一致メール作成・自動送信設定
+
+- [必要ファイル版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial54_Essentials.zip)
+- [完全版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial54_Outlook_Drafts_Complete.zip)
+- [変更内容](CHANGES_TRIAL54.md) / [検証結果](VALIDATION_TRIAL54.md)
+- [Microsoft 365初回接続設定](MICROSOFT_SETUP_TRIAL54.md)
+- [メール作成画面](Trial54_Mail_Preview.png) / [メール設定](Trial54_Mail_Settings.png) / [メイン画面](Trial54_Main.png)
+
+表示中の不一致を社員別にOutlookメールへ。必須To/CC・名前・本文と自動送信を設定。自動送信初期OFF。Microsoft 365のアプリ登録と初回接続が必要。全44テスト成功。Trial51のUIと更新した19ページ図解を継承。Windows EXEは未同梱です。
+
+以下は過去版の説明です。
+
 # 勤怠チェッカー Trial53 — メールCSV取込・手動紐付け
 
 - [必要ファイル版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial53_Essentials.zip)
