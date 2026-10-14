@@ -1,3 +1,14 @@
+# 勤怠チェッカー Trial56 — 社員情報の統合・送信切替
+
+- [必要ファイル版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial56_Essentials.zip)
+- [完全版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial56_Employee_Information_Complete.zip)
+- [社員情報画面](Trial56_Employee_Information.png) / [紐付け用CSV](Trial56_Employee_CSV.png) / [勤怠用CSV](Trial56_Attendance_ID_CSV.png) / [メール作成](Trial56_Mail_Preview.png)
+- [図解操作ガイド（19ページ）](AttendSync_Trial56_図解操作ガイド.pdf) / [変更内容](CHANGES_TRIAL56.md) / [検証](VALIDATION_TRIAL56.md)
+
+IDとメールを1画面で紐付け・保存。「社員情報を読み込む」で、紐付け用CSV＝ID＋メール、勤怠用CSV＝勤怠照合兼IDのみを列指定します。メール作成画面でも今回の自動送信を切替可能。設定の初期値は維持します。全45テスト成功。Microsoft初回接続はZIP内の連携ガイド、または[Trial54の設定手順](MICROSOFT_SETUP_TRIAL54.md)を参照。ソース版で、Windows EXEは未同梱です。実テナントの送信は未検証です。
+
+以下は過去版の説明です。
+
 # 勤怠チェッカー Trial55 — メール表記の調整
 
 - [必要ファイル版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial55_Essentials.zip)
