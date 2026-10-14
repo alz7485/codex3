@@ -154,13 +154,14 @@ def execute_image_cleanup(root, images, non_images):
         if non_images:
             backup = recovery_folder(root, 'images')
             # Persist recovery paths before moving any data.
-            records = [(item.source, backup / item.source.relative_to(root)) for item in non_images]
+            # Avoid repeating long title/book/file names in the quarantine path.
+            records = [(item.source, backup / 'data' / f'{index:06d}') for index, item in enumerate(non_images)]
             write_recovery(backup, records)
-        for item in non_images:
+        for index, item in enumerate(non_images):
             confined(root, item.source)
             if is_link(item.source) or signature(item.source) != item.before:
                 raise ValueError(f'削除対象が変更されています: {item.source}')
-            target = backup / item.source.relative_to(root)
+            target = backup / 'data' / f'{index:06d}'
             target.parent.mkdir(parents=True, exist_ok=True)
             if target.exists():
                 raise ValueError(f'退避先が既に存在します: {target}')

@@ -1,5 +1,6 @@
 from pathlib import Path
 import tempfile
+import json
 import unittest
 from unittest.mock import patch
 from images import plan_images, execute_images, plan_non_images, execute_image_cleanup
@@ -24,7 +25,9 @@ class ImageTests(unittest.TestCase):
             self.assertTrue((book / 'nested/keep.PNG').exists())
             self.assertTrue((book.parent / 'keep.txt').exists())
             self.assertFalse((book / 'notes.txt').exists())
-            self.assertEqual((backup / 'title/book/notes.txt').read_text(), 'notes')
+            records = json.loads((backup / 'restore.json').read_text(encoding='utf-8'))
+            target = next(Path(record['backup']) for record in records if Path(record['original']) == book / 'notes.txt')
+            self.assertEqual(target.read_text(), 'notes')
             self.assertEqual(plan_non_images(root), [])
 
     def test_cleanup_failure_restores_non_images(self):

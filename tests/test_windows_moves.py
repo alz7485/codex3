@@ -60,6 +60,27 @@ class WindowsMoveTests(unittest.TestCase):
             self.assertTrue((root / 'b').is_dir())
             self.assertFalse((root / '.folder-tool-trash').exists())
 
+    def test_nonimage_quarantine_shortens_long_book_paths_and_undo(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path('\\\\?\\' + str(Path(directory).resolve())) / 'data'
+            book = root / 'Title' / ('book_' + 'a' * 180)
+            book.mkdir(parents=True)
+            try:
+                note = book / ('n' * 100 + '.txt'); note.write_text('keep')
+                (book / 'page.jpg').write_text('image')
+                history = History(root.parent / 'history')
+                _, backup = history.run('cleanup', lambda: execute_image_cleanup(root, plan_images(root), plan_non_images(root)))
+                records = json.loads((backup / 'restore.json').read_text(encoding='utf-8'))
+                target = Path(records[0]['backup'])
+                self.assertEqual(target.parent, backup / 'data')
+                self.assertEqual(target.name, '000000')
+                self.assertEqual(target.read_text(), 'keep')
+                history.undo(history.entries()[0][0])
+                self.assertEqual(note.read_text(), 'keep')
+                self.assertEqual((book / 'page.jpg').read_text(), 'image')
+            finally:
+                shutil.rmtree(root.parent)
+
     def test_transient_sharing_lock_is_retried(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve()
