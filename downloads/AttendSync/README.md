@@ -1,3 +1,13 @@
+# 勤怠チェッカー Trial52 — 空欄表示の数式時刻
+
+- [必要ファイル版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial52_Essentials.zip)
+- [完全版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial52_Holiday_Blanks_Complete.zip)
+- [変更内容](CHANGES_TRIAL52.md) / [検証結果](VALIDATION_TRIAL52.md)
+
+始業・終業などの数式0が表示形式/ゼロ非表示設定で空欄に見える場合、CSVの空欄と一致するよう修正。通常の0:00と実働0時間は保持。旧キャッシュは次回読み込みで自動再解析。全42テスト成功。Trial51のUIと14ページ図解を継承。Windows EXEは未同梱です。
+
+以下は過去版の説明です。
+
 # 勤怠チェッカー Trial51
 
 - [必要ファイル版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial51_Essentials.zip)
