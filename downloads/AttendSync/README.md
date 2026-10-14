@@ -1,3 +1,13 @@
+# 勤怠チェッカー Trial55 — メール表記の調整
+
+- [必要ファイル版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial55_Essentials.zip)
+- [完全版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial55_Mail_Wording_Complete.zip)
+- [変更内容](CHANGES_TRIAL55.md) / [検証](VALIDATION_TRIAL55.md) / [メール画面](Trial55_Mail_Preview.png)
+
+宛名の敬称初期値を「殿」にし、不一致内容は「派遣元」「派遣先」のみの表記にしました。保存済みの敬称/件名/本文は維持し、設定→メールで変更できます。Microsoft初回接続手順は[Trial54の連携ガイド](MICROSOFT_SETUP_TRIAL54.md)を継承。
+
+以下は過去版の説明です。
+
 # 勤怠チェッカー Trial54 — 不一致メール作成・自動送信設定
 
 - [必要ファイル版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial54_Essentials.zip)
