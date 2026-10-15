@@ -1,3 +1,13 @@
+# 勤怠チェッカー Trial62 — 独立監査・修正版
+
+- [必要ファイル版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial62_Essentials.zip)
+- [完全版ZIP（監査証跡・テスト付き）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial62_Final_Audit_Complete.zip)
+- [集約・最終監査報告](AUDIT_TRIAL62.md) / [変更内容](CHANGES_TRIAL62.md) / [検証結果](VALIDATION_TRIAL62.md)
+
+破壊・誤操作・欠損データ・設定変更・誤判定の5役で監査し、重複を除く10件を修正。別担当の最終監査と全49テストスクリプトが成功しました。空CSV・列不足の誤一致や異常値の非表示、社員情報更新・回復などを修正。ソース版でEXEは未同梱。Windows実機・実Excel・実Microsoft365送信は未検証です。
+
+以下は過去版の説明です。
+
 # 勤怠チェッカー Trial61 — CSVが無い月度分は非表示
 
 - [必要ファイル版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial61_Essentials.zip)
