@@ -1,3 +1,14 @@
+# 勤怠チェッカー Trial64 — クラシックOutlook COM連携
+
+- [必要ファイル版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial64_Essentials.zip)
+- [完全版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial64_Classic_Outlook_COM_Complete.zip)
+- [メール設定の画面](Trial64_Classic_Outlook_Settings.png) / [変更内容](CHANGES_TRIAL64.md) / [検証](VALIDATION_TRIAL64.md) / [図解18ページ](AttendSync_Trial64_図解操作ガイド.pdf)
+- [社員登録サンプルCSV](AttendSync_Employee_Registration_Sample.csv) / [説明付きZIP](AttendSync_Employee_Registration_Sample.zip)
+
+アカウント取得だけでなくメール作成・送信もCOMに切替。MicrosoftアプリID・テナントID・アプリ登録・ブラウザ認証は不要です。自動送信OFFは指定アカウントの下書き、ONはOutlookへ送信要求。全51本成功。Windows実機の接続・実送信・EXEビルドは未検証です。ソース版でEXEは未同梱。
+
+以下は過去版の説明です。旧版のMicrosoftアプリ登録は本版には不要です。
+
 # 勤怠チェッカー Trial63 — クラシックOutlookから設定を取得
 
 - [必要ファイル版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial63_Essentials.zip)
