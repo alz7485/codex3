@@ -1,3 +1,14 @@
+# 勤怠チェッカー Trial60 — 読込設定を1行に・画面幅を整理
+
+- [必要ファイル版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial60_Essentials.zip)
+- [完全版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial60_Compact_Import_Settings_Complete.zip)
+- [CSV読込](Trial60_Employee_CSV.png) / [社員情報](Trial60_Employee_Registration.png) / [メイン](Trial60_Main.png) / [メール作成](Trial60_Mail_Preview.png)
+- [図解ガイド（18ページ）](AttendSync_Trial60_図解操作ガイド.pdf) / [変更内容](CHANGES_TRIAL60.md) / [検証](VALIDATION_TRIAL60.md)
+
+社員IDの括弧書きを削除し、4つの列指定・開始行・文字コードを1行へ統合。列入力幅54pxにし、CSV読込1000px／社員情報1040px／メイン1180px／メール作成1080pxへ初期幅を縮めました。前版の47本成功を継承し、関連6本も成功。社員情報の事前登録を維持。ソース版でWindows EXEは未同梱です。
+
+以下は過去版の説明です。
+
 # 勤怠チェッカー Trial59 — 社員情報を先に登録
 
 - [必要ファイル版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial59_Essentials.zip)
