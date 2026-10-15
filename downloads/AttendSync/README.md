@@ -1,3 +1,14 @@
+# 勤怠チェッカー Trial61 — CSVが無い月度分は非表示
+
+- [必要ファイル版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial61_Essentials.zip)
+- [完全版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial61_Missing_CSV_Month_Filter_Complete.zip)
+- [チェックONの画面](Trial61_CSV_Month_Filter_On.png) / [OFFの画面](Trial61_CSV_Month_Filter_Off.png)
+- [図解18ページ](AttendSync_Trial61_図解操作ガイド.pdf) / [変更内容](CHANGES_TRIAL61.md) / [検証](VALIDATION_TRIAL61.md)
+
+「CSVが無い月度分は非表示」を追加し初期ON。CSVの日付から記録のない年月を判定し、該当する「CSV記録なし」の要確認を一覧から隠します。OFFで即復元。個人別欠落や入力異常は残し、全数・診断は保持します。全48本成功。ソース版でWindows EXEは未同梱です。
+
+以下は過去版の説明です。
+
 # 勤怠チェッカー Trial60 — 読込設定を1行に・画面幅を整理
 
 - [必要ファイル版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial60_Essentials.zip)
