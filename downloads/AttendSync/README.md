@@ -1,3 +1,14 @@
+# 勤怠チェッカー Trial59 — 社員情報を先に登録
+
+- [必要ファイル版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial59_Essentials.zip)
+- [完全版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial59_Employee_Registration_Complete.zip)
+- [社員情報](Trial59_Employee_Registration.png) / [CSV読込](Trial59_Employee_CSV.png) / [未登録時の案内](Trial59_Registration_Required.png)
+- [図解ガイド（18ページ）](AttendSync_Trial59_図解操作ガイド.pdf) / [変更内容](CHANGES_TRIAL59.md) / [検証](VALIDATION_TRIAL59.md)
+
+社員情報が未登録なら「勤怠チェックを行う前に社員情報を登録してください」と表示して社員情報画面へ。キャンセルでは勤怠を読み込みません。社員情報CSVの照合結果列・照合ボタン・勤怠用ID取込を廃止し、4列一覧へ自動読込。勤怠データからIDを推測・登録せず、登録済みの対応だけで勤怠をチェックします。全47スクリプト成功。ソース版でWindows EXEは未同梱です。
+
+以下は過去版の説明です。
+
 # 勤怠チェッカー Trial58 — 社員情報CSVのドラッグ読込・セル移動
 
 - [必要ファイル版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial58_Essentials.zip)
