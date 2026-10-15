@@ -1,3 +1,13 @@
+# 勤怠チェッカー Trial57 — 社員情報CSVの列配置
+
+- [必要ファイル版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial57_Essentials.zip)
+- [完全版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial57_Employee_CSV_Columns_Complete.zip)
+- [CSV読込画面](Trial57_Employee_CSV.png) / [図解操作ガイド（19ページ）](AttendSync_Trial57_図解操作ガイド.pdf) / [変更内容](CHANGES_TRIAL57.md) / [検証](VALIDATION_TRIAL57.md)
+
+紐付け用CSVの初期値：スタッフID=A、社員ID（派遣元スタッフコード）=B、氏名=C、メール=J。保存済みの列指定は保持します。旧設定がある場合は読込画面で変更してください。関連3本・36テスト成功。Trial56の機能を継承。ソース版でWindows EXEは未同梱です。
+
+以下は過去版の説明です。
+
 # 勤怠チェッカー Trial56 — 社員情報の統合・送信切替
 
 - [必要ファイル版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial56_Essentials.zip)
