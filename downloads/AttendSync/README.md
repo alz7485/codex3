@@ -1,3 +1,14 @@
+# 勤怠チェッカー Trial63 — クラシックOutlookから設定を取得
+
+- [必要ファイル版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial63_Essentials.zip)
+- [完全版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial63_Outlook_Account_Complete.zip)
+- [取得ボタンの画面](Trial63_Outlook_Account_Settings.png) / [変更内容](CHANGES_TRIAL63.md) / [検証](VALIDATION_TRIAL63.md) / [図解18ページ](AttendSync_Trial63_図解操作ガイド.pdf)
+- [社員登録サンプルCSV](AttendSync_Employee_Registration_Sample.csv) / [説明付きZIP](AttendSync_Employee_Registration_Sample.zip)
+
+「設定」→「メール」→「起動中のOutlookから取得」でメールアドレス・表示名を入力。複数アカウントは選択し、保存で確定します。送信は引き続きMicrosoft Graph経由でアプリID等が必要です。関連6本・81テスト成功。Windows実機のOutlook接続は未検証。ソース版でEXEは未同梱です。
+
+以下は過去版の説明です。
+
 # 勤怠チェッカー Trial62 — 独立監査・修正版
 
 - [社員登録用サンプルCSV（4名）](AttendSync_Employee_Registration_Sample.csv) / [説明付きZIP](AttendSync_Employee_Registration_Sample.zip) / [使い方](Employee_Registration_Sample_README.md)
