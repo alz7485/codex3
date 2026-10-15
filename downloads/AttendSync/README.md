@@ -1,3 +1,14 @@
+# 勤怠チェッカー Trial58 — 社員情報CSVのドラッグ読込・セル移動
+
+- [必要ファイル版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial58_Essentials.zip)
+- [完全版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial58_Employee_CSV_Drop_Complete.zip)
+- [CSV読込画面](Trial58_Employee_CSV.png) / [社員情報](Trial58_Employee_Information.png) / [勤怠用CSV](Trial58_Attendance_ID_CSV.png)
+- [図解ガイド（19ページ）](AttendSync_Trial58_図解操作ガイド.pdf) / [変更内容](CHANGES_TRIAL58.md) / [検証](VALIDATION_TRIAL58.md)
+
+社員情報・CSV読込画面へのドロップだけで読込と確認一覧表示。CSV行番号を外し、一覧のダブルクリックで元CSVの該当セルへ移動（Windows版Excel）。画面配置も整理しました。スタッフID=A／社員ID（派遣元スタッフコード）=B／氏名=C／メール=Jの初期値を継承し、保存済み列設定は保持。全46スクリプト成功。ソース版でWindows EXEは未同梱、実ExcelでのCSVセル移動は未検証です。
+
+以下は過去版の説明です。
+
 # 勤怠チェッカー Trial57 — 社員情報CSVの列配置
 
 - [必要ファイル版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial57_Essentials.zip)
