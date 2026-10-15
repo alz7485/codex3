@@ -1,5 +1,6 @@
 # 勤怠チェッカー Trial62 — 独立監査・修正版
 
+- [社員登録用サンプルCSV（4名）](AttendSync_Employee_Registration_Sample.csv) / [説明付きZIP](AttendSync_Employee_Registration_Sample.zip) / [使い方](Employee_Registration_Sample_README.md)
 - [必要ファイル版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial62_Essentials.zip)
 - [完全版ZIP（監査証跡・テスト付き）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial62_Final_Audit_Complete.zip)
 - [集約・最終監査報告](AUDIT_TRIAL62.md) / [変更内容](CHANGES_TRIAL62.md) / [検証結果](VALIDATION_TRIAL62.md)
