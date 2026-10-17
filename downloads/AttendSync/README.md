@@ -1,3 +1,14 @@
+# 勤怠チェッカー Trial65 — サブエージェント監査・修正版
+
+- [必要ファイル版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial65_Essentials.zip)
+- [完全版ZIP（監査証跡・テスト付き）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial65_Independent_Audit_Complete.zip)
+- [集約・最終監査報告](AUDIT_TRIAL65.md) / [変更内容](CHANGES_TRIAL65.md) / [検証](VALIDATION_TRIAL65.md)
+- [社員登録サンプルCSV](AttendSync_Employee_Registration_Sample.csv) / [説明付きZIP](AttendSync_Employee_Registration_Sample.zip)
+
+6役で独立監査し9原因を修正。各担当の再試験、別担当の最終監査、全52本の回帰試験が成功しました。キャッシュ/対象年月/復旧/省略設定/秒表示/メールの続行・重複・宛先処理を修正。クラシックOutlook COM連携でアプリID不要です。旧ハッシュの移行制約は監査報告を参照。Windows実機・実送信・EXEビルドは未検証のソース版です。
+
+以下は過去版の説明です。
+
 # 勤怠チェッカー Trial64 — クラシックOutlook COM連携
 
 - [必要ファイル版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial64_Essentials.zip)
