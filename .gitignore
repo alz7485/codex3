@@ -9,3 +9,6 @@ build/
 dist/
 *.spec
 operation-errors.log
+
+# Local audit reports; never production data.
+audit-runs/

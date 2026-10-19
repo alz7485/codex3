@@ -1,4 +1,18 @@
+# 勤怠チェッカー Trial66 — 完成監査の指摘修正版
+
+- [必要ファイル版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial66_Essentials.zip)
+- [完全版ZIP（テスト・監査証跡・監査設定付き）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial66_Completion_Audit_Fixes_Complete.zip)
+- [監査結果](AUDIT_TRIAL66.md) / [変更内容](CHANGES_TRIAL66.md) / [検証・SHA256](VALIDATION_TRIAL66.md)
+- [社員登録サンプルCSV](AttendSync_Employee_Registration_Sample.csv) / [説明付きZIP](AttendSync_Employee_Registration_Sample.zip)
+- [今後の監査の呼び出し方](../../docs/audit/README.md) / [監査設定だけのZIP](AttendSync_Audit_Framework.zip)
+
+完成監査の確定11件と追加2境界を修正。53本の回帰試験成功、6グループと別担当の統括監査で解消を確認しました。クラシックOutlook COM連携でアプリID不要です。両ZIPはソース版で、Windows実機・実配送・EXEビルドは未検証。更新前はuserdataと旧メール処理履歴をバックアップしてください。旧履歴の復元制約は変更内容を参照してください。
+
+以下は過去版の説明です。
+
 # 勤怠チェッカー Trial65 — サブエージェント監査・修正版
+
+監査体制の設定を追加しました。[使い方](../../docs/audit/README.md) / [設定だけのZIP](AttendSync_Audit_Framework.zip)。13役と3つの呼出指示を含みます。アプリ本体はTrial65のままで、この設定追加は製品の完成監査を実施したことを意味しません。
 
 - [必要ファイル版ZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial65_Essentials.zip)
 - [完全版ZIP（監査証跡・テスト付き）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AttendSync/AttendSync_Trial65_Independent_Audit_Complete.zip)

@@ -1,0 +1,42 @@
+# Audit workflow metadata, read by scripts/audit_control.py and AGENTS.md.
+# This is NOT an extension of the Codex config.toml schema.
+schema_version = 1
+project = "AttendSync"
+archive_glob = "downloads/AttendSync/AttendSync_Trial*_Complete.zip"
+coordinator = "audit_coordinator"
+max_parallel_specialists = 6
+
+[[groups]]
+id = "G1"
+name = "仕様・構造"
+roles = ["audit_specification", "audit_architecture"]
+[[groups]]
+id = "G2"
+name = "不具合・耐障害性"
+roles = ["audit_bugs", "audit_destructive"]
+[[groups]]
+id = "G3"
+name = "操作性・改善"
+roles = ["audit_uiux", "audit_improvements"]
+[[groups]]
+id = "G4"
+name = "性能・省力化"
+roles = ["audit_performance", "audit_automation"]
+[[groups]]
+id = "G5"
+name = "データ・安全性"
+roles = ["audit_data_integrity", "audit_security"]
+[[groups]]
+id = "G6"
+name = "配布・独立反証"
+roles = ["audit_distribution", "audit_skeptic"]
+
+[modes.normal]
+trigger = "通常監査して"
+strategy = "six_groups"
+[modes.complete]
+trigger = "完成監査して"
+strategy = "twelve_independent_specialists"
+[modes.postfix]
+trigger = "修正後監査して"
+strategy = "change_dependency_regression"

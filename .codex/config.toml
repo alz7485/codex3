@@ -1,0 +1,5 @@
+# Codex official project configuration. No model/provider/permission overrides.
+# Custom agents are discovered from .codex/agents/*.toml.
+[agents]
+enabled = true
+max_concurrent_threads_per_session = 6
