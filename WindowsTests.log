@@ -1,0 +1,147 @@
+test_case_only_folder_rename_and_rollback (test_audit.AuditTests.test_case_only_folder_rename_and_rollback) ... ok
+test_corrupt_settings_preserved_when_saving (test_audit.AuditTests.test_corrupt_settings_preserved_when_saving) ... ok
+test_destination_dangling_link_and_case_collision (test_audit.AuditTests.test_destination_dangling_link_and_case_collision) ... ok
+test_folder_recovery_info_written_before_move (test_audit.AuditTests.test_folder_recovery_info_written_before_move) ... ok
+test_image_cleanup_symlink_recovery_rejected (test_audit.AuditTests.test_image_cleanup_symlink_recovery_rejected) ... ok
+test_natural_sort_non_decimal_unicode_does_not_crash (test_audit.AuditTests.test_natural_sort_non_decimal_unicode_does_not_crash) ... ok
+test_nested_recovery_data_excluded_from_image_cleanup (test_audit.AuditTests.test_nested_recovery_data_excluded_from_image_cleanup) ... ok
+test_recovery_symlink_never_moves_data_outside (test_audit.AuditTests.test_recovery_symlink_never_moves_data_outside) ... ok
+test_reserved_recovery_and_windows_names_rejected (test_audit.AuditTests.test_reserved_recovery_and_windows_names_rejected) ... ok
+test_restore_json_file_can_itself_be_quarantined (test_audit.AuditTests.test_restore_json_file_can_itself_be_quarantined) ... ok
+test_virtual_plan_and_source_traversal (test_audit.AuditTests.test_virtual_plan_and_source_traversal) ... ok
+test_windows_junction_attribute_detection (test_audit.AuditTests.test_windows_junction_attribute_detection) ... ok
+test_all_thirteen_roles_and_modes_exist (test_audit_framework.AuditFrameworkTests.test_all_thirteen_roles_and_modes_exist) ... ok
+test_ambiguous_latest_release_requires_explicit_target (test_audit_framework.AuditFrameworkTests.test_ambiguous_latest_release_requires_explicit_target) ... ok
+test_complete_uses_twelve_distinct_jobs_in_two_waves (test_audit_framework.AuditFrameworkTests.test_complete_uses_twelve_distinct_jobs_in_two_waves) ... ok
+test_direct_source_precedes_archived_release (test_audit_framework.AuditFrameworkTests.test_direct_source_precedes_archived_release) ... ok
+test_duplicate_specialism_cannot_silently_reduce_coverage (test_audit_framework.AuditFrameworkTests.test_duplicate_specialism_cannot_silently_reduce_coverage) ... ERROR
+test_explicit_target_must_exist (test_audit_framework.AuditFrameworkTests.test_explicit_target_must_exist) ... ok
+test_inspection_does_not_change_existing_config_or_extensions (test_audit_framework.AuditFrameworkTests.test_inspection_does_not_change_existing_config_or_extensions) ... ok
+test_latest_numeric_trial_not_lexicographic_order (test_audit_framework.AuditFrameworkTests.test_latest_numeric_trial_not_lexicographic_order) ... ok
+test_lower_host_capacity_is_respected (test_audit_framework.AuditFrameworkTests.test_lower_host_capacity_is_respected) ... ok
+test_missing_role_is_an_error (test_audit_framework.AuditFrameworkTests.test_missing_role_is_an_error) ... ok
+test_normal_is_six_parallel_groups_covering_twelve_roles (test_audit_framework.AuditFrameworkTests.test_normal_is_six_parallel_groups_covering_twelve_roles) ... ok
+test_postfix_requires_baseline_and_preserves_changed_paths (test_audit_framework.AuditFrameworkTests.test_postfix_requires_baseline_and_preserves_changed_paths) ... ok
+test_unrelated_repository_root_is_not_mistaken_for_attendsync (test_audit_framework.AuditFrameworkTests.test_unrelated_repository_root_is_not_mistaken_for_attendsync) ... ok
+test_unsupported_per_role_sandbox_is_not_claimed (test_audit_framework.AuditFrameworkTests.test_unsupported_per_role_sandbox_is_not_claimed) ... ERROR
+test_zero_capacity_is_rejected (test_audit_framework.AuditFrameworkTests.test_zero_capacity_is_rejected) ... ok
+test_backup_folders_excluded_from_all_discovery (test_books.BookTests.test_backup_folders_excluded_from_all_discovery) ... ok
+test_examples_and_rightmost_number (test_books.BookTests.test_examples_and_rightmost_number) ... ok
+test_generated_equivalent_volume_name_survives_second_run (test_books.BookTests.test_generated_equivalent_volume_name_survives_second_run) ... ok
+test_rename_preserves_contents_and_works_with_image_cleanup (test_books.BookTests.test_rename_preserves_contents_and_works_with_image_cleanup) ... ok
+test_collision (test_core.FolderTests.test_collision) ... ok
+test_create_without_move (test_core.FolderTests.test_create_without_move) ... ok
+test_custom_group_used_for_collision_and_execution (test_core.FolderTests.test_custom_group_used_for_collision_and_execution) ... ok
+test_deletion_restored_when_plan_fails (test_core.FolderTests.test_deletion_restored_when_plan_fails) ... ok
+test_double_brackets_are_one_square_segment (test_core.FolderTests.test_double_brackets_are_one_square_segment) ... ok
+test_duplicate_size_and_selected_deletion (test_core.FolderTests.test_duplicate_size_and_selected_deletion) ... ok
+test_duplicate_sources_larger_removed (test_core.FolderTests.test_duplicate_sources_larger_removed) ... ok
+test_group_and_rename (test_core.FolderTests.test_group_and_rename) ... ok
+test_invalid_names (test_core.FolderTests.test_invalid_names) ... ok
+test_partial_removal_inside_square (test_core.FolderTests.test_partial_removal_inside_square) ... ok
+test_protect_specific_occurrence (test_core.FolderTests.test_protect_specific_occurrence) ... ok
+test_punctuation_after_deletion_and_filesystem (test_core.FolderTests.test_punctuation_after_deletion_and_filesystem) ... ok
+test_punctuation_rules (test_core.FolderTests.test_punctuation_rules) ... ok
+test_rollback (test_core.FolderTests.test_rollback) ... ok
+test_title_with_brackets_can_be_preserved (test_core.FolderTests.test_title_with_brackets_can_be_preserved) ... ok
+test_empty_query_and_modified_candidate_rejected (test_file_cleanup.FileCleanupTests.test_empty_query_and_modified_candidate_rejected) ... ok
+test_failure_rolls_back (test_file_cleanup.FileCleanupTests.test_failure_rolls_back) ... ok
+test_or_search_and_extension_matching (test_file_cleanup.FileCleanupTests.test_or_search_and_extension_matching) ... ok
+test_outside_scope_rejected (test_file_cleanup.FileCleanupTests.test_outside_scope_rejected) ... ok
+test_query_remembered_separately_from_paths (test_file_cleanup.FileCleanupTests.test_query_remembered_separately_from_paths) ... ok
+test_recursive_search_and_individual_exclusion (test_file_cleanup.FileCleanupTests.test_recursive_search_and_individual_exclusion) ... ok
+test_changed_image_rejected (test_images.ImageTests.test_changed_image_rejected) ... ok
+test_cleanup_failure_restores_non_images (test_images.ImageTests.test_cleanup_failure_restores_non_images) ... ok
+test_cleanup_preserves_images_and_outside_files (test_images.ImageTests.test_cleanup_preserves_images_and_outside_files) ... ok
+test_collision_with_directory (test_images.ImageTests.test_collision_with_directory) ... ok
+test_depth_and_extension_are_preserved (test_images.ImageTests.test_depth_and_extension_are_preserved) ... ok
+test_existing_numbered_source_does_not_get_overwritten (test_images.ImageTests.test_existing_numbered_source_does_not_get_overwritten) ... ok
+test_failure_restores_all_names_and_contents (test_images.ImageTests.test_failure_restores_all_names_and_contents) ... ok
+test_natural_order_and_each_book_starts_at_one (test_images.ImageTests.test_natural_order_and_each_book_starts_at_one) ... ok
+test_new_non_image_invalidates_preview (test_images.ImageTests.test_new_non_image_invalidates_preview) ... ok
+test_book_scan_can_cancel_between_books (test_improvements.ImprovementTests.test_book_scan_can_cancel_between_books) ... ok
+test_cancel_restores_completed_folder_moves (test_improvements.ImprovementTests.test_cancel_restores_completed_folder_moves) ... ok
+test_cancel_search_before_any_mutation (test_improvements.ImprovementTests.test_cancel_search_before_any_mutation) ... ok
+test_case_only_history_checks_contents_before_undo (test_improvements.ImprovementTests.test_case_only_history_checks_contents_before_undo) ... ok
+test_comparison_counts_images_and_files (test_improvements.ImprovementTests.test_comparison_counts_images_and_files) ... ok
+test_file_deletion_undo (test_improvements.ImprovementTests.test_file_deletion_undo) ... ok
+test_folder_operation_can_be_undone_after_restart (test_improvements.ImprovementTests.test_folder_operation_can_be_undone_after_restart) ... ok
+test_image_rename_and_cleanup_undo (test_improvements.ImprovementTests.test_image_rename_and_cleanup_undo) ... ok
+test_leading_and_trailing_square_rules (test_improvements.ImprovementTests.test_leading_and_trailing_square_rules) ... ok
+test_legacy_history_missing_final_state_cannot_replay (test_improvements.ImprovementTests.test_legacy_history_missing_final_state_cannot_replay) ... ok
+test_malformed_history_is_visible_but_cannot_change_files (test_improvements.ImprovementTests.test_malformed_history_is_visible_but_cannot_change_files) ... ok
+test_related_operations_can_be_undone_newest_first (test_improvements.ImprovementTests.test_related_operations_can_be_undone_newest_first) ... ok
+test_undo_collision_preserves_both_sides (test_improvements.ImprovementTests.test_undo_collision_preserves_both_sides) ... ok
+test_undo_refuses_modified_contents (test_improvements.ImprovementTests.test_undo_refuses_modified_contents) ... ok
+test_undo_still_rejects_added_empty_directory (test_improvements.ImprovementTests.test_undo_still_rejects_added_empty_directory) ... ok
+test_corrupt_and_wrong_type_settings_do_not_crash (test_settings.SettingsTests.test_corrupt_and_wrong_type_settings_do_not_crash) ... ok
+test_failed_save_keeps_previous_settings (test_settings.SettingsTests.test_failed_save_keeps_previous_settings) ... ok
+test_independent_paths_survive_restart (test_settings.SettingsTests.test_independent_paths_survive_restart) ... ok
+test_missing_path_retained_and_dialog_uses_existing_parent (test_settings.SettingsTests.test_missing_path_retained_and_dialog_uses_existing_parent) ... ok
+test_packaged_settings_beside_executable (test_settings.SettingsTests.test_packaged_settings_beside_executable) ... ok
+test_settings_beside_application_not_current_directory (test_settings.SettingsTests.test_settings_beside_application_not_current_directory) ... ok
+test_background_progress_returns_result (test_ui.UITests.test_background_progress_returns_result) ... ok
+test_book_confirmation_commits_edit_without_enter (test_ui.UITests.test_book_confirmation_commits_edit_without_enter) ... ok
+test_book_conflict_filter_ignores_disabled_plan (test_ui.UITests.test_book_conflict_filter_ignores_disabled_plan) ... ok
+test_book_filter_commits_active_editor_before_detaching (test_ui.UITests.test_book_filter_commits_active_editor_before_detaching) ... ok
+test_book_list_rename_refresh_and_undo_preserve_contents (test_ui.UITests.test_book_list_rename_refresh_and_undo_preserve_contents) ... ok
+test_book_tab_loads_persistent_list_and_unknown_filter (test_ui.UITests.test_book_tab_loads_persistent_list_and_unknown_filter) ... ok
+test_cancelled_or_failed_load_clears_previous_rows (test_ui.UITests.test_cancelled_or_failed_load_clears_previous_rows) ... ok
+test_click_on_manually_removed_character_restores_it (test_ui.UITests.test_click_on_manually_removed_character_restores_it) ... ok
+test_diagnostic_write_failure_preserves_original_error (test_ui.UITests.test_diagnostic_write_failure_preserves_original_error) ... ok
+test_direct_edit_of_folder_name (test_ui.UITests.test_direct_edit_of_folder_name) ... ok
+test_excluded_row_has_no_lower_highlight (test_ui.UITests.test_excluded_row_has_no_lower_highlight) ... ok
+test_failed_book_reload_clears_old_execution_state (test_ui.UITests.test_failed_book_reload_clears_old_execution_state) ... ok
+test_file_confirmation_click_excludes_row_without_deleting (test_ui.UITests.test_file_confirmation_click_excludes_row_without_deleting) ... ok
+test_filtered_reload_removes_detached_rows (test_ui.UITests.test_filtered_reload_removes_detached_rows) ... ok
+test_highlight_click_and_selected_range_with_emoji (test_ui.UITests.test_highlight_click_and_selected_range_with_emoji) ... ok
+test_highlight_scroll_and_manual_name_edit (test_ui.UITests.test_highlight_scroll_and_manual_name_edit) ... ok
+test_mousewheel_on_highlighted_cell_scrolls_table (test_ui.UITests.test_mousewheel_on_highlighted_cell_scrolls_table) ... ok
+test_operation_failure_records_diagnostic_beside_app (test_ui.UITests.test_operation_failure_records_diagnostic_beside_app) ... ok
+test_original_column_only_highlights_deletions_and_updates (test_ui.UITests.test_original_column_only_highlights_deletions_and_updates) ... ok
+test_partial_book_cancel_reports_completed_titles (test_ui.UITests.test_partial_book_cancel_reports_completed_titles) ... ok
+test_preset_restore_and_display_filter_keep_checks (test_ui.UITests.test_preset_restore_and_display_filter_keep_checks) ... ok
+test_preview_commits_edit_without_enter (test_ui.UITests.test_preview_commits_edit_without_enter) ... ok
+test_scroll_commits_inline_editor (test_ui.UITests.test_scroll_commits_inline_editor) ... ok
+test_tabs_keep_independent_paths_and_query_across_restart (test_ui.UITests.test_tabs_keep_independent_paths_and_query_across_restart) ... ok
+test_long_original_folder_quarantine_and_undo (test_windows_moves.WindowsMoveTests.test_long_original_folder_quarantine_and_undo) ... ok
+test_nonimage_quarantine_shortens_long_book_paths_and_undo (test_windows_moves.WindowsMoveTests.test_nonimage_quarantine_shortens_long_book_paths_and_undo) ... ok
+test_permission_denial_does_not_retry_or_remove_source (test_windows_moves.WindowsMoveTests.test_permission_denial_does_not_retry_or_remove_source) ... ok
+test_persistent_sharing_lock_restores_prior_deletions (test_windows_moves.WindowsMoveTests.test_persistent_sharing_lock_restores_prior_deletions) ... ok
+test_transient_sharing_lock_is_retried (test_windows_moves.WindowsMoveTests.test_transient_sharing_lock_is_retried) ... ok
+test_utf16_name_limit_is_rejected_before_deletion (test_windows_moves.WindowsMoveTests.test_utf16_name_limit_is_rejected_before_deletion) ... ok
+
+======================================================================
+ERROR: test_duplicate_specialism_cannot_silently_reduce_coverage (test_audit_framework.AuditFrameworkTests.test_duplicate_specialism_cannot_silently_reduce_coverage)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\a\codex3\codex3\tests\test_audit_framework.py", line 61, in test_duplicate_specialism_cannot_silently_reduce_coverage
+    path.write_text(path.read_text().replace('audit_architecture', 'audit_specification'))
+                    ^^^^^^^^^^^^^^^^
+  File "C:\hostedtoolcache\windows\Python\3.12.10\x64\Lib\pathlib.py", line 1028, in read_text
+    return f.read()
+           ^^^^^^^^
+  File "C:\hostedtoolcache\windows\Python\3.12.10\x64\Lib\encodings\cp1252.py", line 23, in decode
+    return codecs.charmap_decode(input,self.errors,decoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeDecodeError: 'charmap' codec can't decode byte 0x8d in position 455: character maps to <undefined>
+
+======================================================================
+ERROR: test_unsupported_per_role_sandbox_is_not_claimed (test_audit_framework.AuditFrameworkTests.test_unsupported_per_role_sandbox_is_not_claimed)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "D:\a\codex3\codex3\tests\test_audit_framework.py", line 72, in test_unsupported_per_role_sandbox_is_not_claimed
+    path.write_text(path.read_text() + '\nsandbox_mode = "read-only"\n')
+                    ^^^^^^^^^^^^^^^^
+  File "C:\hostedtoolcache\windows\Python\3.12.10\x64\Lib\pathlib.py", line 1028, in read_text
+    return f.read()
+           ^^^^^^^^
+  File "C:\hostedtoolcache\windows\Python\3.12.10\x64\Lib\encodings\cp1252.py", line 23, in decode
+    return codecs.charmap_decode(input,self.errors,decoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeDecodeError: 'charmap' codec can't decode byte 0x81 in position 95: character maps to <undefined>
+
+----------------------------------------------------------------------
+Ran 112 tests in 17.385s
+
+FAILED (errors=2)
