@@ -11,9 +11,9 @@
 python scripts/build_onedir.py --setup-only
 ```
 
-3. Pythonインタープリターに `.venv\\Scripts\\python.exe` を選びます。**F5で起動・デバッグ**、**Ctrl+Shift+BでEXE作成**です。
+3. Pythonインタープリターに `.venv\Scripts\python.exe` を選びます。**F5で起動・デバッグ**、**Ctrl+Shift+BでEXE作成**です。
 
-[詳しい手順](VSCODE_GUIDE.md)。Windows用EXEの出力先は `dist\\ExLauncher\\ExLauncher.exe` です。
+[詳しい手順](VSCODE_GUIDE.md)。Windows用EXEの出力先は `dist\ExLauncher\ExLauncher.exe` です。
 
 67テスト成功。日本語・空白を含むパスでPyInstallerの実ビルドとQt起動をLinux上で確認しました。Windows上のVS Code/F5/BAT/EXEは未検証です。ソースZIPであり、ビルド済みEXEは含みません。
 
