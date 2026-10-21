@@ -1,9 +1,22 @@
-# ExLauncher v1.0.5
+# ExLauncher v1.0.6
 
-[修正版ソース一式ZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/ExLauncher/ExLauncher_Codex_Handoff_v1.0.5_Audit_Fixes.zip)
+[VS Code対応・修正版ソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/ExLauncher/ExLauncher_Codex_Handoff_v1.0.6_VSCode_Build.zip)
 
-通常監査の12件に対応した完全なソース一式です。データ保護、カテゴリ移動の復旧、長い一覧のスクロール、バー位置補正、Modernアニメーション中の非表示処理などを修正しています。Classicのカテゴリ件数表示と既存の速度改善を含みます。
+`No module named PyInstaller` に対応し、プロジェクト内の `.venv` にPySide6とPyInstallerを準備します。ランチャー本体はv1.0.5と同じです。
 
-既存28件＋追加28件、計56テストがQt offscreenで成功しました。Windows実機・EXEビルドは未検証です。このZIPはソース版で、EXEは含みません。修正内容・ビルド方法・検証の詳細はZIP内の `FIXES_v1.0.5.md`、`CODEX_HANDOFF.md`、`validation_v1.0.5.json` を参照してください。
+1. ZIPをすべて展開し、main.pyと.vscodeがあるフォルダをVS Codeで開きます。Microsoftの「Python」「Python Debugger」拡張を使用します。
+2. VS Codeのターミナルで初回の準備を実行します。
 
-SHA-256: `401a77f68e04b9928dcee7ad66abb67466d2dccdee12f46f3ab938e7282427d6`
+```powershell
+python scripts/build_onedir.py --setup-only
+```
+
+3. Pythonインタープリターに `.venv\\Scripts\\python.exe` を選びます。**F5で起動・デバッグ**、**Ctrl+Shift+BでEXE作成**です。
+
+[詳しい手順](VSCODE_GUIDE.md)。Windows用EXEの出力先は `dist\\ExLauncher\\ExLauncher.exe` です。
+
+67テスト成功。日本語・空白を含むパスでPyInstallerの実ビルドとQt起動をLinux上で確認しました。Windows上のVS Code/F5/BAT/EXEは未検証です。ソースZIPであり、ビルド済みEXEは含みません。
+
+SHA-256: `e2a4bb15d59bb8254abde263f7cc4e7810e96a5fc3c671ebc429e43f53a418fa`
+
+[前版 v1.0.5（通常監査の不具合修正版）](ExLauncher_Codex_Handoff_v1.0.5_Audit_Fixes.zip)
