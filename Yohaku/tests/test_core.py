@@ -67,8 +67,8 @@ class NotificationTests(unittest.TestCase):
     def test_chatter_interval_and_no_immediate_repeat(self):
         notice = self.engine.next_notice(self.now, [])
         self.assertFalse(notice.important)
-        self.assertIsNone(self.engine.next_notice(self.now + timedelta(minutes=89), []))
-        next_notice = self.engine.next_notice(self.now + timedelta(minutes=90), [])
+        self.assertIsNone(self.engine.next_notice(self.now + timedelta(minutes=9, seconds=59), []))
+        next_notice = self.engine.next_notice(self.now + timedelta(minutes=10), [])
         self.assertNotEqual(notice.text, next_notice.text)
 
     def test_manual_menu_delays_chatter_but_not_meeting(self):
@@ -99,7 +99,7 @@ class NotificationTests(unittest.TestCase):
         save_json(path, {"personality": "冷静な案内役", "interval": 120})
         old = Settings.load(path)
         self.assertEqual(old.character, "A")
-        self.assertEqual(old.interval, 120)
+        self.assertEqual(old.interval, 10)
         for character in CHARACTERS:
             with self.subTest(character=character):
                 old.character = character

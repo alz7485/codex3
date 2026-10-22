@@ -5,12 +5,13 @@ from datetime import datetime, timedelta
 from functools import lru_cache
 from pathlib import Path
 import math
+import json
 import sqlite3
 import sys
 import threading
 import time
 
-from PySide6.QtCore import QDate, QLocale, QLockFile, QObject, QRectF, QSize, Qt, QTime, QTimer, Signal
+from PySide6.QtCore import QDate, QEvent, QLocale, QLockFile, QObject, QRect, QRectF, QSize, Qt, QTime, QTimer, Signal
 from PySide6.QtGui import QAction, QColor, QFont, QIcon, QPainter, QPainterPath, QPen, QPixmap
 from PySide6.QtWidgets import (
     QApplication, QButtonGroup, QCalendarWidget, QCheckBox, QComboBox, QFrame, QHeaderView, QHBoxLayout, QLabel, QMainWindow,
@@ -21,6 +22,7 @@ from PySide6.QtWidgets import (
 from .core import CHARACTERS, Engine, Notice, PHRASES, Settings, data_directory, is_quiet, save_json
 from .activity import FileHistory, FileTracker, opened_file_snapshot
 from .motion import Motion
+from .dialogue import AUTO_PERSONALITY, BUBBLE_MS, INTERVALS, PROFILES, voice_for
 from .outlook import read_calendar
 from .metadata import APP_DISPLAY_NAME, VERSION
 
@@ -118,8 +120,24 @@ def character_frames(character):
     sheet = QPixmap(str(path))
     if sheet.isNull():
         raise RuntimeError(f"アニメーション画像を読み込めません: {path.name}")
-    width, height = sheet.width() // 3, sheet.height() // 2
-    return tuple(sheet.copy((i % 3) * width, (i // 3) * height, width, height) for i in range(6))
+    width, height = sheet.width() // 6, sheet.height() // 4
+    frames = tuple(sheet.copy((i % 6) * width, (i // 6) * height, width, height) for i in range(24))
+    # Recorded content rectangles exclude neighboring-cell fragments, while one
+    # shared canvas preserves scale and baseline throughout the animation.
+    layout = json.loads((path.parent / "motion_layout.json").read_text())
+    content = [QRect(*values) for values in layout[character.lower()]]
+    bounds = QRect()
+    cleaned = []
+    for frame, rect in zip(frames, content):
+        clipped = QPixmap(frame.size())
+        clipped.fill(Qt.GlobalColor.transparent)
+        painter = QPainter(clipped)
+        painter.drawPixmap(rect, frame, rect)
+        painter.end()
+        cleaned.append(clipped)
+        bounds = bounds.united(rect)
+    return tuple(frame.copy(bounds) for frame in cleaned)
+
 
 
 class Mascot(QWidget):
@@ -132,11 +150,17 @@ class Mascot(QWidget):
         self.frame_index = None
         self.flipped = False
         self.bob = 0.0
+        self.sway = 0.0
+        self.scale_x = self.scale_y = 1.0
+        self.subpixel = 0.0
+        self.previous_frame = None
+        self.frame_changed_at = 0.0
         self.set_character(character)
 
     def set_character(self, character):
         self.character = character if character in CHARACTERS else "A"
         self.pixmap = character_pixmap(self.character)
+        self.previous_frame = None
         self.setAccessibleName(CHARACTERS[self.character])
         self.update()
 
@@ -144,16 +168,29 @@ class Mascot(QWidget):
         p = QPainter(self)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
         p.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
-        pixmap = self.pixmap if self.frame_index is None else character_frames(self.character)[self.frame_index]
+        p.translate(self.subpixel, self.bob)
+        p.translate(self.width() / 2, self.height() - 4)
+        p.rotate(self.sway)
+        p.scale(self.scale_x, self.scale_y)
+        p.translate(-self.width() / 2, -self.height() + 4)
         if self.flipped:
             p.translate(self.width(), 0)
             p.scale(-1, 1)
-        p.translate(0, self.bob)
-        size = pixmap.size().scaled(self.size(), Qt.AspectRatioMode.KeepAspectRatio)
+        frames = character_frames(self.character)
+        pixmap = self.pixmap if self.frame_index is None else frames[self.frame_index]
+        size = pixmap.size().scaled(QSize(self.width() - 6, self.height() - 6), Qt.AspectRatioMode.KeepAspectRatio)
         target = QRectF((self.width() - size.width()) / 2,
-                        self.height() - size.height(), size.width(), size.height())
+                       self.height() - size.height() - 3, size.width(), size.height())
+        # Brief crossfade softens expression changes without a hard cut.
+        blend = min(1.0, max(0.0, (time.monotonic() - self.frame_changed_at) / 0.085))
+        if self.previous_frame is not None and self.frame_index is not None and blend < 1:
+            previous = frames[self.previous_frame]
+            p.setOpacity(1 - blend)
+            p.drawPixmap(target, previous, QRectF(previous.rect()))
+            p.setOpacity(blend)
         p.drawPixmap(target, pixmap, QRectF(pixmap.rect()))
         p.end()
+
 
 
 class Panel(QMainWindow):
@@ -231,9 +268,9 @@ class Panel(QMainWindow):
         self.hero_mascot = Mascot(108, character=self.settings.character)
         h.addWidget(self.hero_mascot)
         words = box(spacing=9)
-        self.personality_badge = label(self.settings.personality, "badge")
+        self.personality_badge = label(voice_for(self.settings), "badge")
         words.addWidget(self.personality_badge, alignment=Qt.AlignmentFlag.AlignLeft)
-        quote = label("ひと息どうぞ。\nキーボードは逃げません。", wrap=True)
+        self.hero_quote = quote = label(PROFILES[self.settings.character][2], wrap=True)
         quote.setStyleSheet("font-size: 18px; line-height: 1.6;")
         words.addWidget(quote)
         self.character_caption = label(CHARACTERS[self.settings.character] + " · セリフの表示例", "muted")
@@ -312,6 +349,8 @@ class Panel(QMainWindow):
             self.character_buttons[key] = choice
             row.addWidget(choice)
         chooser.addLayout(row)
+        self.profile_description = label(PROFILES[self.settings.character][1], "muted", True)
+        chooser.addWidget(self.profile_description)
         self.animation_check = QCheckBox("表情・まばたきのアニメーション")
         self.animation_check.setChecked(self.settings.animation)
         self.animation_check.toggled.connect(lambda v: self.update_setting("animation", v))
@@ -329,7 +368,7 @@ class Panel(QMainWindow):
         row.addWidget(label("余白の性格", "section"))
         row.addStretch()
         personality = QComboBox()
-        personality.addItems(PHRASES.keys())
+        personality.addItems([AUTO_PERSONALITY, *PHRASES])
         personality.setCurrentText(self.settings.personality)
         personality.setAccessibleName("余白の性格")
         personality.currentTextChanged.connect(lambda v: self.update_setting("personality", v))
@@ -343,14 +382,14 @@ class Panel(QMainWindow):
         row.addWidget(label("雑談の間隔"))
         row.addStretch()
         interval = QComboBox()
-        for value in (60, 90, 120):
+        for value in INTERVALS:
             interval.addItem(f"{value}分に1回まで", value)
-        interval.setCurrentIndex((60, 90, 120).index(self.settings.interval))
+        interval.setCurrentIndex(INTERVALS.index(self.settings.interval))
         interval.setAccessibleName("雑談の間隔")
         interval.currentIndexChanged.connect(lambda i: self.update_setting("interval", interval.itemData(i)))
         row.addWidget(interval)
         form.addLayout(row)
-        form.addWidget(label("雑談の間隔は起動後の経過時間で決まります。入力内容は収集しません。", "muted", True))
+        form.addWidget(label("初期設定は約10分ごと。時間帯・曜日・予定の前後で話題を変え、吹き出しは約1分表示します。会議中・非表示中は自動会話を休みます。", "muted", True))
         layout.addWidget(card)
         activity = QFrame(objectName="card")
         activity_box = box(activity, 18, 10)
@@ -393,12 +432,16 @@ class Panel(QMainWindow):
 
     def update_setting(self, key, value):
         setattr(self.settings, key, value)
-        self.personality_badge.setText(self.settings.personality)
+        self.personality_badge.setText(voice_for(self.settings))
         if key == "character":
             self.rail_mascot.set_character(value)
             self.hero_mascot.set_character(value)
             self.character_buttons[value].setChecked(True)
             self.character_caption.setText(CHARACTERS[value] + " · セリフの表示例")
+            self.profile_description.setText(PROFILES[value][1])
+            self.hero_quote.setText(PROFILES[value][2])
+        if key == "personality":
+            self.hero_quote.setText(PROFILES[self.settings.character][2] if value == AUTO_PERSONALITY else PHRASES[value]["chat"][0])
         if key == "animation":
             self.walking_check.setEnabled(value)
         self.changed.emit(key)
@@ -418,7 +461,7 @@ class Resident(Mascot):
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setToolTip("余白 · クリックで用事を選ぶ／右クリックで設定")
+        self.setToolTip("余白 · クリックで用事を選ぶ／右クリックで非表示")
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.RightButton:
@@ -428,6 +471,8 @@ class Resident(Mascot):
 
 
 class Bubble(QFrame):
+    hide_requested = Signal()
+
     def __init__(self):
         super().__init__()
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
@@ -436,6 +481,8 @@ class Bubble(QFrame):
         self.setObjectName("card")
         self.setFixedWidth(322)
         self.tail_x = 270
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.customContextMenuRequested.connect(lambda _: self.hide_requested.emit())
         layout = box(self, 18, 10)
         layout.setContentsMargins(18, 14, 18, 30)
         row = QHBoxLayout()
@@ -472,7 +519,7 @@ class Bubble(QFrame):
         self.text.setText(notice.text)
         self.adjustSize()
         self.show()
-        self.timer.start(14000 if notice.important else 10000)
+        self.timer.start(BUBBLE_MS)
 
 
 class Bridge(QObject):
@@ -511,6 +558,14 @@ class InteractionBubble(Bubble):
         layout.addWidget(self.choice_row)
         self.choice_row.hide()
         self.resize_text()
+        for widget in [self, *self.findChildren(QWidget)]:
+            widget.installEventFilter(self)
+
+    def eventFilter(self, watched, event):
+        if event.type() == QEvent.Type.MouseButtonPress and event.button() == Qt.MouseButton.RightButton:
+            self.hide_requested.emit()
+            return True
+        return super().eventFilter(watched, event)
 
     def resize_text(self):
         height = self.text.heightForWidth(self.width() - 44)
@@ -518,7 +573,7 @@ class InteractionBubble(Bubble):
         self.adjustSize()
 
     def open_choices(self, text="お呼びですか？", name="余白"):
-        self.timer.stop()
+        self.timer.start(BUBBLE_MS)
         self.current = None
         self.interactive = True
         self.heading.setText(name)
@@ -531,7 +586,7 @@ class InteractionBubble(Bubble):
         self.buttons["calendar"].setFocus()
 
     def content(self, key, heading, text):
-        self.timer.stop()
+        self.timer.start(BUBBLE_MS)
         self.current = key
         self.interactive = True
         self.heading.setText(heading)
@@ -547,7 +602,7 @@ class InteractionBubble(Bubble):
         self.text.setText(notice.text)
         self.resize_text()
         self.show()  # WA_ShowWithoutActivating keeps automatic notices passive.
-        self.timer.start(14000 if notice.important else 10000)
+        self.timer.start(BUBBLE_MS)
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Escape:
@@ -673,6 +728,7 @@ class Controller(QObject):
         self.events = []
         self.connected = False
         self.hidden = False
+        self.user_hidden = False
         self.busy = False
         self.generation = 0
         self.connected_at = None
@@ -689,17 +745,19 @@ class Controller(QObject):
         self.history_window.refresh_requested.connect(self.refresh_history)
         self.history_window.settings_requested.connect(self.show_panel)
         self.menu = QMenu()
-        self.menu.addAction("余白を開く", self.show_panel)
+        self.visibility_action = self.menu.addAction("キャラを非表示", self.toggle_visibility)
+        self.menu.addAction("設定を開く", self.show_panel)
         self.pause_action = self.menu.addAction("1時間おやすみ", self.pause)
         self.share_action = self.menu.addAction("画面共有モード", self.share)
         self.menu.addSeparator()
         self.menu.addAction("Outlookから切断", self.disconnect)
         self.menu.addSeparator()
         self.menu.addAction("余白を終了", self.app.quit)
-        self.resident.context_requested.connect(self.menu.popup)
+        self.resident.context_requested.connect(lambda _: self.hide_character())
+        self.bubble.hide_requested.connect(self.hide_character)
         self.tray = QSystemTrayIcon(self)
         self.apply_character()
-        self.tray.setToolTip("余白 — デスクトップの小さな同僚")
+        self.tray.setToolTip("余白 — 左クリックで表示切り替え / 右クリックでメニュー")
         self.tray.setContextMenu(self.menu)
         self.tray.activated.connect(self.tray_activated)
         self.tray.show()
@@ -709,7 +767,8 @@ class Controller(QObject):
             self.share_action.setEnabled(False)
         self.position()
         self.resident.show()
-        self.show_panel()
+        if not QSystemTrayIcon.isSystemTrayAvailable():
+            self.show_panel()
         self.tick_timer = QTimer(self)
         self.tick_timer.timeout.connect(self.tick)
         self.tick_timer.start(15000)
@@ -717,7 +776,8 @@ class Controller(QObject):
         self.poll_timer.timeout.connect(self.poll)
         self.poll_timer.start(120000)
         self.animation_timer = QTimer(self)
-        self.animation_timer.setInterval(50)
+        self.animation_timer.setInterval(16)
+        self.animation_timer.setTimerType(Qt.TimerType.PreciseTimer)
         self.animation_timer.timeout.connect(self.animate)
         self.activity_timer = QTimer(self)
         self.activity_timer.setInterval(5000)
@@ -734,7 +794,37 @@ class Controller(QObject):
 
     def tray_activated(self, reason):
         if reason == QSystemTrayIcon.ActivationReason.Trigger:
+            self.toggle_visibility()
+
+    def hide_character(self):
+        if not QSystemTrayIcon.isSystemTrayAvailable():
             self.show_panel()
+            self.panel.mode_label.setText("通知領域が使えないため、キャラの非表示はできません")
+            return
+        self.user_hidden = True
+        self.apply_visibility()
+
+    def toggle_visibility(self):
+        if self.hidden:
+            self.share()  # A tray click is an explicit request to leave sharing mode.
+        elif self.user_hidden:
+            self.user_hidden = False
+            self.engine.last_display = datetime.now().astimezone()
+            self.apply_visibility()
+        else:
+            self.hide_character()
+
+    def apply_visibility(self):
+        visible = not self.hidden and not self.user_hidden
+        self.resident.setVisible(visible)
+        if not visible:
+            self.bubble.hide()
+            self.history_window.hide()
+            self.panel.hide()
+        self.visibility_action.setText("キャラを非表示" if visible else "キャラを表示")
+        self.tray.setToolTip("余白 — " + ("画面共有モード中" if self.hidden else "非表示 · 左クリックで表示" if self.user_hidden else "左クリックで非表示 / 右クリックでメニュー"))
+        self.update_mode()
+        self.update_animation_policy()
 
     def show_panel(self):
         self.panel.show()
@@ -748,7 +838,8 @@ class Controller(QObject):
         if self.motion_x is None:
             self.motion_x = float(upper)
         self.motion_x = min(upper, max(lower, self.motion_x))
-        self.resident.move(round(self.motion_x), area.bottom() - self.resident.height() - 12)
+        self.resident.subpixel = self.motion_x - math.floor(self.motion_x)
+        self.resident.move(math.floor(self.motion_x), area.bottom() - self.resident.height() - 12)
         for bubble in (self.bubble,):
             x = self.resident.x() + self.resident.width() / 2 - bubble.width() / 2
             x = max(area.left() + 8, min(area.right() - bubble.width() - 8, x))
@@ -759,7 +850,7 @@ class Controller(QObject):
 
     def update_animation_policy(self):
         now = datetime.now().astimezone()
-        enabled = self.settings.animation and not self.hidden and not is_quiet(now, self.settings)
+        enabled = self.settings.animation and not self.hidden and not self.user_hidden and not is_quiet(now, self.settings)
         enabled = enabled and not (self.engine.paused_until and now < self.engine.paused_until)
         if enabled:
             if not self.animation_timer.isActive():
@@ -769,7 +860,9 @@ class Controller(QObject):
             self.animation_timer.stop()
             self.resident.frame_index = None
             self.resident.flipped = False
-            self.resident.bob = 0
+            self.resident.bob = self.resident.sway = 0
+            self.resident.scale_x = self.resident.scale_y = 1.0
+            self.resident.previous_frame = None
             self.resident.update()
 
     def animate(self):
@@ -784,25 +877,32 @@ class Controller(QObject):
         blocked = self.bubble.isVisible() or self.panel.isVisible() or self.history_window.isVisible() or self.resident.underMouse()
         self.motion_x = self.motion.advance(dt, self.motion_x if self.motion_x is not None else upper,
                                           lower, upper, self.settings.walking and not blocked)
-        state = (self.motion.frame(), self.motion.direction < 0 and self.motion.walking,
-                 -abs(math.sin(self.motion.elapsed * 10)) * 1.5 if self.motion.walking else 0)
-        if state != (self.resident.frame_index, self.resident.flipped, self.resident.bob):
-            self.resident.frame_index, self.resident.flipped, self.resident.bob = state
-            self.resident.update()
+        frame = self.motion.frame()
+        if frame != self.resident.frame_index:
+            self.resident.previous_frame = self.resident.frame_index
+            self.resident.frame_changed_at = now
+            self.resident.frame_index = frame
+        self.resident.flipped = self.motion.direction < 0 and self.motion.walking
+        (self.resident.bob, self.resident.sway,
+         self.resident.scale_x, self.resident.scale_y) = self.motion.pose()
+        self.resident.update()
         self.position()
 
     def open_choices(self):
-        if self.hidden:
+        if self.hidden or self.user_hidden:
             return
-        self.motion.react("happy")
+        self.motion.react("curious")
+        self.engine.last_display = datetime.now().astimezone()
         self.interaction.open_choices(self.engine.phrase("call"), CHARACTERS[self.settings.character])
         self.position()
 
     def select_content(self, key):
-        if self.hidden:
+        if self.hidden or self.user_hidden:
             return
         now = datetime.now().astimezone()
+        self.engine.last_display = now
         if key == "calendar":
+            self.motion.react("think", speaking=True)
             fresh = self.connected_at is not None and (now - self.connected_at).total_seconds() < 300
             if not self.connected or not fresh:
                 text = "予定は未接続、または更新待ちです。\n設定画面からOutlookに接続してください。"
@@ -813,6 +913,7 @@ class Controller(QObject):
                                    for e in upcoming[:10]) or "このあとの時間指定の予定はありません。"
             self.interaction.content(key, CHARACTERS[self.settings.character], "このあとの予定をお知らせします。\n\n" + text)
         elif key == "activity":
+            self.motion.react("nod")
             self.interaction.content(key, CHARACTERS[self.settings.character], "履歴を開きました。\n日付を選んで、振り返ってみましょう。")
             self.history_window.calendar.setDateRange(QDate.currentDate().addDays(-7), QDate.currentDate())
             self.refresh_history()
@@ -820,9 +921,11 @@ class Controller(QObject):
             self.history_window.raise_()
             self.history_window.activateWindow()
         elif key == "message":
-            self.motion.react("happy")
-            self.interaction.content(key, CHARACTERS[self.settings.character], self.engine.phrase("chat"))
+            notice = self.engine.conversation(now, self.events, self.connected and self.connected_at is not None and (now - self.connected_at).total_seconds() < 300)
+            self.motion.react(notice.expression, speaking=True)
+            self.interaction.content(key, CHARACTERS[self.settings.character], notice.text)
         elif key == "settings":
+            self.motion.react("nod")
             self.interaction.content(key, CHARACTERS[self.settings.character], "設定を開きますね。")
             self.show_panel()
         self.position()
@@ -1009,23 +1112,21 @@ class Controller(QObject):
             self.engine.paused_until = None
             self.update_mode()
         self.update_animation_policy()
-        if self.interaction.isVisible() and self.interaction.current == "calendar":
-            self.select_content("calendar")
         fresh = self.connected_at is not None and (now - self.connected_at).total_seconds() < 300
         try:
-            notice = self.engine.next_notice(now, self.events, self.hidden, self.connected and fresh,
-                                             allow_chatter=not self.interaction.isVisible())
+            notice = self.engine.next_notice(now, self.events, self.hidden or self.user_hidden, self.connected and fresh,
+                                             allow_chatter=not (self.interaction.isVisible() or self.panel.isVisible() or self.history_window.isVisible()))
         except OSError:
             self.panel.calendar_detail.setText("通知履歴を保存できません。保存先の権限をご確認ください。")
             return
         if notice:
-            self.motion.react("notice" if notice.important else "happy")
+            self.motion.react(notice.expression, speaking=True)
             self.bubble.display(notice)
             self.position()
 
     def sample(self):
-        if self.hidden:
-            self.panel.mode_label.setText("画面共有モード中は通知を表示しません")
+        if self.hidden or self.user_hidden:
+            self.panel.mode_label.setText("非表示中は通知を表示しません")
             return
         self.bubble.display(Notice("通知のプレビュー · 実際の予定ではありません", self.engine.phrase("meeting"), True))
         self.motion.react("notice")
@@ -1042,19 +1143,18 @@ class Controller(QObject):
         text = "おやすみを解除" if paused else "1時間おやすみ"
         self.panel.pause_button.setText(text)
         self.pause_action.setText(text)
-        self.panel.mode_label.setText("画面共有モード" if self.hidden else (f"{paused:%H:%M}までおやすみ" if paused else "通常モード"))
+        self.panel.mode_label.setText("画面共有モード" if self.hidden else (f"{paused:%H:%M}までおやすみ" if paused else "キャラは非表示" if self.user_hidden else "通常モード"))
 
     def share(self):
         self.hidden = not self.hidden
         self.bubble.hide()
         self.interaction.hide()
         self.history_window.hide()
-        self.resident.setVisible(not self.hidden)
-        if self.hidden:
-            self.panel.hide()
+        if not self.hidden:
+            self.user_hidden = False
+        self.apply_visibility()
         self.share_action.setText("画面共有モードを解除" if self.hidden else "画面共有モード")
         self.panel.share_button.setText("画面共有モードを解除" if self.hidden else "画面共有モード")
-        self.tray.setToolTip("余白 — 画面共有モード中" if self.hidden else "余白 — デスクトップの小さな同僚")
         self.update_mode()
         self.update_animation_policy()
 

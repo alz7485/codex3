@@ -8,6 +8,8 @@ from pathlib import Path
 import random
 from typing import Callable
 
+from .dialogue import AUTO_PERSONALITY, EXPRESSIONS, INTERVALS, PHRASES, PROFILES, voice_for
+
 
 CHARACTERS = {
     "A": "余白ノート",
@@ -46,8 +48,9 @@ class Settings:
     animation: bool = True
     walking: bool = True
     file_logging: bool = False
-    personality: str = "控えめな皮肉屋"
-    interval: int = 90
+    personality: str = AUTO_PERSONALITY
+    interval: int = 10
+    conversation_version: int = 2
     quiet_start: str = "18:00"
     quiet_end: str = "09:00"
 
@@ -58,12 +61,17 @@ class Settings:
         for key, value in raw.items():
             if key in asdict(settings) and type(value) is type(getattr(settings, key)):
                 setattr(settings, key, value)
-        if settings.personality not in PHRASES:
+        if settings.personality not in (*PHRASES, AUTO_PERSONALITY):
             settings.personality = cls.personality
         if settings.character not in CHARACTERS:
             settings.character = "A"
-        if settings.interval not in (60, 90, 120):
-            settings.interval = 90
+        if settings.interval not in INTERVALS:
+            settings.interval = 10
+        # Adopt the requested ten-minute rhythm when upgrading older installs.
+        # Existing custom voice overrides are preserved.
+        if raw and (type(raw.get("conversation_version")) is not int or raw["conversation_version"] < 2):
+            settings.interval = 10
+        settings.conversation_version = 2
         for name in ("quiet_start", "quiet_end"):
             try:
                 datetime.strptime(getattr(settings, name), "%H:%M")
@@ -85,30 +93,8 @@ class Notice:
     heading: str
     text: str
     important: bool = False
+    expression: str = "happy"
 
-
-PHRASES = {
-    "控えめな皮肉屋": {
-        "call": ["お呼びですか？", "用事は何でしょう？", "何？", "何かありました？"],
-        "meeting": ["そろそろ会議です。余白も、持ち物にどうぞ。", "会議まであと少し。お茶の準備も議題のうちです。", "もうすぐ会議。結論にも、出番があるといいですね。"],
-        "chat": ["ひと息どうぞ。考えごとは、席を外すと進むことも。", "肩の力を抜きましょう。キーボードは逃げません。", "少し遠くを見ませんか。画面とは、長い付き合いですし。", "予定の隙間も予定のうち。少しだけ、ひと休み。"],
-    },
-    "元気な応援係": {
-        "call": ["呼びました？", "何をしましょうか？", "今日は何のお手伝い？", "お呼びですか？"],
-        "meeting": ["もうすぐ会議です。ひと呼吸して、いってらっしゃい！", "会議が近づいています。準備した分、きっと大丈夫。", "あと少しで会議。飲み物もお忘れなく！"],
-        "chat": ["ここまでお疲れさまです。少し背伸びをどうぞ！", "ひと息ついて、また一歩ずついきましょう。", "水分補給の時間です。今日もいいペースで！", "小さな休憩も、次の集中の味方です。"],
-    },
-    "冷静な案内役": {
-        "call": ["ご用件は何でしょうか？", "お呼びでしょうか？", "何を確認しますか？", "用事は何でしょう？"],
-        "meeting": ["まもなく予定の開始時刻です。準備をご確認ください。", "予定の開始が近づいています。移動時間もご確認ください。", "開始前のお知らせです。必要な資料をご確認ください。"],
-        "chat": ["短い休憩をおすすめします。", "目を休める時間を取りましょう。", "姿勢と水分補給をご確認ください。", "ひと区切りついたら、肩を動かしてみましょう。"],
-    },
-    "のんびりした同僚": {
-        "call": ["ん、呼びました？", "何？", "どうしました？", "何か用ですか？"],
-        "meeting": ["そろそろ会議みたいです。ゆっくり、準備しましょう。", "予定が近づいています。お茶をひと口、どうぞ。", "もうすぐ会議ですね。ひと呼吸してからで。"],
-        "chat": ["ちょっと、ひと息つきませんか。", "窓の外を眺める時間も、あっていいですよね。", "背伸びでもしましょう。私も、気持ちだけ。", "少し休んでから、続きにしましょう。"],
-    },
-}
 
 
 def is_quiet(now: datetime, settings: Settings) -> bool:
@@ -134,17 +120,65 @@ class Engine:
         self.recent = self.state.get("recent", [])
         if not isinstance(self.recent, list):
             self.recent = []
-        self.recent = [v for v in self.recent if isinstance(v, str)][-16:]
+        self.recent = [v for v in self.recent if isinstance(v, str)][-64:]
+        self.category_last: dict[str, datetime] = {}
+        self.last_category = None
+        self.session_spoken = False
         raw = self.state.get("notified", {})
         self.notified = raw if isinstance(raw, dict) else {}
 
     def phrase(self, category: str) -> str:
-        phrases = PHRASES[self.settings.personality][category]
-        keys = [f"{self.settings.personality}/{category}/{i}" for i in range(len(phrases))]
-        candidates = [i for i, key in enumerate(keys) if key not in self.recent[-2:]]
+        voice = voice_for(self.settings)
+        phrases = PHRASES[voice][category]
+        keys = [f"{voice}/{category}/{i}" for i in range(len(phrases))]
+        # Cycle through nearly the entire category before reusing a remark.
+        recent = [key for key in self.recent if key.startswith(f"{voice}/{category}/")]
+        window = recent[-min(12, len(phrases) - 1):]
+        candidates = [i for i, key in enumerate(keys) if key not in window]
         index = self.choose(candidates or list(range(len(phrases))))
-        self.recent = (self.recent + [keys[index]])[-16:]
+        self.recent = (self.recent + [keys[index]])[-64:]
         return phrases[index]
+
+    def conversation(self, now: datetime, events: list[Event] = (), connected=False) -> Notice:
+        """Choose authored lines from time/calendar context, never observed user input."""
+        session_minutes = (now - self.started).total_seconds() / 60
+        if not self.session_spoken and 0 <= session_minutes <= 30:
+            category = "startup"
+        else:
+            hour = now.hour
+            time_category = ("morning" if 5 <= hour < 11 else "lunch" if 11 <= hour < 14
+                             else "afternoon" if 14 <= hour < 17 else "evening")
+            candidates = ["chat", "focus", "encourage", "smalltalk", "water", "eyes", "posture", time_category]
+            if now.weekday() == 0:
+                candidates.append("monday")
+            elif now.weekday() == 4:
+                candidates.append("friday")
+            elif now.weekday() >= 5:
+                candidates.append("weekend")
+            if session_minutes >= 60:
+                candidates.append("long_session")
+            if connected:
+                if any(600 < (e.start - now).total_seconds() <= 1800 for e in events):
+                    candidates.extend(["before_meeting"] * 2)
+                if any(0 <= (now - e.end).total_seconds() <= 1200 for e in events):
+                    candidates.extend(["after_meeting"] * 2)
+            eligible = [c for c in candidates if c != self.last_category and
+                        (c not in self.category_last or
+                         (now - self.category_last[c]).total_seconds() >= (1200 if c == "chat" else 3600))]
+            # Rapid manual requests still rotate topics; automatic remarks respect cooldowns.
+            if eligible:
+                # Prefer topics not yet used this session, then the oldest topic.
+                # This keeps long working days varied even with unlucky random draws.
+                oldest = min(self.category_last[c].timestamp() if c in self.category_last else float("-inf") for c in eligible)
+                pool = [c for c in eligible if (self.category_last[c].timestamp() if c in self.category_last else float("-inf")) == oldest]
+            else:
+                pool = [c for c in candidates if c != self.last_category] or candidates
+            category = self.choose(pool)
+        self.session_spoken = True
+        self.last_category = category
+        self.category_last[category] = now
+        return Notice(f"{CHARACTERS[self.settings.character]}から、ひとこと",
+                      self.phrase(category), expression=EXPRESSIONS[category])
 
     def persist(self, now: datetime) -> None:
         # Keys are removed one day after the occurrence ends; cap corrupted files too.
@@ -167,13 +201,13 @@ class Engine:
                     text = event.title[:60] + "\n" + text
                 self.last_display = now
                 self.persist(now)
-                return Notice(f"予定まで あと{minutes}分", text, True)
+                return Notice(f"予定まで あと{minutes}分", text, True, "notice")
         elapsed = (now - self.last_display).total_seconds()
         if connected and any(event.start <= now < event.end for event in events):
             return None  # Keep casual remarks out of calendar meeting time.
         if allow_chatter and self.settings.chatter and elapsed >= self.settings.interval * 60:
             self.last_display = now
-            text = self.phrase("chat")
+            notice = self.conversation(now, events, connected)
             self.persist(now)
-            return Notice("余白から、ひとこと", text)
+            return notice
         return None

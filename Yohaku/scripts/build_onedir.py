@@ -19,7 +19,8 @@ from companion.metadata import VERSION
 
 def required_files(project=PROJECT):
     paths = [project / "Yohaku.spec", project / "packaging/windows_version_info.txt",
-             project / "companion/assets/app/yohaku.ico", project / "companion/assets/app/yohaku.png"]
+             project / "companion/assets/app/yohaku.ico", project / "companion/assets/app/yohaku.png",
+             project / "companion/assets/characters/motion_layout.json"]
     paths += [project / f"companion/assets/characters/{key}{suffix}.png"
               for key in "abef" for suffix in ("", "_motion")]
     return paths

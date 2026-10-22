@@ -14,7 +14,7 @@ class MotionTests(unittest.TestCase):
                 frames.add(motion.frame())
         self.assertTrue(all(10 <= p <= 200 for p in positions))
         self.assertLess(min(positions), 200)
-        self.assertEqual(frames, {4, 5})
+        self.assertEqual(frames, set(range(16, 24)))
 
     def test_interaction_blocks_walking_and_resume_is_not_a_jump(self):
         motion = Motion()
@@ -23,6 +23,25 @@ class MotionTests(unittest.TestCase):
         self.assertFalse(motion.walking)
         x = motion.advance(10000, 100, 0, 200, True)
         self.assertLessEqual(abs(x - 100), 2)
+
+    def test_acceleration_breathing_and_all_expression_reactions(self):
+        from companion.motion import EXPRESSION_FRAMES
+        motion = Motion(uniform=lambda a, b: a)
+        motion.wait = 0
+        x, steps = 150, []
+        for _ in range(60):
+            new_x = motion.advance(1 / 60, x, 0, 300, True)
+            steps.append(abs(new_x - x))
+            x = new_x
+        self.assertLess(steps[0], steps[-1])
+        self.assertLessEqual(max(steps), 20 / 60)
+        before = motion.pose()
+        motion.advance(1 / 60, x, 0, 300, False)
+        after = motion.pose()
+        self.assertTrue(all(abs(a - b) < 0.3 for a, b in zip(before, after)))
+        for expression, frame in EXPRESSION_FRAMES.items():
+            motion.react(expression)
+            self.assertEqual(motion.frame(), frame)
 
     def test_blink_reaction_expiration_and_small_screen_clamp(self):
         motion = Motion()

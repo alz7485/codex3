@@ -11,6 +11,7 @@ from unittest.mock import patch
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 from companion.core import CHARACTERS, PHRASES, Event, Settings
 from companion.activity import FileObservation
+from companion.dialogue import voice_for
 from companion.ui import Controller, Panel, character_frames, character_pixmap, create_application
 
 
@@ -164,7 +165,7 @@ class UserInterfaceTests(unittest.TestCase):
     def test_app_has_brand_name_version_and_windows_icon(self):
         c = self.controller
         self.assertEqual(self.app.applicationDisplayName(), "余白 / YOHAKU")
-        self.assertEqual(self.app.applicationVersion(), "0.6.1")
+        self.assertEqual(self.app.applicationVersion(), "0.7.0")
         self.assertFalse(c.brand_icon.isNull())
         self.assertEqual(c.panel.windowIcon().cacheKey(), c.brand_icon.cacheKey())
         c.panel.character_buttons["B"].click()
@@ -183,10 +184,11 @@ class UserInterfaceTests(unittest.TestCase):
             c.resident.clicked.emit()
             self.assertTrue(c.interaction.isVisible())
             self.assertIs(c.interaction, c.bubble)
-            self.assertIn(c.bubble.text.text(), PHRASES[c.settings.personality]["call"])
+            self.assertIn(c.bubble.text.text(), PHRASES[voice_for(c.settings)]["call"])
             window_id = int(c.bubble.winId())
             self.assertEqual(set(c.interaction.buttons), {"calendar", "activity", "settings", "message"})
-            self.assertFalse(c.interaction.timer.isActive())
+            self.assertTrue(c.interaction.timer.isActive())
+            self.assertEqual(c.interaction.timer.interval(), 60000)
             c.interaction.buttons["calendar"].click()
             self.assertIn("件名は非表示", c.interaction.text.text())
             self.assertNotIn("SECRET", c.interaction.text.text())
@@ -315,20 +317,88 @@ class UserInterfaceTests(unittest.TestCase):
         try:
             for key in CHARACTERS:
                 frames = character_frames(key)
-                self.assertEqual(len(frames), 6)
+                self.assertEqual(len(frames), 24)
                 digests = set()
                 for frame in frames:
                     image = frame.toImage()
                     digests.add(hashlib.sha256(bytes(image.bits())).hexdigest())
-                self.assertEqual(len(digests), 6)
+                self.assertEqual(len(digests), 24)
                 c.panel.character_buttons[key].click()
-                for index in range(6):
+                for index in range(24):
                     self.assertTrue(frames[index].hasAlphaChannel())
                     c.resident.frame_index = index
                     self.assertFalse(c.resident.grab().isNull())
         finally:
             c.resident.frame_index = None
             c.panel.character_buttons["A"].click()
+
+    def test_right_click_hides_and_tray_left_click_restores_without_opening_settings(self):
+        from PySide6.QtCore import Qt
+        from PySide6.QtTest import QTest
+        from PySide6.QtWidgets import QSystemTrayIcon
+        c = self.controller
+        c.panel.hide()
+        c.open_choices()
+        try:
+            with patch.object(QSystemTrayIcon, "isSystemTrayAvailable", return_value=True):
+                QTest.mouseClick(c.resident, Qt.MouseButton.RightButton)
+                self.assertTrue(c.user_hidden)
+                self.assertFalse(c.resident.isVisible())
+                self.assertFalse(c.bubble.isVisible())
+                self.assertFalse(c.panel.isVisible())
+                self.assertFalse(c.animation_timer.isActive())
+                c.sample()
+                c.tick()
+                self.assertFalse(c.bubble.isVisible())
+                c.tray_activated(QSystemTrayIcon.ActivationReason.Trigger)
+                self.assertTrue(c.resident.isVisible())
+                self.assertFalse(c.panel.isVisible())
+                self.assertFalse(c.bubble.isVisible())
+                self.assertFalse(c.user_hidden)
+                c.tray_activated(QSystemTrayIcon.ActivationReason.Context)
+                self.assertTrue(c.resident.isVisible())
+                c.tray_activated(QSystemTrayIcon.ActivationReason.Trigger)
+                self.assertFalse(c.resident.isVisible())
+                c.tray_activated(QSystemTrayIcon.ActivationReason.Trigger)
+                self.assertTrue(c.resident.isVisible())
+                c.open_choices()
+                QTest.mouseClick(c.bubble.text, Qt.MouseButton.RightButton)
+                self.assertFalse(c.bubble.isVisible())
+                self.assertFalse(c.resident.isVisible())
+                c.tray_activated(QSystemTrayIcon.ActivationReason.Trigger)
+        finally:
+            c.user_hidden = False
+            c.apply_visibility()
+
+    def test_bubble_one_minute_lifetime_and_calendar_tick_does_not_restart_timer(self):
+        from PySide6.QtTest import QTest
+        c = self.controller
+        c.sample()
+        self.assertEqual(c.bubble.timer.interval(), 60000)
+        c.open_choices()
+        self.assertEqual(c.bubble.timer.interval(), 60000)
+        c.select_content("calendar")
+        self.assertEqual(c.bubble.timer.interval(), 60000)
+        with patch.object(c, "select_content") as refresh:
+            c.tick()
+            refresh.assert_not_called()
+        c.select_content("message")
+        self.assertEqual(c.bubble.timer.interval(), 60000)
+        # Exercise the same timer's hide path without a real one-minute wait.
+        c.bubble.timer.start(1)
+        QTest.qWait(20)
+        self.assertFalse(c.bubble.isVisible())
+        self.assertTrue(c.resident.isVisible())
+
+    def test_no_tray_fallback_keeps_a_visible_recovery_path(self):
+        from PySide6.QtWidgets import QSystemTrayIcon
+        c = self.controller
+        with patch.object(QSystemTrayIcon, "isSystemTrayAvailable", return_value=False):
+            c.hide_character()
+        self.assertTrue(c.resident.isVisible())
+        self.assertTrue(c.panel.isVisible())
+        self.assertFalse(c.user_hidden)
+        c.panel.hide()
 
     def test_walk_pauses_for_interaction_and_motion_can_be_disabled(self):
         c = self.controller
