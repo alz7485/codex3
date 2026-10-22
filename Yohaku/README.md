@@ -4,9 +4,9 @@
 
 **仕事に、ひと呼吸。** 予定とファイル履歴をそっと知らせる、デスクトップの小さな同僚です。
 
-[ソースZIPをGitHubからダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.6.0-source.zip)
+[ソースZIPをGitHubからダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.6.1-source.zip)
 
-v0.6.0ではアプリ名と固定アイコンを整え、Windows onedir用spec・ビルドスクリプト・GitHub Actionsを同梱しました。ダウンロードZIPには完全なソースと素材が入っています。**ビルド済みWindows EXEは含みません。**
+v0.6.1ではアプリ名と固定アイコン、Windows onedir用spec・ビルドコードに加え、ターミナルへ直接貼り付ける `ONEDIR_COMMAND.txt` を同梱しました。ダウンロードZIPには完全なソースと素材が入っています。**ビルド済みWindows EXEは含みません。**
 
 Windowsデスクトップの隅で、予定と短いひとことをそっと知らせる常駐アプリの試作品です。**画面下での歩行・表情アニメーション・音声なし・従来版Outlook**に対応しています。
 
@@ -107,24 +107,37 @@ py -3.11 -m venv .venv
 
 ## Windows用配布フォルダーを作る
 
-Windows 11 / 64bit Python 3.11または3.12で `BuildWindows.cmd` を実行します。初回は`.venv`に必要な依存を導入し、`Yohaku.spec`でonedir形式を作ります。
+Windows 11 / 64bit Python 3.11または3.12で、展開した`Yohaku`フォルダーをターミナルで開き、同梱の **`ONEDIR_COMMAND.txt`** のコマンドを順に貼り付けて実行します。バッチ・PowerShellスクリプト・仮想環境の有効化は使いません。
+
+```powershell
+py -3.11 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements-build.txt
+.\.venv\Scripts\python.exe -m PyInstaller --noconfirm --clean Yohaku.spec
+.\.venv\Scripts\python.exe scripts\collect_licenses.py dist\Yohaku
+.\.venv\Scripts\python.exe -c "import shutil; shutil.make_archive('Yohaku-v0.6.1-windows-x64-onedir', 'zip', 'dist', 'Yohaku')"
+```
+
+Python 3.12の場合は、1行目を `py -3.12 -m venv .venv` に変更します。
+
+3行目がonedirを作るコマンドです。`Yohaku.spec`にフォルダー形式、アイコン、4キャラとアニメーション素材、製品名・版を定義しています。出力は `dist\Yohaku\Yohaku.exe`。5行目で作るZIPは作業フォルダー直下の `Yohaku-v0.6.1-windows-x64-onedir.zip` です。
 
 | 同梱ファイル | 用途 |
 |---|---|
-| `BuildWindows.cmd` | ダブルクリック用の入口 |
+| `ONEDIR_COMMAND.txt` | ターミナルへ貼り付ける直接コマンド |
+| `BuildWindows.cmd` | バッチが利用できる環境向けの補助入口 |
 | `scripts/build_onedir.py` | 仮想環境の準備、PyInstaller、素材の確認、配布ZIPの作成 |
 | `Yohaku.spec` | onedir用の定義。4キャラ・アニメーション・アプリアイコンを同梱 |
 | `packaging/windows_version_info.txt` | 余白 / YOHAKUの製品名とバージョン情報 |
 | `scripts/package_source.py` | 完全ソースZIPとSHA-256の作成。ローカルの設定・履歴を除外 |
 | `.github/workflows/yohaku-windows.yml` | GitHub ActionsのWindowsビルド定義 |
 
-コマンドで実行する場合：
+依存の導入から配布ZIPまでPythonのビルドヘルパーに任せる場合は、次のコマンドも使えます：
 
 ```powershell
 py -3.11 scripts/build_onedir.py
 ```
 
-出力は `dist\Yohaku\Yohaku.exe` と `release\Yohaku-v0.6.0-windows-x64-onedir.zip` です。**EXEだけを取り出さず、ZIPをすべて展開して実行してください。** DLL・Qt・画像は同じフォルダーの`_internal`に入ります。配布物には依存ソフトウェアのライセンス文書もコピーします。署名・社内パッケージ化は含みません。LinuxからWindows EXEを作ったものではありません。
+ビルドヘルパーの場合の出力は `dist\Yohaku\Yohaku.exe` と `release\Yohaku-v0.6.1-windows-x64-onedir.zip` です。**EXEだけを取り出さず、ZIPをすべて展開して実行してください。** DLL・Qt・画像は同じフォルダーの`_internal`に入ります。配布物には依存ソフトウェアのライセンス文書もコピーします。署名・社内パッケージ化は含みません。LinuxからWindows EXEを作ったものではありません。
 
 ビルド素材の確認だけなら `python scripts/build_onedir.py --check`、ビルド環境の準備だけなら `py -3.11 scripts/build_onedir.py --setup-only` を使います。Windows用ビルドはWindows上で実行してください。
 

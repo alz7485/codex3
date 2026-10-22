@@ -4,6 +4,7 @@ __pycache__/
 build/
 dist/
 release/
+Yohaku-*-onedir.zip
 *.sqlite3
 *.sqlite3-journal
 *.sqlite3-wal

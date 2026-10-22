@@ -6,6 +6,11 @@ import sys
 
 
 def collect(folder):
+    project = Path(__file__).resolve().parents[1]
+    for name in ("README.md", "THIRD_PARTY_NOTICES.md"):
+        source = project / name
+        if source.is_file():
+            shutil.copy2(source, Path(folder) / name)
     destination = Path(folder) / "third-party-licenses"
     destination.mkdir(parents=True, exist_ok=True)
     for name in ("PySide6", "PySide6_Essentials", "PySide6_Addons", "shiboken6", "pywin32", "pyinstaller", "pyinstaller-hooks-contrib", "packaging", "altgraph"):
