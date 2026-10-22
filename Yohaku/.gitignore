@@ -12,3 +12,8 @@ Yohaku-*-onedir.zip
 settings.json
 history.json
 .env
+
+dialogue.json
+dialogue.json.bak
+dialogue.json.tmp
+Yohaku-conversation.json

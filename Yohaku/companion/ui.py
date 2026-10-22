@@ -16,13 +16,13 @@ from PySide6.QtGui import QAction, QColor, QFont, QIcon, QPainter, QPainterPath,
 from PySide6.QtWidgets import (
     QApplication, QButtonGroup, QCalendarWidget, QCheckBox, QComboBox, QFrame, QHeaderView, QHBoxLayout, QLabel, QMainWindow,
     QMenu, QMessageBox, QPushButton, QScrollArea, QSizePolicy, QStackedWidget, QSystemTrayIcon, QTimeEdit,
-    QToolButton, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget,
+    QToolButton, QSpinBox, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget,
 )
 
 from .core import CHARACTERS, Engine, Notice, PHRASES, Settings, data_directory, is_quiet, save_json
 from .activity import FileHistory, FileTracker, opened_file_snapshot
 from .motion import Motion
-from .dialogue import AUTO_PERSONALITY, BUBBLE_MS, INTERVALS, PROFILES, voice_for
+from .dialogue import AUTO_PERSONALITY, BUBBLE_MS, PROFILES, DialogueError, DialogueStore, voice_for
 from .outlook import read_calendar
 from .metadata import APP_DISPLAY_NAME, VERSION
 
@@ -52,7 +52,7 @@ QPushButton#nav { border: none; background: transparent; color: #738079; text-al
 QPushButton#nav:checked { color: #2f503e; background: #dfe8dd; font-weight: 600; }
 QPushButton#nav:hover { background: #e4ebe1; }
 QPushButton#link { background: transparent; border: none; color: #52745e; padding: 6px; font-size: 12px; }
-QComboBox, QTimeEdit, QDateEdit { border: 1px solid #d6ded8; background: white; border-radius: 6px; padding: 8px; min-height: 18px; }
+QComboBox, QTimeEdit, QDateEdit, QSpinBox, QLineEdit { border: 1px solid #d6ded8; background: white; border-radius: 6px; padding: 8px; min-height: 18px; }
 QComboBox::drop-down { border: none; width: 23px; }
 QCheckBox { spacing: 10px; }
 QCheckBox::indicator { width: 18px; height: 18px; border: 1px solid #b9c7bc; border-radius: 5px; background: white; }
@@ -69,6 +69,13 @@ QToolButton#character:focus { border: 2px solid #41664f; }
 QCalendarWidget QWidget#qt_calendar_navigationbar { background: #edf1ee; }
 QCalendarWidget QToolButton { background: #edf1ee; color: #263b43; border: none; padding: 4px; }
 QCalendarWidget QAbstractItemView:enabled { selection-background-color: #385c4a; selection-color: white; }
+QPlainTextEdit { background: white; border: 1px solid #d6ded8; border-radius: 7px; padding: 8px; }
+QListWidget { background: white; border: 1px solid #dce4dd; border-radius: 7px; outline: none; }
+QListWidget::item { padding: 6px 9px; }
+QListWidget::item:selected { background: #e5eee1; color: #263b43; }
+QTabWidget::pane { border: 1px solid #dce4dd; background: #fafbf9; }
+QTabBar::tab { background: #edf1ee; padding: 9px 17px; color: #65736a; }
+QTabBar::tab:selected { background: #fafbf9; color: #385c4a; border-top: 2px solid #385c4a; }
 QWidget#speechChoiceRow { background: transparent; }
 QPushButton#speechChoice { background: transparent; border: 1px solid #dce5da; border-radius: 7px; padding: 7px 10px; color: #41634d; font-size: 12px; font-weight: 500; text-align: left; }
 QPushButton#speechChoice:hover, QPushButton#speechChoice:focus { background: #edf4e9; border-color: #7a9a81; }
@@ -200,10 +207,12 @@ class Panel(QMainWindow):
     pause_requested = Signal()
     hide_requested = Signal()
     clear_history_requested = Signal()
+    dialogue_requested = Signal()
 
-    def __init__(self, settings):
+    def __init__(self, settings, dialogue=None):
         super().__init__()
         self.settings = settings
+        self.dialogue = dialogue
         self.setWindowTitle("余白 — デスクトップの小さな同僚")
         self.setMinimumSize(880, 680)
         self.resize(920, 740)
@@ -240,6 +249,30 @@ class Panel(QMainWindow):
         self.build_settings()
         self.set_page(0)
 
+    def profile(self, key):
+        if self.dialogue is None:
+            return PROFILES[key]
+        p = self.dialogue.data['profiles'][key]
+        return p['voice'], p['description'], p['tagline']
+
+    def voice(self):
+        return voice_for(self.settings, self.dialogue.data if self.dialogue else None)
+
+    def quote(self):
+        if self.settings.personality == AUTO_PERSONALITY:
+            return self.profile(self.settings.character)[2]
+        bank = self.dialogue.data['phrases'] if self.dialogue else PHRASES
+        return bank[self.voice()]['chat'][0]
+
+    def refresh_dialogue(self):
+        self.personality_badge.setText(self.voice())
+        p = self.profile(self.settings.character)
+        self.profile_description.setText(p[1])
+        self.hero_quote.setText(self.quote())
+        self.interval_spin.blockSignals(True)
+        self.interval_spin.setValue(self.settings.interval)
+        self.interval_spin.blockSignals(False)
+
     def set_page(self, index):
         self.pages.setCurrentIndex(index)
         for i, tab in enumerate(self.tabs):
@@ -268,9 +301,9 @@ class Panel(QMainWindow):
         self.hero_mascot = Mascot(108, character=self.settings.character)
         h.addWidget(self.hero_mascot)
         words = box(spacing=9)
-        self.personality_badge = label(voice_for(self.settings), "badge")
+        self.personality_badge = label(self.voice(), "badge")
         words.addWidget(self.personality_badge, alignment=Qt.AlignmentFlag.AlignLeft)
-        self.hero_quote = quote = label(PROFILES[self.settings.character][2], wrap=True)
+        self.hero_quote = quote = label(self.quote(), wrap=True)
         quote.setStyleSheet("font-size: 18px; line-height: 1.6;")
         words.addWidget(quote)
         self.character_caption = label(CHARACTERS[self.settings.character] + " · セリフの表示例", "muted")
@@ -349,7 +382,7 @@ class Panel(QMainWindow):
             self.character_buttons[key] = choice
             row.addWidget(choice)
         chooser.addLayout(row)
-        self.profile_description = label(PROFILES[self.settings.character][1], "muted", True)
+        self.profile_description = label(self.profile(self.settings.character)[1], "muted", True)
         chooser.addWidget(self.profile_description)
         self.animation_check = QCheckBox("表情・まばたきのアニメーション")
         self.animation_check.setChecked(self.settings.animation)
@@ -381,15 +414,16 @@ class Panel(QMainWindow):
         row = QHBoxLayout()
         row.addWidget(label("雑談の間隔"))
         row.addStretch()
-        interval = QComboBox()
-        for value in INTERVALS:
-            interval.addItem(f"{value}分に1回まで", value)
-        interval.setCurrentIndex(INTERVALS.index(self.settings.interval))
-        interval.setAccessibleName("雑談の間隔")
-        interval.currentIndexChanged.connect(lambda i: self.update_setting("interval", interval.itemData(i)))
-        row.addWidget(interval)
+        self.interval_spin = QSpinBox()
+        self.interval_spin.setRange(1, 1440)
+        self.interval_spin.setSuffix(' 分')
+        self.interval_spin.setValue(self.settings.interval)
+        self.interval_spin.setAccessibleName('雑談の間隔')
+        self.interval_spin.valueChanged.connect(lambda value: self.update_setting('interval', value))
+        row.addWidget(self.interval_spin)
         form.addLayout(row)
         form.addWidget(label("初期設定は約10分ごと。時間帯・曜日・予定の前後で話題を変え、吹き出しは約1分表示します。会議中・非表示中は自動会話を休みます。", "muted", True))
+        form.addWidget(button("会話文・発生ルールを編集", self.dialogue_requested.emit))
         layout.addWidget(card)
         activity = QFrame(objectName="card")
         activity_box = box(activity, 18, 10)
@@ -432,16 +466,15 @@ class Panel(QMainWindow):
 
     def update_setting(self, key, value):
         setattr(self.settings, key, value)
-        self.personality_badge.setText(voice_for(self.settings))
+        self.personality_badge.setText(self.voice())
         if key == "character":
             self.rail_mascot.set_character(value)
             self.hero_mascot.set_character(value)
             self.character_buttons[value].setChecked(True)
             self.character_caption.setText(CHARACTERS[value] + " · セリフの表示例")
-            self.profile_description.setText(PROFILES[value][1])
-            self.hero_quote.setText(PROFILES[value][2])
-        if key == "personality":
-            self.hero_quote.setText(PROFILES[self.settings.character][2] if value == AUTO_PERSONALITY else PHRASES[value]["chat"][0])
+            self.profile_description.setText(self.profile(value)[1])
+        if key in ('character', 'personality'):
+            self.hero_quote.setText(self.quote())
         if key == "animation":
             self.walking_check.setEnabled(value)
         self.changed.emit(key)
@@ -480,6 +513,7 @@ class Bubble(QFrame):
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
         self.setObjectName("card")
         self.setFixedWidth(322)
+        self.duration_ms = BUBBLE_MS
         self.tail_x = 270
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(lambda _: self.hide_requested.emit())
@@ -519,7 +553,7 @@ class Bubble(QFrame):
         self.text.setText(notice.text)
         self.adjustSize()
         self.show()
-        self.timer.start(BUBBLE_MS)
+        self.timer.start(self.duration_ms)
 
 
 class Bridge(QObject):
@@ -573,7 +607,7 @@ class InteractionBubble(Bubble):
         self.adjustSize()
 
     def open_choices(self, text="お呼びですか？", name="余白"):
-        self.timer.start(BUBBLE_MS)
+        self.timer.start(self.duration_ms)
         self.current = None
         self.interactive = True
         self.heading.setText(name)
@@ -586,7 +620,7 @@ class InteractionBubble(Bubble):
         self.buttons["calendar"].setFocus()
 
     def content(self, key, heading, text):
-        self.timer.start(BUBBLE_MS)
+        self.timer.start(self.duration_ms)
         self.current = key
         self.interactive = True
         self.heading.setText(heading)
@@ -602,7 +636,7 @@ class InteractionBubble(Bubble):
         self.text.setText(notice.text)
         self.resize_text()
         self.show()  # WA_ShowWithoutActivating keeps automatic notices passive.
-        self.timer.start(BUBBLE_MS)
+        self.timer.start(self.duration_ms)
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Escape:
@@ -707,11 +741,15 @@ class Controller(QObject):
         self.app = app
         self.path = data_directory()
         self.settings = Settings.load(self.path / "settings.json")
-        self.engine = Engine(self.settings, self.path / "history.json")
-        self.panel = Panel(self.settings)
+        self.dialogue = DialogueStore(self.path / "dialogue.json", self.settings.interval)
+        self.settings.interval = self.dialogue.data["options"]["interval_minutes"]
+        self.engine = Engine(self.settings, self.path / "history.json", dialogue=self.dialogue)
+        self.editor = None
+        self.panel = Panel(self.settings, self.dialogue)
         self.brand_icon = QIcon(str(Path(__file__).parent / "assets/app/yohaku.ico"))
         self.resident = Resident(self.settings.character)
         self.bubble = InteractionBubble()
+        self.bubble.duration_ms = self.dialogue.data["options"]["bubble_seconds"] * 1000
         self.interaction = self.bubble  # One actual speech window for all modes.
         self.history_window = HistoryWindow()
         self.motion = Motion()
@@ -735,6 +773,7 @@ class Controller(QObject):
         self.bridge = Bridge()
         self.bridge.result.connect(self.received)
         self.panel.changed.connect(self.save_settings)
+        self.panel.dialogue_requested.connect(self.show_dialogue_editor)
         self.panel.connect_requested.connect(self.refresh)
         self.panel.sample_requested.connect(self.sample)
         self.panel.pause_requested.connect(self.pause)
@@ -747,12 +786,13 @@ class Controller(QObject):
         self.menu = QMenu()
         self.visibility_action = self.menu.addAction("キャラを非表示", self.toggle_visibility)
         self.menu.addAction("設定を開く", self.show_panel)
+        self.menu.addAction("会話を編集", self.show_dialogue_editor)
         self.pause_action = self.menu.addAction("1時間おやすみ", self.pause)
         self.share_action = self.menu.addAction("画面共有モード", self.share)
         self.menu.addSeparator()
         self.menu.addAction("Outlookから切断", self.disconnect)
         self.menu.addSeparator()
-        self.menu.addAction("余白を終了", self.app.quit)
+        self.menu.addAction("余白を終了", self.request_quit)
         self.resident.context_requested.connect(lambda _: self.hide_character())
         self.bubble.hide_requested.connect(self.hide_character)
         self.tray = QSystemTrayIcon(self)
@@ -783,6 +823,8 @@ class Controller(QObject):
         self.activity_timer.setInterval(5000)
         self.activity_timer.timeout.connect(self.poll_activity)
         self.configure_activity()
+        if self.dialogue.error:
+            self.panel.saved_label.setText(self.dialogue.error)
         self.update_animation_policy()
         for screen in self.app.screens():
             screen.availableGeometryChanged.connect(self.position)
@@ -821,6 +863,8 @@ class Controller(QObject):
             self.bubble.hide()
             self.history_window.hide()
             self.panel.hide()
+            if self.editor:
+                self.editor.hide()
         self.visibility_action.setText("キャラを非表示" if visible else "キャラを表示")
         self.tray.setToolTip("余白 — " + ("画面共有モード中" if self.hidden else "非表示 · 左クリックで表示" if self.user_hidden else "左クリックで非表示 / 右クリックでメニュー"))
         self.update_mode()
@@ -830,6 +874,37 @@ class Controller(QObject):
         self.panel.show()
         self.panel.raise_()
         self.panel.activateWindow()
+
+    def request_quit(self):
+        if self.editor is not None and self.editor.dirty:
+            self.editor.show()
+            self.editor.raise_()
+            if not self.editor.close():
+                return
+        self.app.quit()
+
+    def show_dialogue_editor(self):
+        if self.editor is None:
+            from .dialogue_editor import DialogueEditor
+            self.editor = DialogueEditor(self.dialogue)
+            self.editor.setWindowIcon(self.brand_icon)
+            self.editor.saved.connect(self.dialogue_saved)
+        elif not self.editor.dirty:
+            self.editor.revert()
+        self.editor.show()
+        self.editor.raise_()
+        self.editor.activateWindow()
+
+    def dialogue_saved(self):
+        self.settings.interval = self.dialogue.data['options']['interval_minutes']
+        self.panel.refresh_dialogue()
+        self.bubble.duration_ms = self.dialogue.data['options']['bubble_seconds'] * 1000
+        if self.bubble.isVisible():
+            self.bubble.timer.start(self.bubble.duration_ms)
+        self.engine.category_last.clear()
+        self.engine.last_category = None
+        self.engine.recent = []  # Old indices may refer to deleted/reordered lines.
+        self.engine.last_display = datetime.now().astimezone()
 
     def position(self, *args):
         area = self.app.primaryScreen().availableGeometry()
@@ -874,7 +949,7 @@ class Controller(QObject):
         area = self.app.primaryScreen().availableGeometry()
         lower = area.left() + 12
         upper = max(lower, area.right() - self.resident.width() - 20)
-        blocked = self.bubble.isVisible() or self.panel.isVisible() or self.history_window.isVisible() or self.resident.underMouse()
+        blocked = self.bubble.isVisible() or self.panel.isVisible() or self.history_window.isVisible() or (self.editor is not None and self.editor.isVisible()) or self.resident.underMouse()
         self.motion_x = self.motion.advance(dt, self.motion_x if self.motion_x is not None else upper,
                                           lower, upper, self.settings.walking and not blocked)
         frame = self.motion.frame()
@@ -891,7 +966,7 @@ class Controller(QObject):
     def open_choices(self):
         if self.hidden or self.user_hidden:
             return
-        self.motion.react("curious")
+        self.motion.react(self.dialogue.rule("call")["expression"])
         self.engine.last_display = datetime.now().astimezone()
         self.interaction.open_choices(self.engine.phrase("call"), CHARACTERS[self.settings.character])
         self.position()
@@ -902,19 +977,19 @@ class Controller(QObject):
         now = datetime.now().astimezone()
         self.engine.last_display = now
         if key == "calendar":
-            self.motion.react("think", speaking=True)
+            self.motion.react(self.dialogue.rule("calendar_intro")["expression"], speaking=True)
             fresh = self.connected_at is not None and (now - self.connected_at).total_seconds() < 300
             if not self.connected or not fresh:
-                text = "予定は未接続、または更新待ちです。\n設定画面からOutlookに接続してください。"
+                text = self.engine.phrase("calendar_unavailable")
             else:
                 upcoming = [event for event in self.events if event.end > now]
                 text = "\n\n".join(f"{e.start:%H:%M}–{e.end:%H:%M}  " +
                                    (e.title[:80] if self.settings.show_titles and e.title else "予定あり（件名は非表示）")
-                                   for e in upcoming[:10]) or "このあとの時間指定の予定はありません。"
-            self.interaction.content(key, CHARACTERS[self.settings.character], "このあとの予定をお知らせします。\n\n" + text)
+                                   for e in upcoming[:10]) or self.engine.phrase("calendar_empty")
+            self.interaction.content(key, CHARACTERS[self.settings.character], self.engine.phrase("calendar_intro") + "\n\n" + text)
         elif key == "activity":
-            self.motion.react("nod")
-            self.interaction.content(key, CHARACTERS[self.settings.character], "履歴を開きました。\n日付を選んで、振り返ってみましょう。")
+            self.motion.react(self.dialogue.rule("activity_open")["expression"])
+            self.interaction.content(key, CHARACTERS[self.settings.character], self.engine.phrase("activity_open"))
             self.history_window.calendar.setDateRange(QDate.currentDate().addDays(-7), QDate.currentDate())
             self.refresh_history()
             self.history_window.show()
@@ -922,11 +997,12 @@ class Controller(QObject):
             self.history_window.activateWindow()
         elif key == "message":
             notice = self.engine.conversation(now, self.events, self.connected and self.connected_at is not None and (now - self.connected_at).total_seconds() < 300)
-            self.motion.react(notice.expression, speaking=True)
-            self.interaction.content(key, CHARACTERS[self.settings.character], notice.text)
+            if notice:
+                self.motion.react(notice.expression, speaking=True)
+            self.interaction.content(key, CHARACTERS[self.settings.character], notice.text if notice else self.engine.phrase("no_conversation"))
         elif key == "settings":
-            self.motion.react("nod")
-            self.interaction.content(key, CHARACTERS[self.settings.character], "設定を開きますね。")
+            self.motion.react(self.dialogue.rule("settings_open")["expression"])
+            self.interaction.content(key, CHARACTERS[self.settings.character], self.engine.phrase("settings_open"))
             self.show_panel()
         self.position()
 
@@ -1006,6 +1082,19 @@ class Controller(QObject):
             self.bubble.heading.setText(CHARACTERS[self.settings.character])
 
     def save_settings(self, key="show_titles"):
+        if key == 'interval':
+            from copy import deepcopy
+            candidate = deepcopy(self.dialogue.data)
+            candidate['options']['interval_minutes'] = self.settings.interval
+            try:
+                self.dialogue.save(candidate)
+            except (OSError, DialogueError) as error:
+                self.settings.interval = self.dialogue.data['options']['interval_minutes']
+                self.panel.refresh_dialogue()
+                self.panel.saved_label.setText(f'会話の間隔を保存できませんでした。{error}')
+                return
+            if self.editor is not None and not self.editor.dirty:
+                self.editor.revert()
         if key == "character":
             self.apply_character()
         if key in ("animation", "walking", "quiet_start", "quiet_end"):
@@ -1115,7 +1204,7 @@ class Controller(QObject):
         fresh = self.connected_at is not None and (now - self.connected_at).total_seconds() < 300
         try:
             notice = self.engine.next_notice(now, self.events, self.hidden or self.user_hidden, self.connected and fresh,
-                                             allow_chatter=not (self.interaction.isVisible() or self.panel.isVisible() or self.history_window.isVisible()))
+                                             allow_chatter=not (self.interaction.isVisible() or self.panel.isVisible() or self.history_window.isVisible() or (self.editor is not None and self.editor.isVisible())))
         except OSError:
             self.panel.calendar_detail.setText("通知履歴を保存できません。保存先の権限をご確認ください。")
             return
@@ -1128,8 +1217,8 @@ class Controller(QObject):
         if self.hidden or self.user_hidden:
             self.panel.mode_label.setText("非表示中は通知を表示しません")
             return
-        self.bubble.display(Notice("通知のプレビュー · 実際の予定ではありません", self.engine.phrase("meeting"), True))
-        self.motion.react("notice")
+        self.bubble.display(Notice("通知のプレビュー · 実際の予定ではありません", (self.engine.phrase("meeting") or self.engine.phrase("reminder_disabled")), True))
+        self.motion.react(self.dialogue.rule("meeting")["expression"])
         self.position()
 
     def pause(self):

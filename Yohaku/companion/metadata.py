@@ -1,5 +1,5 @@
 APP_NAME = "余白"
 APP_SLUG = "Yohaku"
 APP_DISPLAY_NAME = "余白 / YOHAKU"
-VERSION = "0.7.0"
+VERSION = "0.8.0"
 DESCRIPTION = "デスクトップの小さな同僚"

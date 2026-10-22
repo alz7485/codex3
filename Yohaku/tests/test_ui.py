@@ -37,6 +37,8 @@ class UserInterfaceTests(unittest.TestCase):
         c.bubble.hide()
         c.interaction.hide()
         c.history_window.hide()
+        if c.editor:
+            c.editor.hide()
         cls.temp.cleanup()
         if cls.old_local is None:
             os.environ.pop("LOCALAPPDATA", None)
@@ -165,7 +167,7 @@ class UserInterfaceTests(unittest.TestCase):
     def test_app_has_brand_name_version_and_windows_icon(self):
         c = self.controller
         self.assertEqual(self.app.applicationDisplayName(), "余白 / YOHAKU")
-        self.assertEqual(self.app.applicationVersion(), "0.7.0")
+        self.assertEqual(self.app.applicationVersion(), "0.8.0")
         self.assertFalse(c.brand_icon.isNull())
         self.assertEqual(c.panel.windowIcon().cacheKey(), c.brand_icon.cacheKey())
         c.panel.character_buttons["B"].click()
@@ -389,6 +391,55 @@ class UserInterfaceTests(unittest.TestCase):
         QTest.qWait(20)
         self.assertFalse(c.bubble.isVisible())
         self.assertTrue(c.resident.isVisible())
+
+    def test_dialogue_editor_save_updates_running_engine_and_bubble_timer(self):
+        from copy import deepcopy
+        c = self.controller
+        original = deepcopy(c.dialogue.data)
+        try:
+            c.panel.dialogue_requested.emit()
+            e = c.editor
+            self.assertTrue(e.isVisible())
+            e.voice.setCurrentText('控えめな皮肉屋')
+            e.phrase_topics.setCurrentRow(0)
+            e.line_edit.setPlainText('編集画面から保存した一言です。')
+            e.options['interval_minutes'].setValue(17)
+            e.options['bubble_seconds'].setValue(85)
+            generation, connected = c.generation, c.connected
+            self.assertTrue(e.save())
+            with patch.object(c.engine, 'choose', side_effect=lambda values: values[0]):
+                self.assertEqual(c.engine.phrase('call'), '編集画面から保存した一言です。')
+            self.assertEqual(c.settings.interval, 17)
+            self.assertEqual(c.panel.interval_spin.value(), 17)
+            self.assertEqual(c.generation, generation)
+            self.assertEqual(c.connected, connected)
+            c.open_choices()
+            self.assertEqual(c.bubble.timer.interval(), 85000)
+            e.hide()
+            c.show_dialogue_editor()
+            self.assertEqual(e.line_edit.toPlainText(), '編集画面から保存した一言です。')
+            e.hide()
+        finally:
+            c.dialogue.save(original)
+            c.dialogue_saved()
+            c.bubble.hide()
+            if c.editor:
+                c.editor.revert()
+                c.editor.hide()
+
+    def test_quit_keeps_application_running_when_editor_cancelled(self):
+        from PySide6.QtWidgets import QMessageBox
+        c = self.controller
+        c.show_dialogue_editor()
+        c.editor.line_edit.setPlainText('保存前の内容')
+        try:
+            with patch.object(QMessageBox, 'question', return_value=QMessageBox.StandardButton.Cancel), patch.object(c.app, 'quit') as quit_app:
+                c.request_quit()
+                quit_app.assert_not_called()
+            self.assertTrue(c.editor.dirty)
+        finally:
+            c.editor.revert()
+            c.editor.hide()
 
     def test_no_tray_fallback_keeps_a_visible_recovery_path(self):
         from PySide6.QtWidgets import QSystemTrayIcon

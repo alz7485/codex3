@@ -1,114 +1,176 @@
-"""Local, authored character voices. No generated text or network at runtime."""
+"""Validated JSON conversation documents and declarative condition evaluation."""
+from __future__ import annotations
+
+from copy import deepcopy
+import json
+from pathlib import Path
+import re
+import shutil
+
+from .motion import EXPRESSION_FRAMES
+
 AUTO_PERSONALITY = "キャラクターに合わせる"
-INTERVALS = (10, 20, 30, 60, 90, 120)
-BUBBLE_MS = 60_000
-PROFILES = {
-    "A": ("控えめな皮肉屋", "気の利く記録係。丁寧な口調に、小さな皮肉。", "キーボードは逃げません。ひと息どうぞ。"),
-    "B": ("冷静な案内役", "几帳面な分析役。短く正確、ときどき不器用。", "休憩も工程の一部です。ひと呼吸を推奨します。"),
-    "E": ("元気な応援係", "まじめで頑張り屋。礼儀正しく、前向きに応援。", "一歩ずつで大丈夫です。一緒にいきましょう！"),
-    "F": ("のんびりした同僚", "お茶好きでマイペース。急かさず、そっと寄り添う。", "お茶が冷める前に、ひと息つこう。"),
-}
-EXPRESSIONS = {
-    "call": "curious", "meeting": "notice", "startup": "greet", "morning": "happy",
-    "lunch": "relaxed", "afternoon": "think", "evening": "sleepy", "monday": "nod",
-    "friday": "proud", "weekend": "curious", "before_meeting": "think",
-    "after_meeting": "relaxed", "long_session": "stretch", "water": "concern",
-    "eyes": "blink", "posture": "stretch", "focus": "think", "encourage": "proud",
-    "smalltalk": "wink", "chat": "happy",
-}
-
-# Each category is authored separately for every voice; one item is one complete remark.
-PHRASES = {
-    "控えめな皮肉屋": {
-        "call": ["お呼びですか？", "用事は何でしょう？", "何？", "何かありました？", "はい、余白の出番ですか？", "ご用件を、余白にどうぞ。"],
-        "meeting": ["そろそろ会議です。余白も、持ち物にどうぞ。", "会議まであと少し。お茶の準備も議題のうちです。", "もうすぐ会議。結論にも、出番があるといいですね。", "予定の時間が近いです。深呼吸ひとつ、持っていきましょう。", "まもなく予定です。必要な資料だけ、手元にどうぞ。"],
-        "chat": ["ひと息どうぞ。キーボードは逃げません。", "予定の隙間も予定のうち。少しだけ、ひと休み。", "余白があると、次の一行が書きやすいものです。", "完璧な一枚より、まず一行。私も白紙から来ました。", "急がば、保存。昔の人は言っていませんが。", "考えが詰まったら、席を立つのも立派な手です。", "今日の自分に、明日の分まで任せなくて大丈夫です。", "小さな区切りをひとつ。付箋くらいの大きさで。", "何も書かない時間にも、使い道はあります。", "仕事は積み重ね。肩の力まで積まなくて大丈夫です。", "一度に開くのは、気持ちの中では一つずつで。", "私はここで待っています。待つのは得意です。ノートなので。"],
-        "startup": ["今日もお供します。まずは一行から、どうぞ。", "余白の準備はできています。予定は詰めすぎずに。", "お仕事のそばに失礼します。急かす機能はありません。", "しおりを挟むように、今日の始まりに小さな区切りを。"],
-        "morning": ["午前のうちに、大事な一つを決めておくのも手です。", "朝の白紙は気持ちがいいですね。全部埋めなくても。", "おはようの次は、ひと呼吸くらいで。", "今日の優先順位、ひとつだけ丸をつけてみませんか。"],
-        "lunch": ["お昼どきですね。画面にも休憩をあげましょう。", "昼休みを、予定の隙間にしないように。", "お昼は何にしましょう。私は紙以外なら何でも、気持ちだけ。", "食べる時間も、今日の大事な予定です。"],
-        "afternoon": ["午後は小さな仕事から再開するのも、悪くありません。", "午後の頭には、少しの余白が効くこともあります。", "集中の続きは、ひと息のあとでも間に合うかもしれません。", "午後のページをめくりましょう。一枚ずつで。"],
-        "evening": ["そろそろ区切りを考える時間ですね。続きにしおりを。", "明日の自分に、一行だけメモを残しておきませんか。", "今日できたことも、ちゃんと数えてくださいね。", "終わり方まで完璧にしなくても。保存して、ひと呼吸。"],
-        "monday": ["月曜は目次を作るくらいの気持ちで。", "一週間、最初から全速力でなくても大丈夫です。", "今週の大事なこと、ひとつだけ書き出してみませんか。", "月曜の余白です。今週も、適度によろしく。"],
-        "friday": ["金曜日。来週の自分に、短い引き継ぎをどうぞ。", "今週のページも、そろそろ区切りですね。", "週末まで持ち越す考えごとは、メモに預ける手もあります。", "今週もここまで。小さな丸をつけておきましょう。"],
-        "weekend": ["週末のお仕事ですか。休む予定も忘れずに。", "曜日にかかわらず、ひと息はあっていいものです。", "お休みの日にも、余白だけは取ってくださいね。", "今日の終わりを、先に決めておくのはいかがでしょう。"],
-        "before_meeting": ["このあと予定がありますね。話すことを一行にしておくのも手です。", "次の予定の前に、手元の作業にしおりを挟んでおきませんか。", "予定の少し前です。資料を探す時間にも余白を。", "あとで戻れるように、今の続きをメモしておくと安心です。"],
-        "after_meeting": ["予定の時間が過ぎましたね。メモを一行、残しておきますか。", "予定のあとには、頭にも切り替えの余白を。", "次の仕事に入る前に、ひと呼吸どうぞ。", "予定表では一区切り。実際の区切りは、ご自身のペースで。"],
-        "long_session": ["起動してからしばらく経ちました。席を外す口実に私をどうぞ。", "私は平気ですが、人間には休憩という便利な機能があるそうです。", "長丁場ですね。途中に白紙の一枚を挟んでみませんか。", "いったん区切っても、ここまでの分は消えませんよ。"],
-        "water": ["飲み物は手元にありますか。私にはこぼさない方向で。", "ひと口どうぞ。文字ばかりでは喉は潤いません。", "水分補給に、小さな余白を。", "カップを持つ間だけ、肩の力も抜いてみませんか。"],
-        "eyes": ["少し遠くを見ませんか。画面とは長い付き合いですし。", "目にも、白紙の時間をどうぞ。", "視線を外してひと呼吸。私はここにいますので。", "窓の向こうまで、目だけ散歩に出してみませんか。"],
-        "posture": ["肩が上がっていたら、そっと下ろしてみましょう。", "背筋まで議事録のように固めなくても大丈夫です。", "座り直すだけでも、小さな区切りになります。", "手をキーボードから離して、少しだけ伸びをどうぞ。"],
-        "focus": ["次にやることを、一行に絞ってみませんか。", "考えごとは、書くと少し軽くなることもあります。", "迷ったら、一番小さな一手からどうぞ。", "見直しは少し時間を空けると、別の目で読めますよ。"],
-        "encourage": ["ひとつ進めば、それは進捗です。小さくても。", "途中のページにも、価値はあります。", "派手でなくても、積み重ねは残りますよ。", "今日の努力に、誰より先に自分で丸をつけてください。"],
-        "smalltalk": ["私の特技ですか。話を折らずに、ページを折れます。", "しおりは黄色です。小さくても、目印は大事なので。", "白紙でいるのも、案外忙しいものですよ。", "余白という名前なので、少し黙っていても仕事のうちです。"],
-    },
-    "冷静な案内役": {
-        "call": ["ご用件は何でしょうか？", "お呼びでしょうか？", "何を確認しますか？", "用事は何でしょう？", "待機を解除。ご用件をどうぞ。", "はい。確認項目を選んでください。"],
-        "meeting": ["まもなく予定の開始時刻です。準備をご確認ください。", "予定の開始が近づいています。移動時間もご確認ください。", "開始前のお知らせです。必要な資料をご確認ください。", "予定の時間です。飲み物とメモの用意をおすすめします。", "開始まであと少しです。接続先の確認をどうぞ。"],
-        "chat": ["短い休憩をおすすめします。", "ひと区切りごとに、保存の確認をどうぞ。", "作業を小さく分けると、次の手順が明確になります。", "休憩も工程の一部です。ひと呼吸を推奨します。", "今日の最優先事項を、一つだけ確認しましょう。", "一度に一項目ずつ。私もその方式で動作しています。", "予定には、切り替えの時間も確保すると安心です。", "確認作業には、少し時間を置く方法もあります。", "小さな区切りを設定しましょう。再開しやすくなります。", "現在、そばで待機中です。お急ぎの必要はありません。", "次の操作の前に、保存先を確認するのも有効です。", "判断材料が足りないときは、確認事項を整理しましょう。"],
-        "startup": ["起動後のご案内です。本日も手順は一つずつ。", "待機を開始しました。まず今日の予定を確認しますか。", "準備できました。余裕のある進行をおすすめします。", "今日の優先順位を設定すると、再開時の目印になります。"],
-        "morning": ["午前のご案内です。今日の目標を一つ設定しましょう。", "朝の確認項目。予定、持ち物、ひと呼吸。", "作業の前に、完了の目安を決めておくと安心です。", "午前中の計画にも、予備時間を設けましょう。"],
-        "lunch": ["昼の時間帯です。食事と休息の時間をご確認ください。", "休憩に入る前に、作業内容の保存をどうぞ。", "お昼のご案内です。画面から離れる時間もおすすめします。", "午後の再開位置を、短くメモしておきませんか。"],
-        "afternoon": ["午後のご案内です。優先順位を一度見直してみましょう。", "再開は短い作業から始める方法もあります。", "午後の予定と、使える時間をご確認ください。", "集中が続かないときは、手順を小さく区切りましょう。"],
-        "evening": ["終業前の確認に、保存と明日のメモをおすすめします。", "作業の区切りを決めておくと、終えやすくなります。", "本日の完了項目を確認してみませんか。", "続きは再開位置を記録しておくと安心です。"],
-        "monday": ["週の初めです。今週の予定を整理しましょう。", "月曜日のご案内です。優先項目は少なめから。", "週の計画には予備時間も含めると安心です。", "今週の作業を、小さな工程に分けてみませんか。"],
-        "friday": ["週末前の確認です。来週の再開位置を記録しましょう。", "金曜日です。未完了項目の引き継ぎメモをどうぞ。", "今週の完了項目にも、確認の印をつけましょう。", "保存と整理を、終業前の手順に加えておくと安心です。"],
-        "weekend": ["週末です。作業時間と休息時間をご確認ください。", "本日の終了時刻を決めておくことをおすすめします。", "曜日を問わず、休憩は必要な工程です。", "予定外の作業にも、余裕を設けましょう。"],
-        "before_meeting": ["このあと予定があります。必要な項目を整理しておきましょう。", "次の予定の前に、現在の作業を保存すると安心です。", "予定に向けて、確認事項を短くまとめてみませんか。", "切り替え時間の確保をおすすめします。"],
-        "after_meeting": ["予定表の終了時刻を過ぎました。決定事項の整理をどうぞ。", "予定のあとです。次に行うことを一つ確認しましょう。", "切り替えのご案内です。ひと呼吸置くことをおすすめします。", "予定表上は一区切りです。実際の進行に合わせて休息をどうぞ。"],
-        "long_session": ["起動からしばらく経ちました。短い休憩を検討してください。", "連続稼働中です。人にも冷却時間をおすすめします。", "長めの時間が経過しました。姿勢を変える機会にどうぞ。", "再開位置を残して、いったん区切る方法もあります。"],
-        "water": ["水分補給のご案内です。飲み物をご確認ください。", "ひと口分の休息をおすすめします。", "カップが空なら、補充の機会にどうぞ。", "飲み物は機器から少し離すと安心です。私も機器です。"],
-        "eyes": ["画面から視線を外し、目を休める時間を取りましょう。", "遠くを見る短い休憩をおすすめします。", "目の休息も、作業手順に含めましょう。", "ひと呼吸の間、視線を変えてみませんか。"],
-        "posture": ["姿勢の確認です。肩や手に力が入っていませんか。", "座り直す短い時間をおすすめします。", "手を休め、無理のない範囲で姿勢を変えてみましょう。", "背中と肩の力を、少し緩めてみませんか。"],
-        "focus": ["次の一手を明確にすると、再開しやすくなります。", "不明点は分けて書き出す方法があります。", "確認する項目を、一つずつ並べてみましょう。", "作業の単位を小さくすることをおすすめします。"],
-        "encourage": ["小さな完了も、完了として数えましょう。", "ここまでの積み重ねを、確認してみてください。", "急がず、一工程ずつで大丈夫です。", "進めた分は残っています。次も一つずつどうぞ。"],
-        "smalltalk": ["私の得意分野は待機です。省エネのつもりです。", "冗談を計算中です。結果は、少しお待ちください。", "休憩の効率を考えた結果、まず休むことにしました。", "胸のボタンですか。飾りです。私にも余白があります。"],
-    },
-    "元気な応援係": {
-        "call": ["呼びました？", "何をしましょうか？", "今日は何のお手伝い？", "お呼びですか？", "はい、ここにいます！ ご用件は？", "用事は何でしょう？ お任せください。"],
-        "meeting": ["もうすぐ会議です。ひと呼吸して、いってらっしゃい！", "会議が近づいています。準備した分、きっと大丈夫。", "あと少しで会議。飲み物もお忘れなく！", "予定まであと少し。メモを用意して、落ち着いていきましょう。", "そろそろ予定です。肩の力を抜いて、いってらっしゃい！"],
-        "chat": ["ここまでお疲れさまです。少し背伸びをどうぞ！", "ひと息ついて、また一歩ずついきましょう。", "小さな休憩も、次の集中の味方です。", "一歩ずつで大丈夫です。一緒にいきましょう！", "焦らず丁寧に。それも立派な進め方です。", "区切りをひとつ作ったら、小さく達成を祝いましょう。", "全部を今日終わらせなくても、進んだ分はあります。", "まじめに頑張る人ほど、休憩も忘れずに！", "困ったら、できることから一つずつです。", "私はここで応援しています。声は出しませんが、全力です。", "小さな確認が、あとで安心につながります。", "今日のいいところも、一つ見つけておきましょう。"],
-        "startup": ["今日もよろしくお願いします！ まずは一歩から。", "応援の準備ができました。無理のないペースでいきましょう。", "ご一緒します！ 最初は今日の大事なことを一つ。", "襟を正して、お仕事のお供です。力みすぎずにいきましょう。"],
-        "morning": ["おはようございます。今日の一歩を決めてみませんか。", "午前中も、ひとつずつ丁寧にいきましょう！", "朝のうちに、大切な予定を確認しておくと安心です。", "新しい一日です。休憩の時間も取ってくださいね。"],
-        "lunch": ["お昼どきです！ 食事の時間も大切にしてくださいね。", "昼休みは、目と肩にも休憩をどうぞ。", "午後に備えて、ここでひと息いれましょう。", "お昼の前に保存をひとつ。安心して休憩できます！"],
-        "afternoon": ["午後も、一歩ずついきましょう。最初は小さな作業から。", "午後の応援です！ 少し姿勢を変えて、気分転換を。", "ひと区切りつけながら進めましょう。無理はなしです。", "午後の予定を確認して、余裕を持っていきましょう！"],
-        "evening": ["今日ここまで、お疲れさまです。終わりの準備も少しずつ。", "できたことを一つ、振り返ってみませんか。", "明日の一歩をメモしておくと、安心して終われます。", "最後まで頑張りすぎずに。区切りも大切です！"],
-        "monday": ["月曜日ですね。今週も、一歩ずつよろしくお願いします！", "週の初めは、予定の確認から丁寧にいきましょう。", "今週の目標は小さめから。積み重ねていきましょう！", "最初から全力疾走でなくて大丈夫です。ペースを大切に。"],
-        "friday": ["金曜日です。今週もここまで、お疲れさまです！", "来週の自分へのメモを残しておきませんか。", "今週できたことを、一つ見つけておきましょう。", "週の区切りも丁寧に。保存を確認したら、ひと呼吸！"],
-        "weekend": ["週末のお仕事、お疲れさまです。休憩も取ってくださいね。", "今日の終わりの時間も、先に決めておきませんか。", "休日でも、一歩ずつ。頑張りすぎはなしでいきましょう。", "お休みの時間を残せるよう、小さく区切って進めましょう！"],
-        "before_meeting": ["このあと予定がありますね。メモの準備をしておきましょう！", "次の予定に向けて、話すことを一つ整理しませんか。", "いまの作業の続きに、目印を残しておくと安心です。", "切り替えの時間も大切に。落ち着いて準備しましょう！"],
-        "after_meeting": ["予定表の時間が過ぎましたね。ひと息いかがですか。", "一区切りの時間ですね。次にやることを一つだけ。", "予定のあとは、肩を緩めてから次の一歩をどうぞ！", "決まったことを短くメモしておくと、あとで助かりますね。"],
-        "long_session": ["起動してからしばらく経ちました。休憩も取ってくださいね！", "長めのお供になりました。少し席を外すのもいいですね。", "ここでひと呼吸。頑張るための休息も、大切な一歩です。", "区切れるところで保存して、短い休憩はいかがですか。"],
-        "water": ["水分補給の時間にしませんか。ひと口どうぞ！", "飲み物はありますか。少し休みながらいきましょう。", "カップを持ったら、肩の力もふっと抜いてくださいね。", "ひと口飲んで、次も自分のペースで！"],
-        "eyes": ["少し遠くを見て、目を休めましょう！", "画面から視線を外して、ひと呼吸いかがですか。", "目にも休憩をどうぞ。私はここで待っています。", "窓の向こうを見るくらいの、小さな気分転換を。"],
-        "posture": ["肩を下ろして、少し背伸びしてみませんか。", "姿勢を変えてひと息。無理のない範囲でどうぞ！", "手を休めて、座り直す時間にしませんか。", "私も襟を正します。そちらは肩の力を抜いてくださいね。"],
-        "focus": ["次に進めることを、一つだけ選んでみましょう！", "小さく区切ると、一歩目が見つかるかもしれません。", "迷ったら確認から。丁寧なのはいいことです。", "できるところからで大丈夫です。ひとつずついきましょう。"],
-        "encourage": ["小さな一歩も、ちゃんと前進です！", "うまくいかない時間があっても、ここまでの努力は残っています。", "急がなくて大丈夫です。自分のペースを大切に。", "今日できたことにも、きちんと丸をつけてくださいね！"],
-        "smalltalk": ["泳ぎは得意ですが、今日は画面の端を歩きます。", "ネクタイは毎日同じです。お気に入りなので！", "私の歩幅は小さめです。その分、一歩ずつ丁寧に。", "まじめすぎると言われます。休憩のおすすめも、まじめにします！"],
-    },
-    "のんびりした同僚": {
-        "call": ["ん、呼びました？", "何？", "どうしました？", "何か用ですか？", "お茶、じゃなくて、ご用事？", "はいはい、何でしょう。"],
-        "meeting": ["そろそろ会議みたいです。ゆっくり、準備しましょう。", "予定が近づいています。お茶をひと口、どうぞ。", "もうすぐ会議ですね。ひと呼吸してからで。", "このあと予定ですね。カップを置いて、準備しようか。", "そろそろお時間です。気持ちだけでも、ゆったりと。"],
-        "chat": ["ちょっと、ひと息つきませんか。", "窓の外を眺める時間も、あっていいですよね。", "背伸びでもしましょう。私も、気持ちだけ。", "少し休んでから、続きにしましょう。", "お茶が冷める前に、ひと息つこう。", "急がない時間も、少しあるといいね。", "何もしない一分って、案外ぜいたくですね。", "私はここで、のんびり待ってます。", "考えごと、いったんメモに預けてみる？", "一つ終わったら、一口。そんなペースもいいですね。", "まだ途中でも、ちゃんとここまで来ていますよ。", "静かにしてるけど、そばにはいます。"],
-        "startup": ["今日も、お茶の横から失礼します。ゆっくりいこう。", "来ましたよ。まず、ひと呼吸しませんか。", "お仕事のお供です。お茶は気持ちだけ、どうぞ。", "最初の一歩は、小さくていいんじゃないかな。"],
-        "morning": ["おはよう。朝のお茶みたいに、ゆっくり始めよう。", "午前中ですね。今日の大事なこと、ひとつ決める？", "朝の光を少し見てから、画面に戻るのもいいね。", "今日も詰め込みすぎずに、いこうね。"],
-        "lunch": ["お昼どきですね。何を食べようか。", "昼休み、お茶と一緒にのんびりしませんか。", "食べる時間まで急がなくても、いいと思うんです。", "お昼の前に保存して、気持ちもひと休みしよう。"],
-        "afternoon": ["午後ですね。まず小さなことから、再開しようか。", "少し眠たくなる時間ですね。背伸びでもどうぞ。", "お茶を入れ直すくらいの、気分転換を。", "午後もぼちぼち。急ぐ前に、ひと呼吸しよう。"],
-        "evening": ["そろそろ、今日の区切りを考える時間かな。", "明日の自分に、続きの場所を教えておこうか。", "今日もここまで、お疲れさま。できた分を数えてね。", "おしまいの前に保存をひとつ。それから、ゆっくり。"],
-        "monday": ["月曜日かあ。今週も、ぼちぼちいこうね。", "週の初めは、予定を眺めるくらいからでも。", "一週間のことを、一度に抱えなくていいと思うよ。", "今週もお供します。お茶の時間は忘れずに。"],
-        "friday": ["金曜日ですね。今週も、ここまで来たね。", "来週のことはメモに置いて、少し身軽にしようか。", "週末が近いね。今日の終わりも、ゆったり決めよう。", "今週の自分にも、お疲れさまのお茶を一杯。"],
-        "weekend": ["週末なんですね。お仕事のあとは、ゆっくりしてね。", "お休みの日にも、お茶の時間はあっていいよね。", "今日、どこまでにしようか。先に決めておくのもいいね。", "あまり抱えすぎずに。ひとつずつで大丈夫。"],
-        "before_meeting": ["このあと予定ですね。今の続きをメモしておく？", "次の予定の前に、お茶をひと口どうぞ。", "少し早めに準備して、あとはのんびり待とうか。", "気持ちを切り替える時間も、あるといいね。"],
-        "after_meeting": ["予定表の時間が過ぎたね。ひと息いかがですか。", "一区切りなら、お茶の時間にしませんか。", "次のことは、肩の力を抜いてからでも。", "決まったことを少しメモして、いったん休もうか。"],
-        "long_session": ["起動してから、けっこう経ったね。少し休もうか。", "長いお供になりました。お茶を入れ直す時間かな。", "区切れるところで、席を外してもいいんじゃないかな。", "いったん止まっても、続きは逃げないよ。"],
-        "water": ["何か飲みませんか。お茶でも、お水でも。", "ひと口飲んで、ふうっと息を吐こう。", "カップが空いたら、少し立つきっかけにどうぞ。", "お茶のおすすめばかりですね。好きな飲み物でいいんですよ。"],
-        "eyes": ["少し遠くを見ようか。窓の向こうとか。", "画面から目を離して、ひと息つこう。", "目も休みたい日があるよね。少しだけ、どうぞ。", "私を見なくても大丈夫。遠くを眺めてていいよ。"],
-        "posture": ["肩の力をふっと抜いてみよう。私も、ふにゃっと。", "座り直すだけでも、ちょっと気分が変わるかも。", "背伸びをひとつ。湯のみの中では難しいけどね。", "手を休めて、少しゆったりしませんか。"],
-        "focus": ["次にやること、ひとつだけにしてみる？", "考えがまとまらないときは、いったん置いておくのもいいね。", "小さなところから始めたら、続きが見えるかも。", "迷うことはメモに出して、頭に余白を作ろうか。"],
-        "encourage": ["今日の分は、今日の歩幅でいいんだよ。", "小さいことでも、できたら一つ分。", "急げないときもあるよね。ゆっくりで大丈夫。", "ここまで来た自分にも、少し優しくしてあげてね。"],
-        "smalltalk": ["この湯のみ、ちょうどいいんです。出る理由がなくて。", "歩くというより、湯のみごとお散歩です。", "お茶の湯気を眺める仕事があったら、得意なんだけど。", "猫の手ですか。貸せますが、のんびりしていますよ。"],
-    },
-}
+INTERVALS = (10, 20, 30, 60, 90, 120)  # Legacy UI/import compatibility.
+DEFAULT_PATH = Path(__file__).parent / 'assets/dialogue/default_dialogue.json'
+KINDS = {'always': 'いつでも', 'time_range': '時間帯', 'weekday': '曜日',
+         'session_range': '起動からの経過', 'before_meeting': '予定の前', 'after_meeting': '予定のあと'}
+ACTION_IDS = ('calendar_intro', 'calendar_unavailable', 'calendar_empty', 'activity_open', 'settings_open', 'no_conversation', 'reminder_disabled')
+MAX_BYTES = 2 * 1024 * 1024
 
 
-def voice_for(settings):
-    return PROFILES[settings.character][0] if settings.personality == AUTO_PERSONALITY else settings.personality
+class DialogueError(ValueError):
+    pass
+
+
+def _require(ok, message):
+    if not ok:
+        raise DialogueError(message)
+
+
+def _integer(value, minimum, maximum):
+    return type(value) is int and minimum <= value <= maximum
+
+
+def _text(value, limit=1000):
+    return isinstance(value, str) and bool(value.strip()) and len(value) <= limit
+
+
+def validate(document):
+    """Reject incomplete, invalid or excessively large documents before any mutation."""
+    _require(isinstance(document, dict), 'JSONの最上位はオブジェクトにしてください。')
+    _require(document.get('schema_version') == 1 and type(document.get('schema_version')) is int, '対応していないJSON形式です。schema_versionは1です。')
+    options = document.get('options')
+    _require(isinstance(options, dict), '全体設定 options がありません。')
+    for key, bounds in {'interval_minutes': (1, 1440), 'bubble_seconds': (5, 300),
+                        'meeting_lead_minutes': (1, 120), 'repeat_window': (0, 64)}.items():
+        _require(_integer(options.get(key), *bounds), f'{key} は{bounds[0]}〜{bounds[1]}の整数にしてください。')
+    for key in ('suppress_during_meetings', 'avoid_consecutive_topic'):
+        _require(type(options.get(key)) is bool, f'{key} はtrue/falseにしてください。')
+    _require(options.get('selection_policy') in ('least_recent', 'weighted'), '話題の選択方式が不正です。')
+    phrases = document.get('phrases')
+    _require(isinstance(phrases, dict) and set(phrases) == set(VOICE_NAMES), '4種の性格のセリフを指定してください。')
+    profiles = document.get('profiles')
+    _require(isinstance(profiles, dict) and set(profiles) == set('ABEF'), 'A/B/E/Fのキャラ設定が必要です。')
+    for key, profile in profiles.items():
+        _require(isinstance(profile, dict) and profile.get('voice') in VOICE_NAMES, f'{key}の性格が不正です。')
+        _require(_text(profile.get('description'), 300) and _text(profile.get('tagline'), 1000), f'{key}の説明と代表的な一言を入力してください。')
+    rules = document.get('rules')
+    _require(isinstance(rules, list) and 3 <= len(rules) <= 100, '発生ルールは3〜100件にしてください。')
+    ids = []
+    for rule in rules:
+        _require(isinstance(rule, dict), '発生ルールの形式が不正です。')
+        key = rule.get('id')
+        _require(isinstance(key, str) and re.fullmatch(r'[a-z][a-z0-9_]{0,39}', key), 'ルールIDは小文字英数字と_で40文字以内にしてください。')
+        _require(key not in ids, f'ルールID {key} が重複しています。')
+        ids.append(key)
+        _require(_text(rule.get('label'), 60), f'{key}: 話題名を入力してください。')
+        _require(type(rule.get('enabled')) is bool, f'{key}: 有効・無効の値が不正です。')
+        trigger = 'click' if key == 'call' else 'reminder' if key == 'meeting' else 'action' if key in ACTION_IDS else 'auto'
+        _require(rule.get('trigger') == trigger, f'{key}: 発生方法は{trigger}にしてください。')
+        _require(isinstance(rule.get('expression'), str) and rule['expression'] in EXPRESSION_FRAMES, f'{key}: 表情が不正です。')
+        _require(_integer(rule.get('weight'), 1, 100) and _integer(rule.get('cooldown_minutes'), 0, 1440), f'{key}: 出現しやすさまたは再発言の間隔が不正です。')
+        condition = rule.get('condition')
+        _require(isinstance(condition, dict) and isinstance(condition.get('kind'), str) and condition['kind'] in KINDS, f'{key}: 発生条件が不正です。')
+        kind = condition['kind']
+        _require(trigger == 'auto' or kind == 'always', f'{key}: 呼びかけ・予定通知の条件は「いつでも」です。')
+        if kind == 'time_range':
+            for name in ('start', 'end'):
+                value = condition.get(name)
+                _require(isinstance(value, str) and re.fullmatch(r'(?:[01][0-9]|2[0-3]):[0-5][0-9]', value), f'{key}: 時刻はHH:mm形式にしてください。')
+        elif kind == 'weekday':
+            days = condition.get('days')
+            _require(isinstance(days, list) and 1 <= len(days) <= 7 and all(_integer(d, 0, 6) for d in days) and len(set(days)) == len(days), f'{key}: 曜日を1つ以上選んでください。')
+        elif kind in ('session_range', 'before_meeting', 'after_meeting'):
+            minimum, maximum = condition.get('minimum_minutes'), condition.get('maximum_minutes')
+            _require(_integer(minimum, 0, 43200), f'{key}: 開始までの分数が不正です。')
+            _require((maximum is None and kind == 'session_range') or (_integer(maximum, 0, 43200) and maximum >= minimum), f'{key}: 終了の分数は開始以上にしてください。')
+            if kind == 'session_range':
+                _require(type(condition.get('first_only')) is bool, f'{key}: 初回のみの値が不正です。')
+    _require({'call', 'meeting', 'chat', *ACTION_IDS} <= set(ids), '基本の呼びかけ・案内・普段の一言のルールは削除できません。')
+    for voice, bank in phrases.items():
+        _require(isinstance(bank, dict) and set(bank) == set(ids), f'{voice}: すべての話題のセリフが必要です。')
+        for key, lines in bank.items():
+            _require(isinstance(lines, list) and 1 <= len(lines) <= 200 and all(_text(line) for line in lines), f'{voice} / {key}: セリフは1〜200件、1件1〜1000文字にしてください。')
+    _require(len(json.dumps(document, ensure_ascii=False).encode('utf-8')) <= MAX_BYTES, 'JSONは2MB以内にしてください。')
+    return deepcopy(document)
+
+
+def read_document(path):
+    path = Path(path)
+    if path.stat().st_size > MAX_BYTES:
+        raise DialogueError('JSONは2MB以内にしてください。')
+    try:
+        return validate(json.loads(path.read_text(encoding='utf-8-sig')))
+    except (UnicodeError, json.JSONDecodeError, RecursionError) as error:
+        raise DialogueError('JSONを読み込めません。書式とUTF-8の文字コードを確認してください。') from error
+
+
+def defaults():
+    return read_document(DEFAULT_PATH)
+
+
+# Voice identifiers stay stable so existing personality overrides keep working.
+VOICE_NAMES = ('控えめな皮肉屋', '冷静な案内役', '元気な応援係', 'のんびりした同僚')
+_DEFAULT = defaults()
+PHRASES = _DEFAULT['phrases']
+PROFILES = {key: (p['voice'], p['description'], p['tagline']) for key, p in _DEFAULT['profiles'].items()}
+EXPRESSIONS = {r['id']: r['expression'] for r in _DEFAULT['rules']}
+BUBBLE_MS = _DEFAULT['options']['bubble_seconds'] * 1000
+
+
+def voice_for(settings, document=None):
+    profiles = (document or _DEFAULT)['profiles']
+    return profiles[settings.character]['voice'] if settings.personality == AUTO_PERSONALITY else settings.personality
+
+
+class DialogueStore:
+    def __init__(self, path, legacy_interval=10):
+        self.path = Path(path)
+        self.error = ''
+        self.data = defaults()
+        if self.path.exists():
+            try:
+                self.data = read_document(self.path)
+            except (OSError, DialogueError) as error:
+                self.error = f'会話JSONを読み込めないため初期値を使用中です。元のファイルは変更していません。{error}'
+        else:
+            self.data['options']['interval_minutes'] = legacy_interval
+
+    def save(self, document):
+        candidate = validate(document)
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        temporary = self.path.with_suffix('.json.tmp')
+        try:
+            temporary.write_text(json.dumps(candidate, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+            if self.path.exists():
+                shutil.copy2(self.path, self.path.with_suffix('.json.bak'))
+            temporary.replace(self.path)
+        finally:
+            temporary.unlink(missing_ok=True)
+        self.data = candidate
+        self.error = ''
+
+    def rule(self, key):
+        return next((r for r in self.data['rules'] if r['id'] == key), None)
+
+
+def matches(rule, now, started, session_spoken, events, connected):
+    c = rule['condition']
+    kind = c['kind']
+    if kind == 'always':
+        return True
+    if kind == 'time_range':
+        current, start, end = now.strftime('%H:%M'), c['start'], c['end']
+        return True if start == end else start <= current < end if start < end else current >= start or current < end
+    if kind == 'weekday':
+        return now.weekday() in c['days']
+    if kind == 'session_range':
+        elapsed = (now - started).total_seconds() / 60
+        return (not c['first_only'] or not session_spoken) and elapsed >= c['minimum_minutes'] and (c['maximum_minutes'] is None or elapsed <= c['maximum_minutes'])
+    if not connected:
+        return False
+    if kind == 'before_meeting':
+        return any(c['minimum_minutes'] < (e.start - now).total_seconds() / 60 <= c['maximum_minutes'] for e in events)
+    if kind == 'after_meeting':
+        return any(c['minimum_minutes'] <= (now - e.end).total_seconds() / 60 <= c['maximum_minutes'] for e in events)
+    return False
