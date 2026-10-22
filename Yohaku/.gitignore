@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+build/
+dist/
+release/
+*.sqlite3
+*.sqlite3-journal
+*.sqlite3-wal
+*.sqlite3-shm
+settings.json
+history.json
+.env
