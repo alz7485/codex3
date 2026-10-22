@@ -1,12 +1,14 @@
-# ExLauncher v1.0.7
+# ExLauncher v1.0.8
 
-[現在の開閉状態を維持する修正版ソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/ExLauncher/ExLauncher_Codex_Handoff_v1.0.7_Selective_Edit.zip)
+[設定UIスライド対応・修正版ソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/ExLauncher/ExLauncher_Codex_Handoff_v1.0.8_Settings_Slide.zip)
 
-Modernで、現在のカテゴリ開閉状態を維持したまま編集モードへ入ります。開いている項目は再利用し、閉じたカテゴリはユーザーが開くまで項目を生成しません。編集中も必要なカテゴリだけ開閉できます。編集終了時は従来どおり、編集前の開閉状態へ戻します。
+Modernの設定ボタンは、**カテゴリ収納 → バーを設定UIの高さへ変更 → 設定UIをスライド表示**の順に動きます。バーの左右配置に合わせ、カテゴリ表示と同じ方向へ出ます。速度設定もカテゴリと共通です。
 
-76テスト成功。1,000項目・全カテゴリ収納の合成データでは、編集開始処理の中央値が836.786msから7.707msへ短縮しました（各5回、Linux/Qt offscreen、アニメーションなし）。Windowsの実測値やFPSではありません。
+OK・キャンセル・Esc・バークリックでは逆順で戻し、設定前のカテゴリ開閉状態を復元します。設定中のバードラッグにも追従します。狭い画面では設定項目をスクロールでき、OK・キャンセルは表示を維持します。
 
-Classic、保存形式、VS Code設定、ビルド環境はv1.0.6を引き継いでいます。
+85テスト成功（Linux/Qt offscreen）。Windows実機での滑らかさ・ちらつき・DPI/複数モニター・EXE実行は未検証です。ソースZIPであり、ビルド済みEXEは含みません。
+
+v1.0.7の編集時の選択展開、Classic、保存形式、VS Code・ビルド環境は引き継いでいます。
 
 1. ZIPをすべて展開し、main.pyと.vscodeがあるフォルダをVS Codeで開きます。Microsoftの「Python」「Python Debugger」拡張を使用します。
 2. VS Codeのターミナルで初回の準備を実行します。
@@ -17,8 +19,8 @@ python scripts/build_onedir.py --setup-only
 
 3. Pythonインタープリターに `.venv\Scripts\python.exe` を選びます。**F5で起動・デバッグ**、**Ctrl+Shift+BでEXE作成**です。
 
-[詳しい手順](VSCODE_GUIDE.md)。Windows用EXEの出力先は `dist\ExLauncher\ExLauncher.exe` です。Windows上のVS Code/F5/BAT/EXEは未検証です。ソースZIPであり、ビルド済みEXEは含みません。
+[詳しい手順](VSCODE_GUIDE.md)。Windows用EXEの出力先は `dist\ExLauncher\ExLauncher.exe` です。
 
-SHA-256: `bd569f3b357cdab118bc2e56d81fe1ee778880712bd2ff2c08ee2e0eb0af5da0`
+SHA-256: `409e948615b578e6035c108e32239a3cd489ceb92ea2c586bb76e766afa6f384`
 
-[前版 v1.0.6（VS Code・ビルド環境対応）](ExLauncher_Codex_Handoff_v1.0.6_VSCode_Build.zip)
+[前版 v1.0.7（編集時の開閉状態維持）](ExLauncher_Codex_Handoff_v1.0.7_Selective_Edit.zip)
