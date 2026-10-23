@@ -181,3 +181,19 @@ class DialogueJsonTests(unittest.TestCase):
             self.assertNotIn('{mail_count}', bank['mail_received'][0])
         upgraded['rules'] = [r for r in upgraded['rules'] if r['id'] != 'mail_unread']
         self.assertNotIn('mail_unread', [r['id'] for r in upgrade(upgraded)['rules']])
+
+    def test_mail_sentence_upgrade_keeps_custom_text_and_the_sender_is_not_persisted(self):
+        from companion.dialogue import upgrade
+        draft = deepcopy(self.store.data)
+        draft.pop('mail_wording_version', None)
+        bank = draft['phrases']['控えめな皮肉屋']
+        bank['mail_received'] = ['メールが届きました。読む時間にも余白をどうぞ。', '自分で編集した案内です。']
+        upgraded = upgrade(draft)
+        self.assertEqual(upgraded['phrases']['控えめな皮肉屋']['mail_received'][0], '{mail_from}メールが来ました。')
+        self.assertEqual(upgraded['phrases']['控えめな皮肉屋']['mail_received'][1], '自分で編集した案内です。')
+        self.store.save(upgraded)
+        self.engine.choose = lambda values: values[0]
+        self.assertEqual(self.engine.phrase('mail_received', {'mail_from': '山田さんから'}), '山田さんからメールが来ました。')
+        self.engine.persist(self.now)
+        self.assertNotIn('山田', self.engine.history_path.read_text())
+        self.assertNotIn('山田', self.store.path.read_text())

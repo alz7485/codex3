@@ -144,10 +144,22 @@ def upgrade(document):
     return upgrade_mail(result)
 
 
+LEGACY_MAIL_WORDING = {
+    'Outlookで新着メールを検知しました。',
+    'メールが届いたみたい。お知らせしておくね。',
+    'メールが届きました。お時間のあるときにご確認ください。',
+    'メールが届きました。読む時間にも余白をどうぞ。',
+    'メールが届きました！ 必要なときに確認しましょう。',
+    '新しいメールが届きました。まずはお知らせまで。',
+    '新しいメールが来ています！ まずはお知らせです。',
+    '新しいメールが来てるよ。手が空いたら見てみてね。',
+}
+
+
 def upgrade_mail(document):
     """Add the new topic once; later user deletions stay deleted."""
     if document.get('content_revision', 0) == 3:
-        return document
+        return upgrade_mail_wording(document)
     result = deepcopy(document)
     base = json.loads(DEFAULT_PATH.read_text(encoding='utf-8'))
     if isinstance(result.get('rules'), list) and isinstance(result.get('phrases'), dict):
@@ -164,6 +176,21 @@ def upgrade_mail(document):
                                          if isinstance(line, str) and '{mail_count}' in line else line
                                          for i, line in enumerate(bank['mail_received'])]
     result['content_revision'] = 3
+    return upgrade_mail_wording(result)
+
+
+def upgrade_mail_wording(document):
+    if document.get('mail_wording_version') == 1:
+        return document
+    result = deepcopy(document)
+    base = json.loads(DEFAULT_PATH.read_text(encoding='utf-8'))
+    if isinstance(result.get('phrases'), dict):
+        for voice, bank in result['phrases'].items():
+            if isinstance(bank, dict) and voice in base['phrases'] and isinstance(bank.get('mail_received'), list):
+                bank['mail_received'] = [base['phrases'][voice]['mail_received'][i % 2]
+                    if isinstance(line, str) and line in LEGACY_MAIL_WORDING else line
+                    for i, line in enumerate(bank['mail_received'])]
+    result['mail_wording_version'] = 1
     return result
 
 

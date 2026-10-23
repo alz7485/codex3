@@ -152,7 +152,7 @@ class Engine:
         self.notified = raw if isinstance(raw, dict) else {}
         self.departure_date = self.state.get('departure_date', '')
 
-    def phrase(self, category: str) -> str:
+    def phrase(self, category: str, replacements=None) -> str:
         voice = voice_for(self.settings, self.dialogue.data)
         rule = self.dialogue.rule(category)
         if rule is None or not rule["enabled"]:
@@ -174,7 +174,10 @@ class Engine:
             values['hours_to_end'] = (f'{hours}時間' if hours else '') + (f'{minutes}分' if minutes or not hours else '')
         values['work_start'] = self.dialogue.data['options']['work_start']
         values['work_end'] = self.dialogue.data['options']['work_end']
+        values.update(replacements or {})
         template = re.sub(r'\{hours_to_end\}\s*時間', '{hours_to_end}', phrases[index])
+        if category == 'mail_received' and values.get('mail_from') and '{mail_from}' not in template:
+            template = '{mail_from}メールが来ました。\n' + template
         return re.sub(r'\{([a-z_]+)\}', lambda match: values.get(match.group(1), match.group(0)), template)
 
     def conversation(self, now: datetime, events: list[Event] = (), connected=False, manual=True) -> Notice | None:

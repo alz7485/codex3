@@ -135,10 +135,17 @@ class UserInterfaceTests(unittest.TestCase):
             self.assertEqual(c.bubble.kind, 'notification')
             self.assertIn('山田さん', c.bubble.text.text())
             self.assertIn('佐藤さん', c.bubble.text.text())
+            self.assertIn('山田さんと佐藤さんから', c.bubble.text.text())
+            self.assertNotIn('送信者：', c.bubble.text.text())
             self.assertNotRegex(c.bubble.text.text() + c.bubble.heading.text(), r'\d+件')
             c.mail_result(c.mail_generation, {'messages': [{'kind': 'mail', 'sender': '鈴木さん'}]}, '')
             self.assertNotIn('山田さん', c.bubble.text.text())
             self.assertIn('鈴木さん', c.bubble.text.text())
+            self.assertRegex(c.bubble.text.text(), r'^鈴木さんから(?:新しい)?メールが(?:来|届き)ました。$')
+            c.mail_result(c.mail_generation, {'messages': [{'kind': 'mail', 'sender': '田中'},
+                                                          {'kind': 'meeting', 'sender': '高橋'}]}, '')
+            self.assertIn('田中さんから', c.bubble.text.text())
+            self.assertIn('高橋さんから会議の案内が来ました。', c.bubble.text.text())
             c.bubble.hide()
             c.unread_at = datetime.now().astimezone() - timedelta(seconds=100)
             c.refresh_context_metrics(datetime.now().astimezone())
@@ -473,7 +480,7 @@ class UserInterfaceTests(unittest.TestCase):
     def test_app_has_brand_name_version_and_windows_icon(self):
         c = self.controller
         self.assertEqual(self.app.applicationDisplayName(), "余白 / YOHAKU")
-        self.assertEqual(self.app.applicationVersion(), "0.11.1")
+        self.assertEqual(self.app.applicationVersion(), "0.11.2")
         self.assertFalse(c.brand_icon.isNull())
         self.assertEqual(c.panel.windowIcon().cacheKey(), c.brand_icon.cacheKey())
         c.panel.character_buttons["B"].click()

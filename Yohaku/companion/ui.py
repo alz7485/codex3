@@ -1418,18 +1418,22 @@ class Controller(QObject):
                     and message.get('kind') in ('mail', 'meeting')]
         if not messages:
             return
-        has_mail = any(message['kind'] == 'mail' for message in messages)
-        meetings = any(message['kind'] == 'meeting' for message in messages)
-        text = self.engine.phrase('mail_received') if has_mail else ''
-        if meetings:
-            text += ('\n' if text else '') + '会議依頼が届きました。'
-        if self.settings.mail_show_senders:
-            senders = dict.fromkeys(sender_with_honorific(str(message.get('sender') or '送信者不明')[:160]) for message in messages)
-            text += '\n\n送信者：' + '、'.join(senders)
+        lines = []
+        for kind in ('mail', 'meeting'):
+            group = [message for message in messages if message['kind'] == kind]
+            if not group:
+                continue
+            names = list(dict.fromkeys(sender_with_honorific(str(message.get('sender') or '')[:160])
+                                       for message in group)) if self.settings.mail_show_senders else []
+            names = [name for name in names if name not in ('送信者不明', '送信者を取得できませんでした')]
+            sender = '、'.join(names[:-1]) + 'と' + names[-1] if len(names) > 1 else ''.join(names)
+            prefix = sender + 'から' if sender else ''
+            lines.append(self.engine.phrase('mail_received', {'mail_from': prefix}) if kind == 'mail'
+                         else prefix + '会議の案内が来ました。')
+        text = '\n'.join(lines)
         self.engine.last_display = now
         self.motion.react(rule['expression'], speaking=True)
-        heading = '新着メール · Outlook' if has_mail else '会議依頼 · Outlook'
-        self.bubble.display(Notice(heading, text, True, rule['expression'], 'notification'))
+        self.bubble.display(Notice('', text, True, rule['expression'], 'notification'))
         self.position()
 
     def shutdown(self):
