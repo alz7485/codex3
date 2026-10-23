@@ -447,7 +447,7 @@ class Panel(QMainWindow):
         for key, name in CHARACTERS.items():
             choice = QToolButton()
             choice.setObjectName("character")
-            choice.setText(f"{key}  {name}")
+            choice.setText(name)
             choice.setIcon(QIcon(character_pixmap(key)))
             choice.setIconSize(QSize(68, 68))
             choice.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextUnderIcon)
@@ -456,7 +456,7 @@ class Panel(QMainWindow):
             choice.setMinimumHeight(108)
             choice.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
             choice.setCursor(Qt.CursorShape.PointingHandCursor)
-            choice.setAccessibleName(f"キャラクター {key} {name}")
+            choice.setAccessibleName(f"キャラクター {name}")
             choice.clicked.connect(lambda checked=False, k=key: self.update_setting("character", k))
             self.character_group.addButton(choice)
             self.character_buttons[key] = choice
