@@ -3,6 +3,16 @@ from companion.motion import Motion
 
 
 class MotionTests(unittest.TestCase):
+    def test_facing_is_retained_when_a_walk_finishes(self):
+        motion = Motion(uniform=lambda a, b: a)
+        motion.wait = 0
+        motion.distance = 0.01
+        motion.advance(0.1, 100, 0, 200, True)
+        self.assertEqual(motion.direction, 1)  # Next trip faces the other way.
+        self.assertEqual(motion.facing, -1)  # Current pose keeps its actual direction.
+        motion.advance(0.1, 100, 0, 200, False)
+        self.assertEqual(motion.facing, -1)
+
     def test_walk_moves_alternates_frames_and_stays_inside_bounds(self):
         motion = Motion(uniform=lambda a, b: a)
         motion.wait = 0

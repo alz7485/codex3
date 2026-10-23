@@ -9,10 +9,13 @@ import unittest
 from unittest.mock import patch
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-from companion.core import CHARACTERS, PHRASES, Event, Settings
+from companion.core import CHARACTERS, PHRASES, Event, Notice, Settings
 from companion.activity import FileObservation
 from companion.dialogue import voice_for
-from companion.ui import Controller, Panel, character_frames, character_pixmap, create_application
+from companion.ui import Controller, Panel, Resident, blend_frames, character_frames, character_pixmap, create_application
+from PySide6.QtCore import QEvent, QPoint, QPointF, QRect, Qt
+from PySide6.QtGui import QColor, QMouseEvent, QPixmap
+from PySide6.QtTest import QTest
 
 
 class UserInterfaceTests(unittest.TestCase):
@@ -49,6 +52,119 @@ class UserInterfaceTests(unittest.TestCase):
 
     def setUp(self):
         self.controller.history_window.hide()
+
+    def test_message_shows_body_and_calendar_and_mail_keep_their_headings(self):
+        bubble = self.controller.bubble
+        try:
+            for kind in ("calendar", "notification", "message"):
+                bubble.display(Notice("表示見出し", "本文だけのメッセージ。", kind=kind))
+                self.app.processEvents()
+                self.assertEqual(bubble.heading.isVisible(), kind != "message")
+                self.assertEqual(bubble.text.text(), "本文だけのメッセージ。")
+            bubble.open_choices()
+            self.assertTrue(bubble.heading.isVisible())
+        finally:
+            bubble.hide()
+
+    def test_frame_transition_preserves_alpha_and_interpolates_color(self):
+        a, b = QPixmap(8, 8), QPixmap(8, 8)
+        a.fill(QColor(200, 0, 0, 255))
+        b.fill(QColor(0, 0, 200, 255))
+        for progress in (0, 0.25, 0.5, 0.75, 1):
+            color = blend_frames(a, b, progress).toImage().pixelColor(4, 4)
+            self.assertGreaterEqual(color.alpha(), 254)
+            self.assertLessEqual(abs(color.red() - 200 * (1 - progress)), 2)
+            self.assertLessEqual(abs(color.blue() - 200 * progress), 2)
+        a.fill(Qt.GlobalColor.transparent)
+        b.fill(Qt.GlobalColor.transparent)
+        self.assertEqual(blend_frames(a, b, 0.5).toImage().pixelColor(0, 0).alpha(), 0)
+
+    def test_drag_does_not_click_and_small_pointer_jitter_still_clicks(self):
+        resident = Resident()
+        resident.move(100, 100)
+        resident.show()
+        clicks, points, finishes = [], [], []
+        resident.clicked.connect(lambda: clicks.append(True))
+        resident.dragged.connect(points.append)
+        resident.drag_finished.connect(lambda: finishes.append(True))
+        try:
+            QTest.mouseClick(resident, Qt.MouseButton.LeftButton, pos=QPoint(30, 30))
+            self.assertEqual(len(clicks), 1)
+            QTest.mousePress(resident, Qt.MouseButton.LeftButton, pos=QPoint(30, 30))
+            origin = resident.press_position
+            event = QMouseEvent(QEvent.Type.MouseMove, QPointF(31, 31),
+                                QPointF(origin + QPoint(1, 1)), Qt.MouseButton.NoButton,
+                                Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier)
+            self.app.sendEvent(resident, event)
+            QTest.mouseRelease(resident, Qt.MouseButton.LeftButton, pos=QPoint(31, 31))
+            self.assertEqual(len(clicks), 2)
+            self.assertEqual(points, [])
+            QTest.mousePress(resident, Qt.MouseButton.LeftButton, pos=QPoint(30, 30))
+            origin = resident.press_position
+            for delta in (QPoint(1, 1), QPoint(80, -30)):
+                event = QMouseEvent(QEvent.Type.MouseMove, QPointF(30, 30),
+                                    QPointF(origin + delta), Qt.MouseButton.NoButton,
+                                    Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier)
+                self.app.sendEvent(resident, event)
+                if delta == QPoint(1, 1):
+                    self.assertEqual(points, [])
+            self.assertEqual(points, [QPoint(180, 70)])
+            self.assertTrue(resident.dragging)
+            QTest.mouseRelease(resident, Qt.MouseButton.LeftButton, pos=QPoint(30, 30))
+            self.assertEqual(len(clicks), 2)
+            self.assertEqual(finishes, [True])
+            self.assertFalse(resident.dragging)
+            self.assertIsNone(resident.press_position)
+        finally:
+            resident.hide()
+            resident.deleteLater()
+
+    def test_drag_position_is_clamped_saved_and_used_as_walking_height(self):
+        c = self.controller
+        old_x, old_y = c.motion_x, c.motion_y
+        old_settings = (c.settings.position_set, c.settings.position_x, c.settings.position_y)
+        area = self.app.primaryScreen().availableGeometry()
+        try:
+            c.drag_character(QPoint(area.left() + 120, area.top() + 50))
+            c.finish_drag()
+            restored = Settings.load(c.path / "settings.json")
+            self.assertTrue(restored.position_set)
+            self.assertEqual((restored.position_x, restored.position_y), (c.resident.x(), c.resident.y()))
+            y = c.resident.y()
+            c.motion_x += 20
+            c.position()
+            self.assertEqual(c.resident.y(), y)
+            c.bubble.display(Notice("", "上端でも読めます。"))
+            c.drag_character(QPoint(area.left() + 120, area.top() - 1000))
+            self.assertTrue(c.bubble.tail_above)
+            self.assertGreater(c.bubble.y(), c.resident.y())
+            c.drag_character(QPoint(area.right() + 10000, area.bottom() + 10000))
+            self.assertTrue(area.contains(c.resident.geometry()))
+            c.motion_x, c.motion_y = float(restored.position_x), restored.position_y
+            c.position()
+            self.assertEqual((c.resident.x(), c.resident.y()), (restored.position_x, restored.position_y))
+        finally:
+            c.settings.position_set, c.settings.position_x, c.settings.position_y = old_settings
+            c.motion_x, c.motion_y = old_x, old_y
+            c.bubble.hide()
+            c.position()
+
+    def test_drag_uses_secondary_monitor_and_recovers_after_monitor_removal(self):
+        from types import SimpleNamespace
+        c = self.controller
+        old_x, old_y = c.motion_x, c.motion_y
+        primary = SimpleNamespace(availableGeometry=lambda: QRect(0, 0, 1920, 1040))
+        secondary = SimpleNamespace(availableGeometry=lambda: QRect(-1280, 0, 1280, 984))
+        try:
+            with patch.object(c.app, "screenAt", return_value=secondary):
+                c.drag_character(QPoint(-900, 300))
+                self.assertEqual(c.resident.pos(), QPoint(-900, 300))
+            with patch.object(c.app, "screenAt", return_value=None), patch.object(c.app, "screens", return_value=[primary]):
+                c.position()
+                self.assertTrue(primary.availableGeometry().contains(c.resident.geometry()))
+        finally:
+            c.motion_x, c.motion_y = old_x, old_y
+            c.position()
 
     def test_pause_and_restore(self):
         c = self.controller
@@ -169,7 +285,7 @@ class UserInterfaceTests(unittest.TestCase):
     def test_app_has_brand_name_version_and_windows_icon(self):
         c = self.controller
         self.assertEqual(self.app.applicationDisplayName(), "余白 / YOHAKU")
-        self.assertEqual(self.app.applicationVersion(), "0.9.0")
+        self.assertEqual(self.app.applicationVersion(), "0.10.0")
         self.assertFalse(c.brand_icon.isNull())
         self.assertEqual(c.panel.windowIcon().cacheKey(), c.brand_icon.cacheKey())
         c.panel.character_buttons["B"].click()

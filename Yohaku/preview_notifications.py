@@ -14,7 +14,7 @@ def main():
     def text(x,y,value,size=14,bold=False):
         font=QFont(app.font());font.setPixelSize(size);font.setBold(bold)
         painter.setFont(font);painter.setPen(QColor('#344f3f'));painter.drawText(x,y,value)
-    text(40,44,'Y O H A K U  /  v0.9.0',13,True)
+    text(40,44,'Y O H A K U  /  v0.10.0',13,True)
     text(40,92,'一言、予定、新着。色でも見分けられる。',29,True)
     notices=[Notice('余白ノート','定時まであと約2時間です。\n今日の区切りを考えておきますか。'),
              Notice('予定まで あと10分','そろそろ会議です。\n余白も、持ち物にどうぞ。',True,'notice','calendar'),

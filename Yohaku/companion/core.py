@@ -48,6 +48,9 @@ class Settings:
     character: str = "A"
     animation: bool = True
     walking: bool = True
+    position_set: bool = False
+    position_x: int = 0
+    position_y: int = 0
     file_logging: bool = False
     context_enabled: bool = True
     mail_enabled: bool = True
@@ -183,7 +186,7 @@ class Engine:
         self.session_spoken = True
         self.last_category = category
         self.category_last[category] = now
-        return Notice(f"{CHARACTERS[self.settings.character]}から、ひとこと",
+        return Notice("",
                       self.phrase(category), expression=self.dialogue.rule(category)['expression'])
 
     def persist(self, now: datetime) -> None:

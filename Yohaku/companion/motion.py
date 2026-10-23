@@ -16,6 +16,7 @@ class Motion:
         self.wait = 15.0
         self.distance = 0.0
         self.direction = -1
+        self.facing = 1
         self.walking = False
         self.speed = 0.0
         self.gait = 0.0
@@ -58,6 +59,8 @@ class Motion:
                 self.distance -= moved
                 self.gait += moved / 22
                 self.walking = moved > 0
+                if self.walking:
+                    self.facing = self.direction
                 if self.distance < 0.08 or next_x in (lower, upper):
                     self.wait = self.uniform(25, 55)
                     self.distance = 0

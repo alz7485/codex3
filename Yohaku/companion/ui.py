@@ -11,7 +11,7 @@ import sys
 import threading
 import time
 
-from PySide6.QtCore import QDate, QEvent, QLocale, QLockFile, QObject, QRect, QRectF, QSize, Qt, QTime, QTimer, Signal
+from PySide6.QtCore import QDate, QEvent, QLocale, QLockFile, QObject, QPoint, QRect, QRectF, QSize, Qt, QTime, QTimer, Signal
 from PySide6.QtGui import QAction, QColor, QFont, QIcon, QPainter, QPainterPath, QPen, QPixmap
 from PySide6.QtWidgets import (
     QApplication, QButtonGroup, QCalendarWidget, QCheckBox, QComboBox, QFrame, QHeaderView, QHBoxLayout, QLabel, QMainWindow,
@@ -149,6 +149,31 @@ def character_frames(character):
 
 
 
+def blend_frames(previous, current, progress):
+    """Interpolate premultiplied pixels before drawing onto the desktop.
+
+    Two source-over draws dim shared opaque pixels to 75% at the midpoint.
+    Adding the weighted frames on a transparent surface preserves their alpha.
+    """
+    weighted = []
+    for source, opacity in ((previous, 1 - progress), (current, progress)):
+        frame = QPixmap(source.size())
+        frame.fill(Qt.GlobalColor.transparent)
+        painter = QPainter(frame)
+        painter.setOpacity(opacity)
+        painter.drawPixmap(0, 0, source)
+        painter.end()
+        weighted.append(frame)
+    # Apply Plus at full painter opacity; Qt's constant-opacity fast path can
+    # otherwise fall back to source-over for opaque source pixmaps.
+    result = weighted[0]
+    painter = QPainter(result)
+    painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Plus)
+    painter.drawPixmap(0, 0, weighted[1])
+    painter.end()
+    return result
+
+
 class Mascot(QWidget):
     """A transparent, smoothly scaled approved character asset."""
 
@@ -187,16 +212,12 @@ class Mascot(QWidget):
             p.scale(-1, 1)
         frames = character_frames(self.character)
         pixmap = self.pixmap if self.frame_index is None else frames[self.frame_index]
+        blend = min(1.0, max(0.0, (time.monotonic() - self.frame_changed_at) / 0.085))
+        if self.previous_frame is not None and self.frame_index is not None and blend < 1:
+            pixmap = blend_frames(frames[self.previous_frame], pixmap, blend)
         size = pixmap.size().scaled(QSize(self.width() - 6, self.height() - 6), Qt.AspectRatioMode.KeepAspectRatio)
         target = QRectF((self.width() - size.width()) / 2,
                        self.height() - size.height() - 3, size.width(), size.height())
-        # Brief crossfade softens expression changes without a hard cut.
-        blend = min(1.0, max(0.0, (time.monotonic() - self.frame_changed_at) / 0.085))
-        if self.previous_frame is not None and self.frame_index is not None and blend < 1:
-            previous = frames[self.previous_frame]
-            p.setOpacity(1 - blend)
-            p.drawPixmap(target, previous, QRectF(previous.rect()))
-            p.setOpacity(blend)
         p.drawPixmap(target, pixmap, QRectF(pixmap.rect()))
         p.end()
 
@@ -391,7 +412,7 @@ class Panel(QMainWindow):
         self.animation_check.setChecked(self.settings.animation)
         self.animation_check.toggled.connect(lambda v: self.update_setting("animation", v))
         chooser.addWidget(self.animation_check)
-        self.walking_check = QCheckBox("ときどき、画面下を歩く")
+        self.walking_check = QCheckBox("ときどき、置いた高さを歩く")
         self.walking_check.setChecked(self.settings.walking)
         self.walking_check.setEnabled(self.settings.animation)
         self.walking_check.toggled.connect(lambda v: self.update_setting("walking", v))
@@ -513,6 +534,8 @@ class Panel(QMainWindow):
 class Resident(Mascot):
     clicked = Signal()
     context_requested = Signal(object)
+    dragged = Signal(object)
+    drag_finished = Signal()
 
     def __init__(self, character="A"):
         super().__init__(82, character=character)
@@ -520,13 +543,40 @@ class Resident(Mascot):
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setToolTip("余白 · 左クリックで一言／右クリックで呼び出し")
+        self.setToolTip("余白 · 左クリックで一言／右クリックで呼び出し／ドラッグで移動")
+        self.press_position = None
+        self.press_origin = None
+        self.dragging = False
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.RightButton:
             self.context_requested.emit(event.globalPosition().toPoint())
         elif event.button() == Qt.MouseButton.LeftButton:
-            self.clicked.emit()
+            self.press_position = event.globalPosition().toPoint()
+            self.press_origin = self.pos()
+            self.dragging = False
+        event.accept()
+
+    def mouseMoveEvent(self, event):
+        if self.press_position is not None and event.buttons() & Qt.MouseButton.LeftButton:
+            delta = event.globalPosition().toPoint() - self.press_position
+            if self.dragging or delta.manhattanLength() >= QApplication.startDragDistance():
+                self.dragging = True
+                self.setCursor(Qt.CursorShape.ClosedHandCursor)
+                self.dragged.emit(self.press_origin + delta)
+        event.accept()
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton and self.press_position is not None:
+            was_dragging = self.dragging
+            self.press_position = None
+            self.dragging = False
+            self.setCursor(Qt.CursorShape.PointingHandCursor)
+            if was_dragging:
+                self.drag_finished.emit()
+            elif self.rect().contains(event.position().toPoint()):
+                self.clicked.emit()
+        event.accept()
 
 
 class Bubble(QFrame):
@@ -542,13 +592,15 @@ class Bubble(QFrame):
         self.duration_ms = BUBBLE_MS
         self.kind = "message"
         self.tail_x = 270
+        self.tail_above = False
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(lambda _: self.call_requested.emit())
         layout = box(self, 18, 10)
         layout.setContentsMargins(18, 14, 18, 30)
         row = QHBoxLayout()
-        self.heading = label("余白から、ひとこと", "muted")
+        self.heading = label("", "muted")
         row.addWidget(self.heading, 1)
+        row.addStretch()
         close = button("×", self.hide, "link")
         close.setAccessibleName("吹き出しを閉じる")
         close.setFixedSize(24, 24)
@@ -569,16 +621,19 @@ class Bubble(QFrame):
         painter.setBrush(QColor(fill))
         painter.setPen(QPen(QColor(stroke), 1))
         shape = QPainterPath()
-        shape.addRoundedRect(QRectF(self.rect()).adjusted(0.5, 0.5, -0.5, -12.5), 13, 13)
+        shape.addRoundedRect(QRectF(self.rect()).adjusted(0.5, 12.5 if self.tail_above else 0.5,
+                                                       -0.5, -0.5 if self.tail_above else -12.5), 13, 13)
         tail = QPainterPath()
-        tail.moveTo(self.tail_x - 10, self.height() - 14)
-        tail.lineTo(self.tail_x + 10, self.height() - 14)
-        tail.lineTo(self.tail_x, self.height() - 1)
+        base, tip = (14, 1) if self.tail_above else (self.height() - 14, self.height() - 1)
+        tail.moveTo(self.tail_x - 10, base)
+        tail.lineTo(self.tail_x + 10, base)
+        tail.lineTo(self.tail_x, tip)
         tail.closeSubpath()
         painter.drawPath(shape.united(tail))
 
     def set_kind(self, kind):
         self.kind = kind if kind in ('message', 'menu', 'calendar', 'notification') else 'message'
+        self.heading.setVisible(self.kind != 'message')
         self.update()
 
     def display(self, notice):
@@ -790,7 +845,8 @@ class Controller(QObject):
         self.interaction = self.bubble  # One actual speech window for all modes.
         self.history_window = HistoryWindow()
         self.motion = Motion()
-        self.motion_x = None
+        self.motion_x = float(self.settings.position_x) if self.settings.position_set else None
+        self.motion_y = self.settings.position_y if self.settings.position_set else None
         self.last_motion_time = time.monotonic()
         self.activity_history = FileHistory(self.path / "files.sqlite3")
         self.activity_tracker = FileTracker(self.activity_history)
@@ -837,6 +893,8 @@ class Controller(QObject):
         self.panel.hide_requested.connect(self.share)
         self.panel.clear_history_requested.connect(self.clear_activity)
         self.resident.clicked.connect(self.show_message)
+        self.resident.dragged.connect(self.drag_character)
+        self.resident.drag_finished.connect(self.finish_drag)
         self.interaction.selected.connect(self.select_content)
         self.history_window.refresh_requested.connect(self.refresh_history)
         self.history_window.settings_requested.connect(self.show_panel)
@@ -969,22 +1027,71 @@ class Controller(QObject):
         self.engine.recent = []  # Old indices may refer to deleted/reordered lines.
         self.engine.last_display = datetime.now().astimezone()
 
+    def resident_area(self):
+        if self.motion_x is None or self.motion_y is None:
+            return self.app.primaryScreen().availableGeometry()
+        center = QPoint(round(self.motion_x + self.resident.width() / 2),
+                        round(self.motion_y + self.resident.height() / 2))
+        screen = self.app.screenAt(center)
+        if screen is None:
+            # A monitor can be unplugged, or a saved position can be off-screen.
+            screen = min(self.app.screens(), key=lambda s: (
+                center - s.availableGeometry().center()).manhattanLength())
+        return screen.availableGeometry()
+
+    def drag_character(self, point):
+        self.motion_x, self.motion_y = float(point.x()), point.y()
+        self.position()
+        self.resident.repaint()
+
+    def finish_drag(self):
+        self.motion.wait = max(1.0, self.motion.wait)
+        self.motion.distance = self.motion.speed = 0
+        self.motion.walking = False
+        self.last_motion_time = time.monotonic()
+        self.settings.position_set = True
+        self.settings.position_x = self.resident.x()
+        self.settings.position_y = self.resident.y()
+        try:
+            save_json(self.path / "settings.json", asdict(self.settings))
+        except OSError:
+            self.panel.saved_label.setText("移動しましたが、位置を保存できませんでした。")
+
     def position(self, *args):
-        area = self.app.primaryScreen().availableGeometry()
+        area = self.resident_area()
         lower = area.left() + 12
         upper = max(lower, area.right() - self.resident.width() - 20)
         if self.motion_x is None:
             self.motion_x = float(upper)
+        if self.motion_y is None:
+            self.motion_y = area.bottom() - self.resident.height() - 12
         self.motion_x = min(upper, max(lower, self.motion_x))
+        self.motion_y = min(max(area.top() + 8, area.bottom() - self.resident.height() - 12),
+                            max(area.top() + 8, self.motion_y))
         self.resident.subpixel = self.motion_x - math.floor(self.motion_x)
-        self.resident.move(math.floor(self.motion_x), area.bottom() - self.resident.height() - 12)
+        point = QPoint(math.floor(self.motion_x), self.motion_y)
+        if point != self.resident.pos():
+            self.resident.move(point)
         for bubble in (self.bubble,):
             x = self.resident.x() + self.resident.width() / 2 - bubble.width() / 2
             x = max(area.left() + 8, min(area.right() - bubble.width() - 8, x))
-            y = max(area.top() + 8, self.resident.y() - bubble.height() - 8)
-            bubble.move(round(x), round(y))
-            bubble.tail_x = max(24, min(bubble.width() - 24, self.resident.x() + self.resident.width() / 2 - x))
-            bubble.update()
+            above = self.resident.y() - bubble.height() - 8
+            tail_above = above < area.top() + 8
+            y = self.resident.y() + self.resident.height() + 8 if tail_above else above
+            y = max(area.top() + 8, min(area.bottom() - bubble.height() - 8, y))
+            if bubble.tail_above != tail_above:
+                bubble.tail_above = tail_above
+                bubble.layout().setContentsMargins(18, 30 if tail_above else 14,
+                                                  18, 14 if tail_above else 30)
+                bubble.update()
+            point = QPoint(round(x), round(y))
+            if point != bubble.pos():
+                bubble.move(point)
+            tail_x = max(24, min(bubble.width() - 24, self.resident.x() + self.resident.width() / 2 - x))
+            if tail_x != bubble.tail_x:
+                bubble.tail_x = tail_x
+                if bubble.isVisible():
+                    bubble.update()
 
     def update_animation_policy(self):
         now = datetime.now().astimezone()
@@ -1009,7 +1116,9 @@ class Controller(QObject):
             return
         now = time.monotonic()
         dt, self.last_motion_time = now - self.last_motion_time, now
-        area = self.app.primaryScreen().availableGeometry()
+        if self.resident.press_position is not None:
+            return  # Keep both the native window and its pose still under the pointer.
+        area = self.resident_area()
         lower = area.left() + 12
         upper = max(lower, area.right() - self.resident.width() - 20)
         blocked = self.bubble.isVisible() or self.panel.isVisible() or self.history_window.isVisible() or (self.editor is not None and self.editor.isVisible()) or self.resident.underMouse()
@@ -1020,11 +1129,12 @@ class Controller(QObject):
             self.resident.previous_frame = self.resident.frame_index
             self.resident.frame_changed_at = now
             self.resident.frame_index = frame
-        self.resident.flipped = self.motion.direction < 0 and self.motion.walking
+        self.resident.flipped = self.motion.facing < 0
         (self.resident.bob, self.resident.sway,
          self.resident.scale_x, self.resident.scale_y) = self.motion.pose()
-        self.resident.update()
         self.position()
+        # Present the pose immediately after the native window move, as one tick.
+        self.resident.repaint()
 
     def configure_context(self):
         self.context_generation += 1
