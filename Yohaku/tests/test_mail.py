@@ -3,10 +3,16 @@ import sys
 import types
 import unittest
 from unittest.mock import patch
-from companion.mail import MailDeduplicator, OutlookMailWatcher
+from companion.mail import MailDeduplicator, OutlookMailWatcher, sender_with_honorific
 
 
 class MailWatcherTests(unittest.TestCase):
+    def test_sender_honorific_is_added_once_and_not_added_to_unknown_sender(self):
+        for value, expected in [('山田 太郎', '山田 太郎さん'), ('佐藤さん', '佐藤さん'),
+                                ('鈴木様', '鈴木さん'), ('田中さま', '田中さん'),
+                                ('送信者不明', '送信者不明'), ('   ', '送信者不明'),
+                                ('送信者を取得できませんでした', '送信者を取得できませんでした')]:
+            self.assertEqual(sender_with_honorific(value), expected)
     def message(self, identity, sender='山田 太郎', transport=None):
         class Message:
             Class = 43

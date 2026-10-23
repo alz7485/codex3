@@ -4,11 +4,11 @@
 
 **仕事に、ひと呼吸。** 予定とファイル履歴をそっと知らせる、デスクトップの小さな同僚です。
 
-[ソースZIP 1/2](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.11.0-source-part1-of-2.zip) · [ソースZIP 2/2](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.11.0-source-part2-of-2.zip)
+[ソースZIP 1/2](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.11.1-source-part1-of-2.zip) · [ソースZIP 2/2](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.11.1-source-part2-of-2.zip)
 
 **両方をダウンロードし、同じ場所へ展開してください。** それぞれ普通のZIPなので、片方ずつテキスト化できます。共通のREADME・マニフェスト等の上書き確認は許可してください。中身は同一です。
 
-v0.11.0では**すべての吹き出しの見出しと×ボタンを削除**し、本文と必要な選択肢だけにしました。残り時間は「1時間40分」の形式です。履歴は3か月・15,000件へ拡張し、ダブルクリックで開けます。退勤前通知は初期17:00で、PC起動時間と勤怠サイトを開く選択肢を表示できます。未承諾の会議案内、新着の送信者表示、未読の通常会話にも対応しています。配布ソースは2つのZIPで、両方にバッチ不要の `ONEDIR_COMMAND.txt` を同梱。**ビルド済みWindows EXEは含みません。**
+v0.11.1では**すべての吹き出しの見出しと×ボタンを削除**し、本文と必要な選択肢だけにしました。残り時間は「1時間40分」の形式です。履歴は3か月・15,000件へ拡張し、ダブルクリックで開けます。退勤前通知は初期17:00で、PC起動時間と勤怠サイトを開く選択肢を表示できます。未承諾の会議案内、新着の送信者表示、未読の通常会話にも対応しています。配布ソースは2つのZIPで、両方にバッチ不要の `ONEDIR_COMMAND.txt` を同梱。**ビルド済みWindows EXEは含みません。**
 
 Windowsデスクトップの隅で、予定と短いひとことをそっと知らせる常駐アプリの試作品です。**ドラッグ移動・歩行・表情アニメーション・音声なし・従来版Outlook**に対応しています。
 
@@ -169,12 +169,12 @@ py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements-build.txt
 .\.venv\Scripts\python.exe -m PyInstaller --noconfirm --clean Yohaku.spec
 .\.venv\Scripts\python.exe scripts\collect_licenses.py dist\Yohaku
-.\.venv\Scripts\python.exe -c "import shutil; shutil.make_archive('Yohaku-v0.11.0-windows-x64-onedir', 'zip', 'dist', 'Yohaku')"
+.\.venv\Scripts\python.exe -c "import shutil; shutil.make_archive('Yohaku-v0.11.1-windows-x64-onedir', 'zip', 'dist', 'Yohaku')"
 ```
 
 Python 3.12の場合は、1行目を `py -3.12 -m venv .venv` に変更します。
 
-3行目がonedirを作るコマンドです。`Yohaku.spec`にフォルダー形式、アイコン、4キャラとアニメーション素材、製品名・版を定義しています。出力は `dist\Yohaku\Yohaku.exe`。5行目で作るZIPは作業フォルダー直下の `Yohaku-v0.11.0-windows-x64-onedir.zip` です。
+3行目がonedirを作るコマンドです。`Yohaku.spec`にフォルダー形式、アイコン、4キャラとアニメーション素材、製品名・版を定義しています。出力は `dist\Yohaku\Yohaku.exe`。5行目で作るZIPは作業フォルダー直下の `Yohaku-v0.11.1-windows-x64-onedir.zip` です。
 
 | 同梱ファイル | 用途 |
 |---|---|
@@ -192,7 +192,7 @@ Python 3.12の場合は、1行目を `py -3.12 -m venv .venv` に変更します
 py -3.11 scripts/build_onedir.py
 ```
 
-ビルドヘルパーの場合の出力は `dist\Yohaku\Yohaku.exe` と `release\Yohaku-v0.11.0-windows-x64-onedir.zip` です。**EXEだけを取り出さず、ZIPをすべて展開して実行してください。** DLL・Qt・画像は同じフォルダーの`_internal`に入ります。配布物には依存ソフトウェアのライセンス文書もコピーします。署名・社内パッケージ化は含みません。LinuxからWindows EXEを作ったものではありません。
+ビルドヘルパーの場合の出力は `dist\Yohaku\Yohaku.exe` と `release\Yohaku-v0.11.1-windows-x64-onedir.zip` です。**EXEだけを取り出さず、ZIPをすべて展開して実行してください。** DLL・Qt・画像は同じフォルダーの`_internal`に入ります。配布物には依存ソフトウェアのライセンス文書もコピーします。署名・社内パッケージ化は含みません。LinuxからWindows EXEを作ったものではありません。
 
 ビルド素材の確認だけなら `python scripts/build_onedir.py --check`、ビルド環境の準備だけなら `py -3.11 scripts/build_onedir.py --setup-only` を使います。Windows用ビルドはWindows上で実行してください。
 
@@ -209,10 +209,12 @@ py -3.11 scripts/build_onedir.py
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
-LinuxのQt offscreen環境で121件の自動テストが通過しています。3か月と月末の保持境界・15,000件の上限・ファイルのダブルクリック・日付の色、退勤通知の時刻・1日1回・再起動・抑制・URLと設定UI・PC起動時間、メッセージの行数別の高さ・クリックで閉じる操作、送信者表示・新着件数なし・未読集計と会話優先度・旧JSONの移行・大量受信の重複抑制、ドラッグとクリックの区別・位置保存・別モニターと切断後の補正・吹き出しの上下切り替え・コマ補間中の不透明度・停止時の向き、操作時間の集計・日跨ぎ・スリープ間隔の除外、未承諾会議案内と予定表の統合・重複と承諾後の通知キー・地域設定フィルターの代替・個別のCOMエラー、複合条件、不明値、旧JSONの移行、Outlook受信イベントと1秒確認のモック、通知の色と抑制、JSONの保存と再読込、編集画面からの即時反映、不正データ・書き込み失敗時の保持、バックアップ、入出力、編集破棄、8時間分の会話進行、時間帯・曜日・予定前後、旧設定の移行、非表示とトレイ復帰、吹き出しのタイマー、24コマの描画も確認しています。既存の通知・履歴・アニメーション、問いかけと4行の選択肢に加え、アプリ名・固定アイコン、onedirに必要な素材、2つのZIPを統合した全ファイルのハッシュ一致、設定・履歴等がZIPに入らないことを確認しました。プレビュー画像は実際のQtウィジェットから生成しています。`preview_animation.py` はFFmpegがあればGIFも書き出します（アプリ実行時には不要です）。
+LinuxのQt offscreen環境で122件の自動テストが通過しています。3か月と月末の保持境界・15,000件の上限・ファイルのダブルクリック・日付の色、退勤通知の時刻・1日1回・再起動・抑制・URLと設定UI・PC起動時間、メッセージの行数別の高さ・クリックで閉じる操作、送信者表示・新着件数なし・未読集計と会話優先度・旧JSONの移行・大量受信の重複抑制、ドラッグとクリックの区別・位置保存・別モニターと切断後の補正・吹き出しの上下切り替え・コマ補間中の不透明度・停止時の向き、操作時間の集計・日跨ぎ・スリープ間隔の除外、未承諾会議案内と予定表の統合・重複と承諾後の通知キー・地域設定フィルターの代替・個別のCOMエラー、複合条件、不明値、旧JSONの移行、Outlook受信イベントと1秒確認のモック、通知の色と抑制、JSONの保存と再読込、編集画面からの即時反映、不正データ・書き込み失敗時の保持、バックアップ、入出力、編集破棄、8時間分の会話進行、時間帯・曜日・予定前後、旧設定の移行、非表示とトレイ復帰、吹き出しのタイマー、24コマの描画も確認しています。既存の通知・履歴・アニメーション、問いかけと4行の選択肢に加え、アプリ名・固定アイコン、onedirに必要な素材、2つのZIPを統合した全ファイルのハッシュ一致、設定・履歴等がZIPに入らないことを確認しました。プレビュー画像は実際のQtウィジェットから生成しています。`preview_animation.py` はFFmpegがあればGIFも書き出します（アプリ実行時には不要です）。
 
 キャラクター画像は `companion/assets/characters/` の背景透過PNGです。画像は開発時に作成した静的な素材で、アプリの起動・切り替えでAIや画像生成サービスに接続しません。onedirの定義で、このフォルダー全体を配布物へ含めます。
 
 **Windows実機・Office文書一覧・Windows最近使ったファイルの取得・実Outlook COM・高DPI・複数画面・Windows通知領域・EXEのビルドと動作は、このLinux環境では未検証です。** `docs/WINDOWS_CHECKLIST.md` に確認手順を記載しています。新しいOutlookのみの環境には対応していません。
 
 朝・予定の前後・夕方の区切り・PC状態に応じた会話は実装済みです。連続会議専用の判定、学習する機嫌、音声、Graph連携、画面全体を自由に歩く機能は含みません。
+
+メールの送信者名には「さん」を付けます。既存の敬称は重ねず、送信者不明の説明には付けません。

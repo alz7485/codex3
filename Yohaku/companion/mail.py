@@ -55,6 +55,17 @@ def sender_name(item):
     return '送信者を取得できませんでした'
 
 
+def sender_with_honorific(name):
+    name = str(name or '').strip() or '送信者不明'
+    if name in ('送信者不明', '送信者を取得できませんでした') or name.endswith('さん'):
+        return name
+    for suffix in ('さま', '様', '殿'):
+        if name.endswith(suffix):
+            name = name[:-len(suffix)].rstrip()
+            break
+    return name + 'さん'
+
+
 class OutlookMailWatcher:
     def __init__(self, received, status, show_senders=True):
         self.received = received

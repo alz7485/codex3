@@ -130,7 +130,7 @@ class UserInterfaceTests(unittest.TestCase):
             c.mail_result(c.mail_generation, {'unread_count': 12}, '')
             self.assertFalse(c.bubble.isVisible())
             self.assertEqual(c.engine.context['unread_mail_count'], 12)
-            c.mail_result(c.mail_generation, {'messages': [{'kind': 'mail', 'sender': '山田さん'},
+            c.mail_result(c.mail_generation, {'messages': [{'kind': 'mail', 'sender': '山田'},
                                                           {'kind': 'mail', 'sender': '佐藤さん'}]}, '')
             self.assertEqual(c.bubble.kind, 'notification')
             self.assertIn('山田さん', c.bubble.text.text())
@@ -473,7 +473,7 @@ class UserInterfaceTests(unittest.TestCase):
     def test_app_has_brand_name_version_and_windows_icon(self):
         c = self.controller
         self.assertEqual(self.app.applicationDisplayName(), "余白 / YOHAKU")
-        self.assertEqual(self.app.applicationVersion(), "0.11.0")
+        self.assertEqual(self.app.applicationVersion(), "0.11.1")
         self.assertFalse(c.brand_icon.isNull())
         self.assertEqual(c.panel.windowIcon().cacheKey(), c.brand_icon.cacheKey())
         c.panel.character_buttons["B"].click()

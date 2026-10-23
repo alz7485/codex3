@@ -35,7 +35,7 @@ def main():
     board = QPixmap(1600, 960)
     board.fill(QColor('#e7ede6'))
     painter = QPainter(board)
-    text(painter, 40, 45, 'Y O H A K U  /  v0.11.0', 14, True)
+    text(painter, 40, 45, 'Y O H A K U  /  v0.11.1', 14, True)
     text(painter, 40, 95, '4つの性格。16の表情としぐさ。', 32, True)
     for row, (key, name) in enumerate(CHARACTERS.items()):
         y = 150 + row * 190
@@ -65,7 +65,7 @@ def main():
                 canvas = QPixmap(1200, 640)
                 canvas.fill(QColor('#e7ede6'))
                 p = QPainter(canvas)
-                text(p, 32, 38, 'Y O H A K U  /  v0.11.0', 13, True)
+                text(p, 32, 38, 'Y O H A K U  /  v0.11.1', 13, True)
                 text(p, 32, 81, 'ひと息ついて、表情もひとつ。', 29, True)
                 text(p, 32, 112, '8コマの歩行 + 加減速・呼吸・体の揺れ / 下段は16種の表情としぐさ', 14)
                 for column, ((key, name), mascot, motion) in enumerate(zip(CHARACTERS.items(), mascots, motions)):

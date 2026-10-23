@@ -26,7 +26,7 @@ from .dialogue import AUTO_PERSONALITY, BUBBLE_MS, PROFILES, DialogueError, Dial
 from .outlook import read_calendar
 from .metadata import APP_DISPLAY_NAME, VERSION
 from .context import UsageLedger, input_idle_seconds, desktop_file_count, office_file_count, work_metrics
-from .mail import OutlookMailWatcher
+from .mail import OutlookMailWatcher, sender_with_honorific
 from .departure import attendance_url, system_uptime_seconds
 
 STYLE = """
@@ -1424,7 +1424,7 @@ class Controller(QObject):
         if meetings:
             text += ('\n' if text else '') + '会議依頼が届きました。'
         if self.settings.mail_show_senders:
-            senders = dict.fromkeys(str(message.get('sender') or '送信者不明')[:160] for message in messages)
+            senders = dict.fromkeys(sender_with_honorific(str(message.get('sender') or '送信者不明')[:160]) for message in messages)
             text += '\n\n送信者：' + '、'.join(senders)
         self.engine.last_display = now
         self.motion.react(rule['expression'], speaking=True)
