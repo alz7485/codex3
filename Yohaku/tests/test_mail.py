@@ -3,16 +3,24 @@ import sys
 import types
 import unittest
 from unittest.mock import patch
-from companion.mail import MailDeduplicator, OutlookMailWatcher, sender_with_honorific
+from companion.mail import MailDeduplicator, OutlookMailWatcher
 
 
 class MailWatcherTests(unittest.TestCase):
-    def test_sender_honorific_is_added_once_and_not_added_to_unknown_sender(self):
-        for value, expected in [('山田 太郎', '山田 太郎さん'), ('佐藤さん', '佐藤さん'),
-                                ('鈴木様', '鈴木さん'), ('田中さま', '田中さん'),
-                                ('送信者不明', '送信者不明'), ('   ', '送信者不明'),
-                                ('送信者を取得できませんでした', '送信者を取得できませんでした')]:
-            self.assertEqual(sender_with_honorific(value), expected)
+    def test_sender_properties_are_never_read_even_with_legacy_flag(self):
+        delivered = []
+        item = self.message('private')
+        reads = []
+        def forbidden(self):
+            reads.append(True)
+            raise AssertionError('Sender must not be read')
+        type(item).SenderName = property(forbidden)
+        type(item).SenderEmailAddress = property(forbidden)
+        watcher = OutlookMailWatcher(delivered.append, lambda _: None, show_senders=True)
+        watcher.collect([item])
+        self.assertEqual(reads, [])
+        self.assertEqual(delivered, [{'messages': [{'kind': 'mail'}]}])
+
     def message(self, identity, sender='山田 太郎', transport=None):
         class Message:
             Class = 43
@@ -34,7 +42,7 @@ class MailWatcherTests(unittest.TestCase):
         watcher = OutlookMailWatcher(delivered.append, lambda _: None)
         watcher.collect([self.message('entry-1', transport='stable-message'),
                          self.message('entry-2', transport='stable-message')])
-        self.assertEqual(delivered, [{'messages': [{'kind': 'mail', 'sender': '山田 太郎'}]}])
+        self.assertEqual(delivered, [{'messages': [{'kind': 'mail'}]}])
         self.assertNotIn('stable-message', watcher.dedup.seen)
 
     def test_large_burst_is_not_truncated_or_repeated_when_dedup_cache_would_overflow(self):
@@ -52,7 +60,7 @@ class MailWatcherTests(unittest.TestCase):
         old = self.message('old')
         old.ReceivedTime -= timedelta(days=1)
         watcher.collect([old, self.message('new', sender='')])
-        self.assertEqual(delivered, [{'messages': [{'kind': 'mail', 'sender': '送信者を取得できませんでした'}]}])
+        self.assertEqual(delivered, [{'messages': [{'kind': 'mail'}]}])
 
     def test_deduplication_is_bounded_and_no_raw_ids_are_persisted(self):
         cache=MailDeduplicator()
@@ -104,7 +112,7 @@ class MailWatcherTests(unittest.TestCase):
         with patch.dict(sys.modules,{'pythoncom':pythoncom,'win32com':package,'win32com.client':client}),patch('companion.mail.sys.platform','win32'):
             watcher.run()
         self.assertEqual(activations,['Outlook.Application'])
-        self.assertEqual([p for p in delivered if 'messages' in p],[{'messages':[{'kind':'mail','sender':''}]}])
+        self.assertEqual([p for p in delivered if 'messages' in p],[{'messages':[{'kind':'mail'}]}])
         if not events: self.assertIn({'unread_count':7},delivered)
         self.assertEqual(new.subject_reads,0)
         self.assertTrue(status)

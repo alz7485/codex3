@@ -26,7 +26,8 @@ from .dialogue import AUTO_PERSONALITY, BUBBLE_MS, PROFILES, DialogueError, Dial
 from .outlook import read_calendar
 from .metadata import APP_DISPLAY_NAME, VERSION
 from .context import UsageLedger, input_idle_seconds, desktop_file_count, office_file_count, work_metrics
-from .mail import OutlookMailWatcher, sender_with_honorific
+from .mail import OutlookMailWatcher
+from .preferences import PRESETS, snapped_y
 from .departure import attendance_url, system_uptime_seconds
 
 STYLE = """
@@ -267,12 +268,15 @@ class Mascot(QWidget):
 
 class Panel(QMainWindow):
     changed = Signal(str)
+    preset_requested = Signal(str)
+    preview_requested = Signal()
     connect_requested = Signal()
     sample_requested = Signal()
     pause_requested = Signal()
     hide_requested = Signal()
     clear_history_requested = Signal()
     dialogue_requested = Signal()
+    reminders_requested = Signal()
     clear_usage_requested = Signal()
 
     def __init__(self, settings, dialogue=None):
@@ -425,6 +429,16 @@ class Panel(QMainWindow):
         chooser = box(card, 18, 10)
         chooser.addWidget(label("いっしょに働くキャラクター", "section"))
         chooser.addWidget(label("選ぶとすぐに切り替わります。性格は下で別々に選べます。", "muted", True))
+        self.preset_combo = QComboBox()
+        for key, (title, _, _) in PRESETS.items():
+            self.preset_combo.addItem(title, key)
+        self.preset_combo.addItem('カスタム', 'custom')
+        self.preset_combo.setCurrentIndex(self.preset_combo.findData(self.settings.comfort_preset))
+        self.preset_combo.setAccessibleName('会話と動きのプリセット')
+        self.preset_combo.currentIndexChanged.connect(lambda _: self.preset_requested.emit(self.preset_combo.currentData()))
+        chooser.addWidget(label('会話と動きのプリセット', 'section'))
+        chooser.addWidget(self.preset_combo)
+        chooser.addWidget(label('標準：10分ごと・歩行あり／控えめ：30分ごと・歩行なし／通知だけ：自動雑談と動きを停止。手動の一言は使えます。', 'muted', True))
         row = QHBoxLayout()
         row.setSpacing(8)
         self.character_buttons = {}
@@ -459,6 +473,18 @@ class Panel(QMainWindow):
         self.walking_check.setEnabled(self.settings.animation)
         self.walking_check.toggled.connect(lambda v: self.update_setting("walking", v))
         chooser.addWidget(self.walking_check)
+        self.snap_check = QCheckBox('下端近くで離すとタスクバー直上にそろえる')
+        self.snap_check.setChecked(self.settings.snap_to_taskbar)
+        self.snap_check.toggled.connect(lambda value: self.update_setting('snap_to_taskbar', value))
+        chooser.addWidget(self.snap_check)
+        self.snap_spin = QSpinBox()
+        self.snap_spin.setRange(4, 48)
+        self.snap_spin.setSuffix(' px以内で吸着')
+        self.snap_spin.setValue(self.settings.snap_distance)
+        self.snap_spin.setAccessibleName('タスクバーに吸着する距離')
+        self.snap_spin.valueChanged.connect(lambda value: self.update_setting('snap_distance', value))
+        chooser.addWidget(self.snap_spin)
+        chooser.addWidget(button('表情・通知のプレビュー', self.preview_requested.emit))
         chooser.addWidget(label("吹き出しを操作中は立ち止まります。静かな時間・おやすみ中は動きません。", "muted", True))
         layout.addWidget(card)
         card = QFrame(objectName="card")
@@ -474,6 +500,7 @@ class Panel(QMainWindow):
         row.addWidget(personality)
         form.addLayout(row)
         chat = QCheckBox("ときどき、ひとこと話しかける")
+        self.chatter_check = chat
         chat.setChecked(self.settings.chatter)
         chat.toggled.connect(lambda v: self.update_setting("chatter", v))
         form.addWidget(chat)
@@ -506,11 +533,7 @@ class Panel(QMainWindow):
         self.mail_check.setChecked(self.settings.mail_enabled)
         self.mail_check.toggled.connect(lambda value: self.update_setting('mail_enabled', value))
         monitor_box.addWidget(self.mail_check)
-        self.mail_sender_check = QCheckBox('新着通知に送信者名を表示する')
-        self.mail_sender_check.setChecked(self.settings.mail_show_senders)
-        self.mail_sender_check.toggled.connect(lambda value: self.update_setting('mail_show_senders', value))
-        monitor_box.addWidget(self.mail_sender_check)
-        monitor_box.addWidget(label('新着は送信者を表示し、件数は出しません。件名・本文は読みません。未読がたまると通常会話で件数をお知らせします。予定は淡い黄、新着は淡い青。非表示・共有・おやすみ・静かな時間中は出しません。', 'muted', True))
+        monitor_box.addWidget(label('新着は「メールが届きました」と通知します。送信者名・新着件数は表示せず、送信者・件名・本文は読みません。直後の連続受信は同じ通知にまとめます。未読がたまると通常会話で件数をお知らせします。', 'muted', True))
         self.mail_status = label('受信通知はOutlook接続後に開始します。', 'muted', True)
         monitor_box.addWidget(self.mail_status)
         layout.addWidget(monitor)
@@ -543,6 +566,14 @@ class Panel(QMainWindow):
         self.departure_status = label('', 'muted', True)
         departure_box.addWidget(self.departure_status)
         layout.addWidget(departure)
+        reminders = QFrame(objectName='card')
+        reminders_box = box(reminders, 18, 10)
+        reminders_box.addWidget(label('自分で登録する通知', 'section'))
+        reminders_box.addWidget(label('「月末の最終平日」「毎月15日までの最終平日」など、条件・時刻・メッセージを登録できます。次回の対象日も確認できます。', 'muted', True))
+        reminders_box.addWidget(button('通知を登録・編集', self.reminders_requested.emit))
+        self.reminders_status = label('', 'muted', True)
+        reminders_box.addWidget(self.reminders_status)
+        layout.addWidget(reminders)
         activity = QFrame(objectName="card")
         activity_box = box(activity, 18, 10)
         activity_box.addWidget(label("開いたファイルの履歴", "section"))
@@ -584,6 +615,9 @@ class Panel(QMainWindow):
 
     def update_setting(self, key, value):
         setattr(self.settings, key, value)
+        if key in ('animation', 'walking', 'chatter', 'interval'):
+            self.settings.comfort_preset = 'custom'
+            self.sync_behavior()
         self.personality_badge.setText(self.voice())
         if key == "character":
             self.rail_mascot.set_character(value)
@@ -596,6 +630,19 @@ class Panel(QMainWindow):
         if key == "animation":
             self.walking_check.setEnabled(value)
         self.changed.emit(key)
+
+    def sync_behavior(self):
+        for widget, value in ((self.animation_check, self.settings.animation),
+                              (self.walking_check, self.settings.walking),
+                              (self.chatter_check, self.settings.chatter)):
+            widget.blockSignals(True)
+            widget.setChecked(value)
+            widget.blockSignals(False)
+        self.walking_check.setEnabled(self.settings.animation)
+        self.preset_combo.blockSignals(True)
+        self.preset_combo.setCurrentIndex(self.preset_combo.findData(self.settings.comfort_preset))
+        self.preset_combo.blockSignals(False)
+        self.refresh_dialogue()
 
     def save_departure_fields(self):
         try:
@@ -732,6 +779,7 @@ class Bubble(QFrame):
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         fill, stroke = {'message': ('#ffffff', '#dce5dc'), 'menu': ('#f2f6ef', '#b6c9b2'),
                         'calendar': ('#fff3d4', '#cfb16c'), 'notification': ('#e7f1ff', '#8caed1'),
+                        'reminder': ('#e7f1ff', '#8caed1'),
                         'departure': ('#fff0dd', '#cf9a61')}[self.kind]
         painter.setBrush(QColor(fill))
         painter.setPen(QPen(QColor(stroke), 1))
@@ -747,7 +795,7 @@ class Bubble(QFrame):
         painter.drawPath(shape.united(tail))
 
     def set_kind(self, kind):
-        self.kind = kind if kind in ('message', 'menu', 'calendar', 'notification', 'departure') else 'message'
+        self.kind = kind if kind in ('message', 'menu', 'calendar', 'notification', 'departure', 'reminder') else 'message'
         self.heading.hide()
         self.text.setTextInteractionFlags(Qt.TextInteractionFlag.NoTextInteraction if self.kind == 'message'
                                          else Qt.TextInteractionFlag.TextSelectableByMouse)
@@ -926,6 +974,18 @@ class HistoryWindow(QMainWindow):
         layout.addLayout(top)
         self.status = label("記録オフ", "muted", True)
         layout.addWidget(self.status)
+        self.search_edit = QLineEdit()
+        self.search_edit.setPlaceholderText('ファイル名・保存先を全履歴から検索')
+        self.search_edit.setAccessibleName('保存済みの全ファイル履歴を検索')
+        self.search_edit.setClearButtonEnabled(True)
+        layout.addWidget(self.search_edit)
+        layout.addWidget(label('検索中は、選択した日付にかかわらず保存済みの全履歴が対象です。検索を消すと日付別に戻ります。', 'muted', True))
+        self.search_timer = QTimer(self)
+        self.search_timer.setSingleShot(True)
+        self.search_timer.setInterval(180)
+        self.search_timer.timeout.connect(self.refresh_requested.emit)
+        self.search_edit.textChanged.connect(lambda _: self.search_timer.start())
+        self.search_edit.returnPressed.connect(self.run_search)
         body = QHBoxLayout()
         body.setSpacing(20)
         dates = box(spacing=10)
@@ -966,30 +1026,37 @@ class HistoryWindow(QMainWindow):
         self.set_records([], "記録オフ")
 
     def today(self):
+        self.search_edit.clear()
         self.calendar.setDateRange(QDate.currentDate().addMonths(-3), QDate.currentDate())
         self.calendar.setSelectedDate(QDate.currentDate())
+
+    def run_search(self):
+        self.search_timer.stop()
+        self.refresh_requested.emit()
 
     def open_file(self, item, column=0):
         path = item.data(0, Qt.ItemDataRole.UserRole)
         if path and not QDesktopServices.openUrl(QUrl.fromLocalFile(path)):
             self.open_status.setText('ファイルを開けませんでした。移動・削除されていないか、保存先や関連付けを確認してください。')
 
-    def set_records(self, rows, status, error=""):
+    def set_records(self, rows, status, error="", query=""):
         self.status.setText(status)
         day = self.calendar.selectedDate()
-        self.day_label.setText(self.calendar.locale().toString(day, "yyyy年M月d日（ddd）") + f"  ·  {len(rows)}件")
-        self.empty.setText(error or "この日の記録はありません。\n記録をオンにすると、この後に開いたファイルを残します。")
+        self.day_label.setText((f'全履歴の検索結果「{query}」' if query else self.calendar.locale().toString(day, "yyyy年M月d日（ddd）")) + f"  ·  {len(rows)}件")
+        self.empty.setText(error or ('一致する履歴はありません。' if query else "この日の記録はありません。\n記録をオンにすると、この後に開いたファイルを残します。"))
+        self.table.setHeaderLabels(['日時' if query else '時刻', 'ファイル名', '保存先'])
+        self.table.setColumnWidth(0, 150 if query else 70)
         self.table.setVisible(bool(rows))
         self.empty.setVisible(not rows)
-        if rows != self.last_rows:
+        if (rows, bool(query)) != self.last_rows:
             self.table.clear()
             for name, path, source, opened in rows:
-                item = QTreeWidgetItem([datetime.fromisoformat(opened).astimezone().strftime("%H:%M:%S"), name, path])
+                item = QTreeWidgetItem([datetime.fromisoformat(opened).astimezone().strftime("%Y/%m/%d %H:%M" if query else "%H:%M:%S"), name, path])
                 item.setData(0, Qt.ItemDataRole.UserRole, path)
                 item.setToolTip(1, name)
                 item.setToolTip(2, path)
                 self.table.addTopLevelItem(item)
-            self.last_rows = list(rows)
+            self.last_rows = (list(rows), bool(query))
 
     def closeEvent(self, event):
         event.ignore()
@@ -1010,8 +1077,14 @@ class Controller(QObject):
         self.settings = Settings.load(self.path / "settings.json")
         self.dialogue = DialogueStore(self.path / "dialogue.json", self.settings.interval)
         self.settings.interval = self.dialogue.data["options"]["interval_minutes"]
+        preset = PRESETS.get(self.settings.comfort_preset)
+        if preset and (any(getattr(self.settings, key) != value for key, value in preset[1].items())
+                       or preset[2] is not None and self.settings.interval != preset[2]):
+            self.settings.comfort_preset = 'custom'
         self.engine = Engine(self.settings, self.path / "history.json", dialogue=self.dialogue)
         self.editor = None
+        self.reminder_editor = None
+        self.preview = None
         self.panel = Panel(self.settings, self.dialogue)
         self.brand_icon = QIcon(str(Path(__file__).parent / "assets/app/yohaku.ico"))
         self.resident = Resident(self.settings.character)
@@ -1056,6 +1129,8 @@ class Controller(QObject):
         self.mail_generation = 0
         self.mail_watcher = None
         self.mail_configuration = None
+        self.mail_burst_last = None
+        self.mail_burst_notice = None
         self.unread_count = None
         self.unread_at = None
         self.hidden = False
@@ -1067,9 +1142,13 @@ class Controller(QObject):
         self.bridge.result.connect(self.received)
         self.panel.changed.connect(self.save_settings)
         self.panel.dialogue_requested.connect(self.show_dialogue_editor)
+        self.panel.reminders_requested.connect(self.show_reminder_editor)
+        self.refresh_reminder_status()
         self.panel.clear_usage_requested.connect(self.clear_usage)
         self.panel.connect_requested.connect(self.refresh)
         self.panel.sample_requested.connect(self.sample)
+        self.panel.preview_requested.connect(self.show_preview)
+        self.panel.preset_requested.connect(self.apply_preset)
         self.panel.pause_requested.connect(self.pause)
         self.panel.hide_requested.connect(self.share)
         self.panel.clear_history_requested.connect(self.clear_activity)
@@ -1083,6 +1162,7 @@ class Controller(QObject):
         self.visibility_action = self.menu.addAction("キャラを非表示", self.toggle_visibility)
         self.menu.addAction("設定を開く", self.show_panel)
         self.menu.addAction("会話を編集", self.show_dialogue_editor)
+        self.menu.addAction("通知を登録・編集", self.show_reminder_editor)
         self.pause_action = self.menu.addAction("1時間おやすみ", self.pause)
         self.share_action = self.menu.addAction("画面共有モード", self.share)
         self.menu.addSeparator()
@@ -1168,6 +1248,10 @@ class Controller(QObject):
             self.panel.hide()
             if self.editor:
                 self.editor.hide()
+            if self.preview:
+                self.preview.hide()
+            if self.reminder_editor:
+                self.reminder_editor.hide()
         self.visibility_action.setText("キャラを非表示" if visible else "キャラを表示")
         self.tray.setToolTip("余白 — " + ("画面共有モード中" if self.hidden else "非表示 · 左クリックで表示" if self.user_hidden else "左クリックで非表示 / 右クリックでメニュー"))
         self.update_mode()
@@ -1208,7 +1292,29 @@ class Controller(QObject):
             self.editor.raise_()
             if not self.editor.close():
                 return
+        if self.reminder_editor is not None and self.reminder_editor.dirty:
+            self.reminder_editor.show()
+            self.reminder_editor.raise_()
+            if not self.reminder_editor.close():
+                return
         self.app.quit()
+
+    def refresh_reminder_status(self):
+        store = self.engine.reminders
+        enabled = sum(rule['enabled'] for rule in store.data['notifications'])
+        self.panel.reminders_status.setText(store.error or f'登録{len(store.data["notifications"])}件 · 有効{enabled}件 · 平日は月〜金')
+
+    def show_reminder_editor(self):
+        if self.reminder_editor is None:
+            from .reminder_editor import ReminderEditor
+            self.reminder_editor = ReminderEditor(self.engine.reminders)
+            self.reminder_editor.setWindowIcon(self.brand_icon)
+            self.reminder_editor.saved.connect(self.refresh_reminder_status)
+        elif not self.reminder_editor.dirty:
+            self.reminder_editor.revert()
+        self.reminder_editor.show()
+        self.reminder_editor.raise_()
+        self.reminder_editor.activateWindow()
 
     def show_dialogue_editor(self):
         if self.editor is None:
@@ -1222,8 +1328,59 @@ class Controller(QObject):
         self.editor.raise_()
         self.editor.activateWindow()
 
+    def show_preview(self):
+        if self.hidden or self.user_hidden:
+            self.panel.mode_label.setText('非表示中はプレビューも表示しません')
+            return
+        if self.preview is None:
+            from .preview import PreviewWindow
+            self.preview = PreviewWindow(self.settings, self.dialogue)
+            self.preview.setWindowIcon(self.brand_icon)
+        self.preview.show()
+        self.preview.raise_()
+        self.preview.activateWindow()
+
+    def apply_preset(self, name):
+        if name == 'custom':
+            self.settings.comfort_preset = name
+            self.save_settings('preset')
+            return
+        if name not in PRESETS:
+            return
+        from copy import deepcopy
+        _, flags, interval = PRESETS[name]
+        original = deepcopy(self.dialogue.data)
+        candidate = deepcopy(original)
+        if interval is not None:
+            candidate['options']['interval_minutes'] = interval
+        values = asdict(self.settings)
+        values.update(flags, comfort_preset=name, interval=candidate['options']['interval_minutes'])
+        try:
+            self.dialogue.save(candidate)
+            save_json(self.path / 'settings.json', values)
+        except (OSError, DialogueError) as error:
+            try:
+                self.dialogue.save(original)
+            except (OSError, DialogueError):
+                self.dialogue.data = original
+            self.panel.sync_behavior()
+            self.panel.saved_label.setText(f'プリセットを保存できませんでした。{error}')
+            return
+        for key, value in values.items():
+            setattr(self.settings, key, value)
+        self.panel.sync_behavior()
+        if self.editor is not None and not self.editor.dirty:
+            self.editor.revert()
+        self.engine.last_display = datetime.now().astimezone()
+        self.update_animation_policy()
+        self.panel.saved_label.setText('会話と動きのプリセットを保存しました。')
+
     def dialogue_saved(self):
         self.settings.interval = self.dialogue.data['options']['interval_minutes']
+        preset = PRESETS.get(self.settings.comfort_preset)
+        if preset and preset[2] is not None and self.settings.interval != preset[2]:
+            self.settings.comfort_preset = 'custom'
+        self.panel.sync_behavior()
         self.panel.refresh_dialogue()
         self.bubble.duration_ms = self.dialogue.data['options']['bubble_seconds'] * 1000
         if self.pending_reaction is not None and self.bubble.notice is self.pending_reaction:
@@ -1254,6 +1411,10 @@ class Controller(QObject):
         self.resident.repaint()
 
     def finish_drag(self):
+        area = self.resident_area()
+        floor = max(area.top() + 8, area.bottom() + 1 - self.resident.height())
+        self.motion_y = snapped_y(self.motion_y, floor, self.settings.snap_to_taskbar, self.settings.snap_distance)
+        self.position()
         self.motion.wait = max(1.0, self.motion.wait)
         self.motion.distance = self.motion.speed = 0
         self.motion.walking = False
@@ -1315,7 +1476,7 @@ class Controller(QObject):
                 self.resident.frame_index = self.motion.frame()
             elif not self.static_pose_timer.isActive() or self.motion.walking:
                 self.motion.react('front', seconds=0)
-                self.motion.front_until = 0
+                self.motion.face_front(0)
                 self.resident.frame_index = 24
             self.resident.flipped = False
             self.resident.bob = self.resident.sway = 0
@@ -1334,7 +1495,7 @@ class Controller(QObject):
         area = self.resident_area()
         lower = area.left() + 12
         upper = max(lower, area.right() - self.resident.width() - 20)
-        blocked = self.pending_reaction is not None or self.bubble.isVisible() or self.panel.isVisible() or self.history_window.isVisible() or (self.editor is not None and self.editor.isVisible()) or self.resident.underMouse()
+        blocked = self.pending_reaction is not None or self.bubble.isVisible() or self.panel.isVisible() or self.history_window.isVisible() or (self.editor is not None and self.editor.isVisible()) or (self.reminder_editor is not None and self.reminder_editor.isVisible()) or self.resident.underMouse()
         self.motion_x = self.motion.advance(dt, self.motion_x if self.motion_x is not None else upper,
                                           lower, upper, self.settings.walking and not blocked)
         frame = self.motion.frame()
@@ -1453,11 +1614,13 @@ class Controller(QObject):
             self.panel.context_status.setText('集計を削除できません。保存先の権限をご確認ください。')
 
     def configure_mail(self):
-        configuration = (self.settings.outlook_enabled, self.settings.mail_enabled, self.settings.mail_show_senders)
+        self.settings.mail_show_senders = False
+        configuration = (self.settings.outlook_enabled, self.settings.mail_enabled)
         if configuration == self.mail_configuration:
             return
         self.mail_configuration = configuration
         self.unread_count = self.unread_at = None
+        self.mail_burst_last = self.mail_burst_notice = None
         self.mail_generation += 1
         if self.mail_watcher:
             self.mail_watcher.stop()
@@ -1468,7 +1631,7 @@ class Controller(QObject):
         generation = self.mail_generation
         self.mail_watcher = OutlookMailWatcher(
             lambda payload: self.mail_bridge.result.emit(generation, payload, ''),
-            lambda status: self.mail_bridge.result.emit(generation, None, status), self.settings.mail_show_senders)
+            lambda status: self.mail_bridge.result.emit(generation, None, status))
         self.mail_watcher.start()
 
     def mail_result(self, generation, payload, status):
@@ -1496,27 +1659,26 @@ class Controller(QObject):
                     and message.get('kind') in ('mail', 'meeting')]
         if not messages:
             return
-        lines = []
-        for kind in ('mail', 'meeting'):
-            group = [message for message in messages if message['kind'] == kind]
-            if not group:
-                continue
-            names = list(dict.fromkeys(sender_with_honorific(str(message.get('sender') or '')[:160])
-                                       for message in group)) if self.settings.mail_show_senders else []
-            names = [name for name in names if name not in ('送信者不明', '送信者を取得できませんでした')]
-            sender = '、'.join(names[:-1]) + 'と' + names[-1] if len(names) > 1 else ''.join(names)
-            prefix = sender + 'から' if sender else ''
-            lines.append(self.engine.phrase('mail_received', {'mail_from': prefix}) if kind == 'mail'
-                         else prefix + '会議の案内が来ました。')
-        text = '\n'.join(lines)
+        clock = time.monotonic()
+        continuing = self.mail_burst_last is not None and 0 <= clock - self.mail_burst_last <= 3
+        self.mail_burst_last = clock
+        if continuing:
+            if self.bubble.isVisible() and self.bubble.notice is self.mail_burst_notice:
+                self.bubble.timer.start(self.bubble.duration_ms)
+            return  # Acknowledge a burst once, without revealing names or counts.
         self.engine.last_display = now
         self.motion.react(rule['expression'], speaking=True)
-        self.bubble.display(Notice('', text, True, rule['expression'], 'notification'))
+        self.mail_burst_notice = Notice('', self.engine.phrase('mail_received'), True, rule['expression'], 'notification')
+        self.bubble.display(self.mail_burst_notice)
         self.position()
 
     def shutdown(self):
         self.pending_reaction = None
         self.static_pose_timer.stop()
+        if self.preview:
+            self.preview.hide()
+        if self.reminder_editor:
+            self.reminder_editor.hide()
         if self.mail_watcher:
             self.mail_watcher.stop()
         if self.usage is not None:
@@ -1675,10 +1837,12 @@ class Controller(QObject):
             status += "\n" + self.activity_error
         try:
             day = self.history_window.calendar.selectedDate().toPython()
-            rows = self.activity_history.for_day(day, now)
-            self.history_window.set_records(rows, status)
+            query = self.history_window.search_edit.text().strip()
+            rows = self.activity_history.search(query, now) if query else self.activity_history.for_day(day, now)
+            self.history_window.set_records(rows, status, query=query)
         except (OSError, ValueError, sqlite3.Error):
-            self.history_window.set_records([], status, "履歴を読み込めません。保存先の権限をご確認ください。")
+            self.history_window.set_records([], status, "履歴を読み込めません。保存先の権限をご確認ください。",
+                                            query=self.history_window.search_edit.text().strip())
 
     def configure_activity(self):
         self.activity_generation += 1
@@ -1742,6 +1906,8 @@ class Controller(QObject):
         self.history_window.setWindowIcon(self.brand_icon)
         if self.bubble.interactive:
             self.bubble.heading.setText(CHARACTERS[self.settings.character])
+        if self.preview is not None and self.preview.isVisible():
+            self.preview.play()
 
     def save_settings(self, key="show_titles"):
         if key == 'context_enabled':
@@ -1917,9 +2083,11 @@ class Controller(QObject):
         fresh = self.connected_at is not None and (now - self.connected_at).total_seconds() < 300
         try:
             notice = self.engine.next_notice(now, self.events, self.hidden or self.user_hidden, self.connected and fresh,
-                                             allow_chatter=not (self.pending_reaction is not None or self.interaction.isVisible() or self.panel.isVisible() or self.history_window.isVisible() or (self.editor is not None and self.editor.isVisible())))
+                                             allow_chatter=not (self.pending_reaction is not None or self.interaction.isVisible() or self.panel.isVisible() or self.history_window.isVisible() or (self.editor is not None and self.editor.isVisible()) or (self.reminder_editor is not None and self.reminder_editor.isVisible())),
+                                             allow_reminders=not (self.pending_reaction is not None or self.bubble.isVisible()))
         except OSError:
             self.panel.calendar_detail.setText("通知履歴を保存できません。保存先の権限をご確認ください。")
+            self.panel.reminders_status.setText('通知履歴を保存できません。保存先の権限をご確認ください。')
             return
         if notice:
             self.motion.react(notice.expression, speaking=True)

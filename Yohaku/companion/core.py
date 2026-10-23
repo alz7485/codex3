@@ -12,6 +12,7 @@ from typing import Callable
 from .dialogue import AUTO_PERSONALITY, PHRASES, DialogueStore, matches, voice_for
 from .departure import DEFAULT_MESSAGE, attendance_url, departure_body
 from .motion import ClickReactions
+from .reminders import ReminderStore, due_time
 
 
 CHARACTERS = {
@@ -56,7 +57,10 @@ class Settings:
     file_logging: bool = False
     context_enabled: bool = True
     mail_enabled: bool = True
-    mail_show_senders: bool = True
+    mail_show_senders: bool = False  # Legacy key, always ignored by the watcher.
+    snap_to_taskbar: bool = True
+    snap_distance: int = 16
+    comfort_preset: str = 'standard'
     personality: str = AUTO_PERSONALITY
     interval: int = 10
     conversation_version: int = 2
@@ -86,6 +90,11 @@ class Settings:
         if raw and (type(raw.get("conversation_version")) is not int or raw["conversation_version"] < 2):
             settings.interval = 10
         settings.conversation_version = 2
+        settings.mail_show_senders = False
+        if settings.comfort_preset not in ('standard', 'restrained', 'notifications', 'custom'):
+            settings.comfort_preset = 'custom'
+        if not 4 <= settings.snap_distance <= 48:
+            settings.snap_distance = 16
         for name in ("quiet_start", "quiet_end", 'departure_time'):
             try:
                 datetime.strptime(getattr(settings, name), "%H:%M")
@@ -97,6 +106,9 @@ class Settings:
             settings.attendance_url = ''
         if not settings.departure_message.strip() or len(settings.departure_message) > 1000:
             settings.departure_message = DEFAULT_MESSAGE
+        if 'comfort_preset' not in raw:
+            settings.comfort_preset = ('standard' if all(getattr(settings, key) == getattr(cls(), key)
+                                                       for key in ('chatter', 'animation', 'walking', 'interval')) else 'custom')
         return settings
 
 
@@ -129,7 +141,7 @@ def is_quiet(now: datetime, settings: Settings) -> bool:
 
 
 class Engine:
-    """Only opaque appointment keys and phrase indices are persisted."""
+    """Notice history contains opaque keys, phrase indices, and delivery dates."""
 
     def __init__(self, settings: Settings, history_path: Path,
                  choose: Callable = random.choice, dialogue: DialogueStore | None = None):
@@ -153,6 +165,10 @@ class Engine:
         raw = self.state.get("notified", {})
         self.notified = raw if isinstance(raw, dict) else {}
         self.departure_date = self.state.get('departure_date', '')
+        self.reminders = ReminderStore(history_path.parent / 'reminders.json')
+        raw = self.state.get('custom_notified', {})
+        self.custom_notified = ({key: value for key, value in raw.items()
+                                 if isinstance(key, str) and isinstance(value, str)} if isinstance(raw, dict) else {})
 
     def phrase(self, category: str, replacements=None) -> str:
         voice = voice_for(self.settings, self.dialogue.data)
@@ -178,8 +194,8 @@ class Engine:
         values['work_end'] = self.dialogue.data['options']['work_end']
         values.update(replacements or {})
         template = re.sub(r'\{hours_to_end\}\s*時間', '{hours_to_end}', phrases[index])
-        if category == 'mail_received' and values.get('mail_from') and '{mail_from}' not in template:
-            template = '{mail_from}メールが来ました。\n' + template
+        if category == 'mail_received':
+            values['mail_from'] = ''
         return re.sub(r'\{([a-z_]+)\}', lambda match: values.get(match.group(1), match.group(0)), template)
 
     def click_reaction(self, monotonic_time):
@@ -227,8 +243,34 @@ class Engine:
         self.notified = {k: v for k, v in self.notified.items()
                          if isinstance(v, (int, float)) and v > now.timestamp()} 
         self.notified = dict(list(self.notified.items())[-512:])
+        current_ids = {rule['id'] for rule in self.reminders.data['notifications']}
+        self.custom_notified = {key: value for key, value in self.custom_notified.items() if key in current_ids}
         save_json(self.history_path, {"recent": self.recent, "notified": self.notified,
-                                     'departure_date': self.departure_date})
+                                     'departure_date': self.departure_date, 'custom_notified': self.custom_notified})
+
+    def custom_notice(self, now, hidden=False):
+        if (hidden or is_quiet(now, self.settings)
+                or (self.paused_until and now < self.paused_until)):
+            return None
+        for rule in sorted(self.reminders.data['notifications'], key=lambda rule: rule['time']):
+            due = due_time(rule, now)
+            if due is None or self.custom_notified.get(rule['id']) == due.date().isoformat():
+                continue
+            previous = self.custom_notified.get(rule['id'])
+            last_display = self.last_display
+            self.custom_notified[rule['id']] = due.date().isoformat()
+            self.last_display = now
+            try:
+                self.persist(now)
+            except OSError:
+                if previous is None:
+                    self.custom_notified.pop(rule['id'], None)
+                else:
+                    self.custom_notified[rule['id']] = previous
+                self.last_display = last_display
+                raise
+            return Notice('', rule['message'], True, 'notice', 'reminder')
+        return None
 
     def departure_notice(self, now, hidden=False, uptime_provider=lambda: None):
         if (not self.settings.departure_enabled or hidden or is_quiet(now, self.settings)
@@ -246,7 +288,7 @@ class Engine:
                       True, 'notice', 'departure')
 
     def next_notice(self, now: datetime, events: list[Event], hidden: bool = False,
-                    connected: bool = False, allow_chatter: bool = True) -> Notice | None:
+                    connected: bool = False, allow_chatter: bool = True, allow_reminders: bool = True) -> Notice | None:
         if hidden or is_quiet(now, self.settings) or (self.paused_until and now < self.paused_until):
             return None
         options = self.dialogue.data["options"]
@@ -266,6 +308,10 @@ class Engine:
                 self.persist(now)
                 status = f" · {event.response}" if event.response else ""
                 return Notice(f"予定まで あと{minutes}分{status}", text, True, reminder["expression"], "calendar")
+        if allow_reminders:
+            notice = self.custom_notice(now)
+            if notice:
+                return notice
         elapsed = (now - self.last_display).total_seconds()
         if options["suppress_during_meetings"] and connected and any(event.start <= now < event.end for event in events):
             return None  # Keep casual remarks out of calendar meeting time.

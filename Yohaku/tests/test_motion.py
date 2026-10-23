@@ -7,7 +7,7 @@ class MotionTests(unittest.TestCase):
         motion = Motion(uniform=lambda a, b: a)
         motion.wait = 0
         motion.distance = 0.01
-        motion.advance(0.1, 100, 0, 200, True)
+        for _ in range(5): motion.advance(0.1, 100, 0, 200, True)
         self.assertEqual(motion.direction, 1)  # Next trip faces the other way.
         self.assertEqual(motion.facing, -1)  # Current pose keeps its actual direction.
         motion.advance(0.1, 100, 0, 200, False)

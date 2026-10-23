@@ -141,6 +141,20 @@ class FileHistory:
             row = db.execute("SELECT name, COUNT(*) AS n FROM files WHERE opened >= ? AND opened < ? GROUP BY path COLLATE NOCASE ORDER BY n DESC, MAX(opened) DESC LIMIT 1", (start, end)).fetchone()
         return {'file_name': row[0], 'file_open_count': row[1]} if row else {'file_name': '', 'file_open_count': 0}
 
+    def search(self, text, now):
+        """Search every retained row; dates and the per-day display cap do not apply."""
+        query = text.strip().casefold()
+        if not query or not self.path.exists():
+            return []
+        with self._connect() as db:
+            self._prune(db, now)
+            db.create_function('casefold', 1, str.casefold, deterministic=True)
+            return db.execute(
+                'SELECT name, path, source, opened FROM files '
+                'WHERE instr(casefold(name), ?) > 0 OR instr(casefold(path), ?) > 0 '
+                'ORDER BY opened DESC, id DESC LIMIT ?',
+                (query, query, MAX_HISTORY_RECORDS)).fetchall()
+
     def clear(self):
         self.path.unlink(missing_ok=True)
 

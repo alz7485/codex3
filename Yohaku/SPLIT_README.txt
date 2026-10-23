@@ -1,7 +1,7 @@
-余白 / YOHAKU v0.13.0 — ソースZIPは2つです
+余白 / YOHAKU v0.14.0 — ソースZIPは2つです
 
-Yohaku-v0.13.0-source-part1-of-2.zip
-Yohaku-v0.13.0-source-part2-of-2.zip
+Yohaku-v0.14.0-source-part1-of-2.zip
+Yohaku-v0.14.0-source-part2-of-2.zip
 
 1. 両方をダウンロードします。片方ずつテキスト化・復元できます。
 2. 2つのZIPを同じ場所へ展開し、Yohakuフォルダーを統合します。

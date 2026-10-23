@@ -16,6 +16,9 @@ history.json
 dialogue.json
 dialogue.json.bak
 dialogue.json.tmp
+reminders.json
+reminders.json.bak
+reminders.json.tmp
 Yohaku-conversation.json
 
 usage.json

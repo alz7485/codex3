@@ -57,7 +57,8 @@ def validate(document):
     _require(_integer(options.get('active_threshold_seconds'), 5, 600), '操作あり判定は5〜600秒にしてください。')
     _require(type(options.get('click_reactions')) is bool, '連打への反応はtrue/falseにしてください。')
     for key, bounds in {'click_window_seconds': (1, 30), 'click_concern_count': (2, 30),
-                        'click_angry_count': (3, 60), 'click_recovery_seconds': (1, 120)}.items():
+                        'click_angry_count': (3, 60), 'click_recovery_seconds': (1, 120),
+                        'click_repeat_seconds': (1, 600)}.items():
         _require(_integer(options.get(key), *bounds), f'{key} は{bounds[0]}〜{bounds[1]}の整数にしてください。')
     _require(options['click_angry_count'] > options['click_concern_count'], '怒る回数は困る回数より多くしてください。')
     _require(options['click_recovery_seconds'] >= options['click_window_seconds'], '連打のリセット時間は判定期間以上にしてください。')
@@ -130,7 +131,7 @@ def upgrade(document):
     if not isinstance(document, dict) or type(document.get('schema_version')) is not int or document.get('schema_version') not in (1, 2):
         return document
     if document['schema_version'] == 2:
-        return upgrade_click_reactions(upgrade_mail(document))
+        return upgrade_comfort(upgrade_click_reactions(upgrade_mail(document)))
     result = deepcopy(document)
     base = json.loads(DEFAULT_PATH.read_text(encoding='utf-8'))
     result['schema_version'] = 2
@@ -147,7 +148,21 @@ def upgrade(document):
                 for voice, bank in result['phrases'].items():
                     if isinstance(bank, dict) and voice in base['phrases']:
                         bank[rule['id']] = deepcopy(base['phrases'][voice][rule['id']])
-    return upgrade_click_reactions(upgrade_mail(result))
+    return upgrade_comfort(upgrade_click_reactions(upgrade_mail(result)))
+
+
+def upgrade_comfort(document):
+    result = deepcopy(document)
+    if isinstance(result.get('options'), dict):
+        result['options'].setdefault('click_repeat_seconds', 30)
+    if result.get('anonymous_mail_version') != 1:
+        base = json.loads(DEFAULT_PATH.read_text(encoding='utf-8'))
+        if isinstance(result.get('phrases'), dict):
+            for voice, bank in result['phrases'].items():
+                if isinstance(bank, dict) and voice in base['phrases']:
+                    bank['mail_received'] = deepcopy(base['phrases'][voice]['mail_received'])
+        result['anonymous_mail_version'] = 1
+    return result
 
 
 def upgrade_click_reactions(document):

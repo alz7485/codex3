@@ -56,11 +56,12 @@ class UserInterfaceTests(unittest.TestCase):
         self.controller.clear_reaction()
         self.controller.bubble.hide()
         self.controller.engine.click_reactions.reset()
+        self.controller.mail_burst_last = self.controller.mail_burst_notice = None
 
     def test_all_bubbles_show_body_without_a_header(self):
         bubble = self.controller.bubble
         try:
-            for kind in ("calendar", "notification", "departure", "menu", "message"):
+            for kind in ("calendar", "notification", "departure", "reminder", "menu", "message"):
                 bubble.display(Notice("表示見出し", "本文だけのメッセージ。", kind=kind))
                 self.app.processEvents()
                 self.assertFalse(bubble.heading.isVisible())
@@ -80,7 +81,10 @@ class UserInterfaceTests(unittest.TestCase):
             c.update_animation_policy()
             for index in range(4):
                 QTest.mouseClick(c.resident, Qt.MouseButton.LeftButton, pos=QPoint(40, 40))
-                self.assertEqual(c.resident.frame_index, 24 if index < 3 else 26)
+                if index < 3:
+                    self.assertIn(c.resident.frame_index, (24, 25))
+                else:
+                    self.assertEqual(c.resident.frame_index, 26)
             notice = c.pending_reaction
             self.assertIsNotNone(notice)
             self.assertFalse(c.bubble.timer.isActive())
@@ -106,7 +110,10 @@ class UserInterfaceTests(unittest.TestCase):
             with patch('companion.ui.time.monotonic', return_value=last + .1):
                 for index in range(3):
                     c.show_message()
-                    self.assertEqual(c.resident.frame_index, 26 if index < 2 else 27)
+                    if index < 2:
+                        self.assertIn(c.resident.frame_index, (24, 25))
+                    else:
+                        self.assertEqual(c.resident.frame_index, 27)
                     if index < 2:
                         QTest.mouseClick(c.bubble.text, Qt.MouseButton.LeftButton, pos=QPoint(8, 8))
             angry = c.pending_reaction
@@ -279,44 +286,44 @@ class UserInterfaceTests(unittest.TestCase):
         finally:
             c.bubble.hide()
 
-    def test_new_mail_has_senders_without_counts_and_unread_is_only_conversation_context(self):
+    def test_new_mail_is_anonymous_and_bursts_do_not_replace_the_first_notice(self):
         c = self.controller
-        old = (c.settings.outlook_enabled, c.settings.mail_enabled, c.settings.mail_show_senders,
-               c.settings.quiet_start, c.settings.quiet_end, c.engine.paused_until, c.unread_count, c.unread_at)
+        old = (c.settings.outlook_enabled, c.settings.mail_enabled, c.settings.quiet_start,
+               c.settings.quiet_end, c.engine.paused_until, c.unread_count, c.unread_at)
         try:
-            c.settings.outlook_enabled = c.settings.mail_enabled = c.settings.mail_show_senders = True
+            c.settings.outlook_enabled = c.settings.mail_enabled = True
             c.settings.quiet_start = c.settings.quiet_end = '00:00'
             c.engine.paused_until = None
-            c.bubble.hide()
-
             c.mail_result(c.mail_generation, {'unread_count': 12}, '')
             self.assertFalse(c.bubble.isVisible())
             self.assertEqual(c.engine.context['unread_mail_count'], 12)
-            c.mail_result(c.mail_generation, {'messages': [{'kind': 'mail', 'sender': '山田'},
-                                                          {'kind': 'mail', 'sender': '佐藤さん'}]}, '')
+            with patch('companion.ui.time.monotonic', return_value=100):
+                c.mail_result(c.mail_generation, {'messages': [{'kind': 'mail', 'sender': 'PRIVATE'}]}, '')
+            notice = c.bubble.notice
             self.assertEqual(c.bubble.kind, 'notification')
-            self.assertIn('山田さん', c.bubble.text.text())
-            self.assertIn('佐藤さん', c.bubble.text.text())
-            self.assertIn('山田さんと佐藤さんから', c.bubble.text.text())
-            self.assertNotIn('送信者：', c.bubble.text.text())
-            self.assertNotRegex(c.bubble.text.text() + c.bubble.heading.text(), r'\d+件')
-            c.mail_result(c.mail_generation, {'messages': [{'kind': 'mail', 'sender': '鈴木さん'}]}, '')
-            self.assertNotIn('山田さん', c.bubble.text.text())
-            self.assertIn('鈴木さん', c.bubble.text.text())
-            self.assertRegex(c.bubble.text.text(), r'^鈴木さんから(?:新しい)?メールが(?:来|届き)ました。$')
-            c.mail_result(c.mail_generation, {'messages': [{'kind': 'mail', 'sender': '田中'},
-                                                          {'kind': 'meeting', 'sender': '高橋'}]}, '')
-            self.assertIn('田中さんから', c.bubble.text.text())
-            self.assertIn('高橋さんから会議の案内が来ました。', c.bubble.text.text())
-            c.bubble.hide()
+            self.assertIn(c.bubble.text.text(), ('メールが届きました。', '新しいメールが届きました。'))
+            self.assertNotIn('PRIVATE', c.bubble.text.text())
+            self.assertNotRegex(c.bubble.text.text(), r'\d+件')
+            with patch('companion.ui.time.monotonic', return_value=101):
+                c.mail_result(c.mail_generation, {'messages': [{'kind': 'meeting', 'sender': 'SECRET'}]}, '')
+            self.assertIs(c.bubble.notice, notice)
+            self.assertTrue(c.bubble.timer.isActive())
+            c.bubble.dismiss()
+            with patch('companion.ui.time.monotonic', return_value=102):
+                c.mail_result(c.mail_generation, {'messages': [{'kind': 'mail'}]}, '')
+            self.assertFalse(c.bubble.isVisible())
+            with patch('companion.ui.time.monotonic', return_value=106):
+                c.mail_result(c.mail_generation, {'messages': [{'kind': 'mail'}]}, '')
+            self.assertTrue(c.bubble.isVisible())
+            self.assertIsNot(c.bubble.notice, notice)
             c.unread_at = datetime.now().astimezone() - timedelta(seconds=100)
             c.refresh_context_metrics(datetime.now().astimezone())
             self.assertNotIn('unread_mail_count', c.engine.context)
             c.mail_result(c.mail_generation, {'unread_count': None}, '')
             self.assertIsNone(c.unread_count)
         finally:
-            (c.settings.outlook_enabled, c.settings.mail_enabled, c.settings.mail_show_senders,
-             c.settings.quiet_start, c.settings.quiet_end, c.engine.paused_until, c.unread_count, c.unread_at) = old
+            (c.settings.outlook_enabled, c.settings.mail_enabled, c.settings.quiet_start,
+             c.settings.quiet_end, c.engine.paused_until, c.unread_count, c.unread_at) = old
             c.bubble.hide()
 
     def test_pending_calendar_status_and_partial_read_warning_are_visible(self):
@@ -643,7 +650,7 @@ class UserInterfaceTests(unittest.TestCase):
     def test_app_has_brand_name_version_and_windows_icon(self):
         c = self.controller
         self.assertEqual(self.app.applicationDisplayName(), "余白 / YOHAKU")
-        self.assertEqual(self.app.applicationVersion(), "0.13.0")
+        self.assertEqual(self.app.applicationVersion(), "0.14.0")
         self.assertFalse(c.brand_icon.isNull())
         self.assertEqual(c.panel.windowIcon().cacheKey(), c.brand_icon.cacheKey())
         c.panel.character_buttons["B"].click()
@@ -1012,7 +1019,9 @@ class UserInterfaceTests(unittest.TestCase):
             c.interaction.hide()
             c.last_motion_time = time.monotonic() - 0.05
             with patch.object(c.resident, "underMouse", return_value=False):
-                c.animate()
+                for _ in range(30):
+                    c.last_motion_time = time.monotonic() - 0.05
+                    c.animate()
             self.assertNotEqual(c.motion_x, 200)
             c.panel.animation_check.click()
             self.assertFalse(c.animation_timer.isActive())

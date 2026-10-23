@@ -189,11 +189,11 @@ class DialogueJsonTests(unittest.TestCase):
         bank = draft['phrases']['控えめな皮肉屋']
         bank['mail_received'] = ['メールが届きました。読む時間にも余白をどうぞ。', '自分で編集した案内です。']
         upgraded = upgrade(draft)
-        self.assertEqual(upgraded['phrases']['控えめな皮肉屋']['mail_received'][0], '{mail_from}メールが来ました。')
+        self.assertEqual(upgraded['phrases']['控えめな皮肉屋']['mail_received'][0], 'メールが届きました。')
         self.assertEqual(upgraded['phrases']['控えめな皮肉屋']['mail_received'][1], '自分で編集した案内です。')
         self.store.save(upgraded)
         self.engine.choose = lambda values: values[0]
-        self.assertEqual(self.engine.phrase('mail_received', {'mail_from': '山田さんから'}), '山田さんからメールが来ました。')
+        self.assertEqual(self.engine.phrase('mail_received', {'mail_from': '山田さんから'}), 'メールが届きました。')
         self.engine.persist(self.now)
         self.assertNotIn('山田', self.engine.history_path.read_text())
         self.assertNotIn('山田', self.store.path.read_text())

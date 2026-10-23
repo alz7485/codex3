@@ -14,9 +14,9 @@ class ClickReactionTests(unittest.TestCase):
         options = defaults()['options']
         clicks = ClickReactions()
         self.assertEqual([clicks.click(i * .2, options) for i in range(7)],
-                         [None, None, None, 'click_concern', 'click_concern', 'click_concern', 'click_angry'])
+                         [None, None, None, 'click_concern', None, None, 'click_angry'])
         # The rolling window empties, but continuing to poke keeps the mood.
-        self.assertEqual(clicks.click(8, options), 'click_angry')
+        self.assertIsNone(clicks.click(8, options))
         self.assertIsNone(clicks.click(18, options))
         self.assertEqual(len(clicks.clicks), 1)
 

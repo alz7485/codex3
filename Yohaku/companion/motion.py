@@ -20,13 +20,20 @@ class ClickReactions:
         self.clicks = deque(maxlen=60)
         self.last = None
         self.stage = 0
+        self.announced = {}
+
+    def reset_burst(self):
+        self.clicks.clear()
+        self.stage = 0
 
     def click(self, now, options):
         if not options['click_reactions']:
             self.reset()
             return None
-        if self.last is not None and (now < self.last or now - self.last >= options['click_recovery_seconds']):
+        if self.last is not None and now < self.last:
             self.reset()
+        elif self.last is not None and now - self.last >= options['click_recovery_seconds']:
+            self.reset_burst()
         self.last = now
         while self.clicks and now - self.clicks[0] > options['click_window_seconds']:
             self.clicks.popleft()
@@ -34,7 +41,13 @@ class ClickReactions:
         count = len(self.clicks)
         self.stage = max(self.stage, 2 if count >= options['click_angry_count'] else
                          1 if count >= options['click_concern_count'] else 0)
-        return ('click_concern' if self.stage == 1 else 'click_angry') if self.stage else None
+        if not self.stage:
+            return None
+        previous = self.announced.get(self.stage)
+        if previous is not None and now - previous < options['click_repeat_seconds']:
+            return None
+        self.announced[self.stage] = now
+        return 'click_concern' if self.stage == 1 else 'click_angry'
 
 
 class Motion:
@@ -54,10 +67,15 @@ class Motion:
         self.talk_until = 0.0
         self.idle_at = 12.0
         self.front_until = 0.0
+        self.phase = 'idle'
+        self.phase_elapsed = 0.0
 
     def face_front(self, seconds=8.0):
         self.front_until = self.elapsed + seconds
         self.walking = False
+        self.phase = 'idle'
+        self.speed = 0.0
+        self.wait = max(self.wait, 0.6)
 
     def react(self, expression, seconds=8.0, speaking=False):
         self.expression = expression if expression in EXPRESSION_FRAMES else "neutral"
@@ -74,9 +92,35 @@ class Motion:
                 self.react(gestures[min(len(gestures) - 1, int(self.uniform(0, len(gestures))))], 2.5)
             self.idle_at = self.elapsed + self.uniform(12, 22)
         next_x = min(upper, max(lower, x))
-        if walk_allowed and upper > lower:
+        if not walk_allowed or upper <= lower:
+            if self.phase != 'idle':
+                self.phase = 'idle'
+                self.wait = max(self.wait, 0.6)
+            self.phase_elapsed = 0.0
+        elif self.phase == 'settle':
+            self.phase_elapsed += dt
+            if self.phase_elapsed >= 0.22:
+                self.phase = 'idle'
+                self.phase_elapsed = 0.0
+        else:
             self.wait -= dt
             if self.wait <= 0:
+                if self.phase == 'idle':
+                    if x >= upper - 4:
+                        self.direction = -1
+                    elif x <= lower + 4:
+                        self.direction = 1
+                    self.facing = self.direction
+                    self.phase, self.phase_elapsed = 'look', 0.0
+                self.phase_elapsed += dt
+                if self.phase == 'look' and self.phase_elapsed >= 0.18:
+                    self.phase, self.phase_elapsed = 'lean', 0.0
+                elif self.phase == 'lean' and self.phase_elapsed >= 0.14:
+                    self.phase, self.phase_elapsed = 'walk', 0.0
+                if self.phase != 'walk':
+                    self.speed = 0.0
+                    self.walk_weight *= math.exp(-dt * 9)
+                    return next_x
                 if self.distance <= 0:
                     self.distance = self.uniform(70, 160)
                     if x >= upper - 4:
@@ -98,6 +142,7 @@ class Motion:
                     self.wait = self.uniform(25, 55)
                     self.distance = 0
                     self.direction *= -1
+                    self.phase, self.phase_elapsed = 'settle', 0.0
         if not self.walking:
             self.speed = 0
         self.walk_weight += ((1.0 if self.walking else 0.0) - self.walk_weight) * (1 - math.exp(-dt * 9))
@@ -106,6 +151,8 @@ class Motion:
     def frame(self):
         if self.walking:
             return 16 + int(self.gait * 8) % 8
+        if self.phase in ('look', 'lean', 'settle'):
+            return 0
         # Keep the emotional face visible instead of alternating to the old
         # side-facing talking frame during repeated-click reactions.
         if self.expression and self.elapsed < self.expression_until and EXPRESSION_FRAMES[self.expression] >= 24:
@@ -124,5 +171,7 @@ class Motion:
         weight = self.walk_weight
         bob = -abs(math.sin(phase)) * 1.2 * weight
         sway = math.sin(phase) * 1.3 * weight
+        if self.phase == 'lean':
+            sway += self.direction * 0.8 * min(1.0, self.phase_elapsed / 0.14)
         breath = math.sin(self.elapsed * 1.7) * 0.007 * (1 - weight)
         return bob, sway, 1 - breath / 2, 1 + breath

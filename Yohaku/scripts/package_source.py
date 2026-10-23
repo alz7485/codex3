@@ -15,7 +15,7 @@ sys.path.insert(0, str(PROJECT))
 from companion.metadata import VERSION
 
 EXCLUDED_DIRS = {".git", ".venv", "__pycache__", "build", "dist", "release", ".pytest_cache", ".aws", ".ssh", ".codex", ".agents"}
-PRIVATE_NAMES = {"settings.json", "history.json", "instance.lock", ".env", "smoke-report.json", "dialogue.json", "dialogue.json.bak", "dialogue.json.tmp", "Yohaku-conversation.json", "usage.json", "usage.tmp", "settings.tmp", "history.tmp"}
+PRIVATE_NAMES = {"settings.json", "history.json", "instance.lock", ".env", "smoke-report.json", "dialogue.json", "dialogue.json.bak", "dialogue.json.tmp", "Yohaku-conversation.json", "usage.json", "usage.tmp", "settings.tmp", "history.tmp", "reminders.json", "reminders.json.bak", "reminders.json.tmp"}
 
 
 def source_files(project):

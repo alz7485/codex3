@@ -44,33 +44,10 @@ def mail_identity(item):
     return (store, int(item.Class), 'entry', str(item.EntryID))
 
 
-def sender_name(item):
-    for attribute in ('SenderName', 'SenderEmailAddress'):
-        try:
-            value = str(getattr(item, attribute) or '').replace('\r', ' ').replace('\n', ' ').strip()
-            if value:
-                return value[:160]
-        except Exception:
-            pass
-    return '送信者を取得できませんでした'
-
-
-def sender_with_honorific(name):
-    name = str(name or '').strip() or '送信者不明'
-    if name in ('送信者不明', '送信者を取得できませんでした') or name.endswith('さん'):
-        return name
-    for suffix in ('さま', '様', '殿'):
-        if name.endswith(suffix):
-            name = name[:-len(suffix)].rstrip()
-            break
-    return name + 'さん'
-
-
 class OutlookMailWatcher:
-    def __init__(self, received, status, show_senders=True):
+    def __init__(self, received, status, show_senders=False):
         self.received = received
         self.status = status
-        self.show_senders = show_senders
         self.stop_event = threading.Event()
         self.thread = None
         # Keep all hashes during this watcher session: an Inbox burst larger
@@ -100,8 +77,7 @@ class OutlookMailWatcher:
                     continue
             except Exception:
                 continue
-            messages.append({'kind': 'mail' if kind == 43 else 'meeting',
-                             'sender': sender_name(item) if self.show_senders else ''})
+            messages.append({'kind': 'mail' if kind == 43 else 'meeting'})
         if messages and not self.stop_event.is_set():
             self.received({'messages': messages})
 

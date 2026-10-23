@@ -36,7 +36,7 @@ def main():
     board = QPixmap(2000, 960)
     board.fill(QColor('#e7ede6'))
     painter = QPainter(board)
-    text(painter, 40, 45, 'Y O H A K U  /  v0.13.0', 14, True)
+    text(painter, 40, 45, 'Y O H A K U  /  v0.14.0', 14, True)
     text(painter, 40, 95, '4つの性格。20の表情としぐさ。', 32, True)
     for row, (key, name) in enumerate(CHARACTERS.items()):
         y = 150 + row * 190
@@ -57,7 +57,7 @@ def main():
         for motion in motions:
             motion.wait = 0
             motion.direction = 1
-            motion.distance = 10000
+            motion.distance = 120
         for mascot in mascots:
             mascot.setFixedSize(138, 160)
             mascot.bottom_padding = 0
@@ -67,7 +67,7 @@ def main():
                 canvas = QPixmap(1200, 640)
                 canvas.fill(QColor('#e7ede6'))
                 p = QPainter(canvas)
-                text(p, 32, 38, 'Y O H A K U  /  v0.13.0', 13, True)
+                text(p, 32, 38, 'Y O H A K U  /  v0.14.0', 13, True)
                 text(p, 32, 81, '足元をそろえて、すっと歩く。', 29, True)
                 text(p, 32, 112, '8コマの中心と接地線を補正 / タスクバー直上まで配置 / 下段は20種の表情', 14)
                 for column, ((key, name), mascot, motion) in enumerate(zip(CHARACTERS.items(), mascots, motions)):
