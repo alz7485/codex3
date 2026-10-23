@@ -12,7 +12,7 @@ import threading
 import time
 
 from PySide6.QtCore import QDate, QEvent, QLocale, QLockFile, QObject, QPoint, QRect, QRectF, QSize, Qt, QTime, QTimer, QUrl, Signal
-from PySide6.QtGui import QAction, QColor, QDesktopServices, QFont, QIcon, QPainter, QPainterPath, QPen, QPixmap, QTransform
+from PySide6.QtGui import QAction, QColor, QCursor, QDesktopServices, QFont, QIcon, QPainter, QPainterPath, QPen, QPixmap, QTransform
 from PySide6.QtWidgets import (
     QApplication, QButtonGroup, QCalendarWidget, QCheckBox, QComboBox, QFrame, QHeaderView, QHBoxLayout, QLabel, QMainWindow,
     QMenu, QMessageBox, QPushButton, QScrollArea, QSizePolicy, QStackedWidget, QSystemTrayIcon, QTimeEdit,
@@ -468,7 +468,7 @@ class Panel(QMainWindow):
         self.animation_check.setChecked(self.settings.animation)
         self.animation_check.toggled.connect(lambda v: self.update_setting("animation", v))
         chooser.addWidget(self.animation_check)
-        self.walking_check = QCheckBox("ときどき、置いた高さを歩く")
+        self.walking_check = QCheckBox("こまめに、置いた高さを歩く")
         self.walking_check.setChecked(self.settings.walking)
         self.walking_check.setEnabled(self.settings.animation)
         self.walking_check.toggled.connect(lambda v: self.update_setting("walking", v))
@@ -1102,6 +1102,8 @@ class Controller(QObject):
         self.motion_x = float(self.settings.position_x) if self.settings.position_set else None
         self.motion_y = self.settings.position_y if self.settings.position_set else None
         self.last_motion_time = time.monotonic()
+        self.hover_point = None
+        self.hover_until = 0.0
         self.activity_history = FileHistory(self.path / "files.sqlite3")
         self.activity_tracker = FileTracker(self.activity_history)
         self.activity_busy = False
@@ -1495,7 +1497,18 @@ class Controller(QObject):
         area = self.resident_area()
         lower = area.left() + 12
         upper = max(lower, area.right() - self.resident.width() - 20)
-        blocked = self.pending_reaction is not None or self.bubble.isVisible() or self.panel.isVisible() or self.history_window.isVisible() or (self.editor is not None and self.editor.isVisible()) or (self.reminder_editor is not None and self.reminder_editor.isVisible()) or self.resident.underMouse()
+        hovered = self.resident.underMouse()
+        if hovered:
+            point = QCursor.pos()
+            if point != self.hover_point:
+                self.hover_point = point
+                self.hover_until = now + 2.0
+        else:
+            self.hover_point = None
+        # Give a moving pointer time to click, without pinning the character
+        # forever beneath an untouched pointer. This transient position is not logged.
+        hover_pause = hovered and now < self.hover_until
+        blocked = self.pending_reaction is not None or self.bubble.isVisible() or self.panel.isVisible() or self.history_window.isVisible() or (self.editor is not None and self.editor.isVisible()) or (self.reminder_editor is not None and self.reminder_editor.isVisible()) or hover_pause
         self.motion_x = self.motion.advance(dt, self.motion_x if self.motion_x is not None else upper,
                                           lower, upper, self.settings.walking and not blocked)
         frame = self.motion.frame()

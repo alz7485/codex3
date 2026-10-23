@@ -37,6 +37,8 @@ class ComfortLogicTests(unittest.TestCase):
             if motion.phase in ('look', 'lean'):
                 self.assertEqual(x, 100)
                 self.assertEqual(motion.frame(), 0)
+            if first_move is not None and motion.phase == 'idle':
+                break  # Inspect the first settled trip before another short walk.
         self.assertGreaterEqual(first_move, .30)
         self.assertLessEqual(first_move, .4)
         self.assertTrue({'look', 'lean', 'walk', 'settle', 'idle'} <= phases)
@@ -154,6 +156,39 @@ class ComfortInterfaceTests(unittest.TestCase):
         c.deleteLater()
         self.env.stop()
         self.temp.cleanup()
+
+    def test_stationary_hover_resumes_walking_but_new_pointer_motion_and_press_pause_it(self):
+        from PySide6.QtCore import QPoint
+        c = self.c
+        c.settings.walking = True
+        c.motion.wait = 0
+        c.motion_x = 200.0
+        c.resident.press_position = None
+        clock = 100.0
+        with patch.object(c.resident, 'underMouse', return_value=True), patch('companion.ui.QCursor.pos', return_value=QPoint(220, 500)) as cursor:
+            for step in range(100):
+                clock = 100 + step * .05
+                c.last_motion_time = clock - .05
+                with patch('companion.ui.time.monotonic', return_value=clock):
+                    c.animate()
+                if step < 40:
+                    self.assertEqual(c.motion_x, 200)
+            self.assertNotEqual(c.motion_x, 200)
+            position = c.motion_x
+            cursor.return_value = QPoint(224, 500)
+            c.last_motion_time = clock
+            with patch('companion.ui.time.monotonic', return_value=clock + .05):
+                c.animate()
+            self.assertEqual(c.motion_x, position)
+            c.resident.press_position = QPoint(224, 500)
+            try:
+                for step in range(100):
+                    c.last_motion_time = clock + step * .05
+                    with patch('companion.ui.time.monotonic', return_value=clock + (step + 1) * .05):
+                        c.animate()
+                    self.assertEqual(c.motion_x, position)
+            finally:
+                c.resident.press_position = None
 
     def test_presets_save_dialogue_and_flags_without_enabling_data_sources(self):
         c = self.c

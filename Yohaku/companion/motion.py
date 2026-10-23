@@ -54,7 +54,7 @@ class Motion:
     def __init__(self, uniform=random.uniform):
         self.uniform = uniform
         self.elapsed = 0.0
-        self.wait = 15.0
+        self.wait = self.uniform(2.0, 4.0)
         self.distance = 0.0
         self.direction = -1
         self.facing = 1
@@ -65,10 +65,11 @@ class Motion:
         self.expression = None
         self.expression_until = 0.0
         self.talk_until = 0.0
-        self.idle_at = 12.0
+        self.idle_at = 5.0
         self.front_until = 0.0
         self.phase = 'idle'
         self.phase_elapsed = 0.0
+        self.was_blocked = False
 
     def face_front(self, seconds=8.0):
         self.front_until = self.elapsed + seconds
@@ -90,9 +91,15 @@ class Motion:
             if self.elapsed >= self.expression_until:
                 gestures = ("think", "curious", "relaxed", "nod", "wink", "stretch", "proud")
                 self.react(gestures[min(len(gestures) - 1, int(self.uniform(0, len(gestures))))], 2.5)
-            self.idle_at = self.elapsed + self.uniform(12, 22)
+            self.idle_at = self.elapsed + self.uniform(5, 9)
         next_x = min(upper, max(lower, x))
+        if walk_allowed and upper > lower and self.was_blocked:
+            # Let the pointer/menu interaction finish, then resume promptly
+            # instead of carrying a long pre-interaction pause forward.
+            self.wait = min(1.4, max(0.8, self.wait))
+            self.was_blocked = False
         if not walk_allowed or upper <= lower:
+            self.was_blocked = True
             if self.phase != 'idle':
                 self.phase = 'idle'
                 self.wait = max(self.wait, 0.6)
@@ -122,7 +129,7 @@ class Motion:
                     self.walk_weight *= math.exp(-dt * 9)
                     return next_x
                 if self.distance <= 0:
-                    self.distance = self.uniform(70, 160)
+                    self.distance = self.uniform(24, 56)
                     if x >= upper - 4:
                         self.direction = -1
                     elif x <= lower + 4:
@@ -139,7 +146,7 @@ class Motion:
                 if self.walking:
                     self.facing = self.direction
                 if self.distance < 0.08 or next_x in (lower, upper):
-                    self.wait = self.uniform(25, 55)
+                    self.wait = self.uniform(2, 5)
                     self.distance = 0
                     self.direction *= -1
                     self.phase, self.phase_elapsed = 'settle', 0.0

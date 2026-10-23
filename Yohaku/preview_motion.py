@@ -36,7 +36,7 @@ def main():
     board = QPixmap(2000, 960)
     board.fill(QColor('#e7ede6'))
     painter = QPainter(board)
-    text(painter, 40, 45, 'Yohaku  /  v0.14.2', 14, True)
+    text(painter, 40, 45, 'Yohaku  /  v0.14.3', 14, True)
     text(painter, 40, 95, '4つの性格。20の表情としぐさ。', 32, True)
     for row, (key, name) in enumerate(CHARACTERS.items()):
         y = 150 + row * 190
@@ -57,7 +57,6 @@ def main():
         for motion in motions:
             motion.wait = 0
             motion.direction = 1
-            motion.distance = 120
         for mascot in mascots:
             mascot.setFixedSize(138, 160)
             mascot.bottom_padding = 0
@@ -67,9 +66,9 @@ def main():
                 canvas = QPixmap(1200, 640)
                 canvas.fill(QColor('#e7ede6'))
                 p = QPainter(canvas)
-                text(p, 32, 38, 'Yohaku  /  v0.14.2', 13, True)
-                text(p, 32, 81, '足元をそろえて、すっと歩く。', 29, True)
-                text(p, 32, 112, '8コマの中心と接地線を補正 / タスクバー直上まで配置 / 下段は20種の表情', 14)
+                text(p, 32, 38, 'Yohaku  /  v0.14.3', 13, True)
+                text(p, 32, 81, '小休止を挟んで、ちょこちょこ歩く。', 29, True)
+                text(p, 32, 112, '小休止2〜5秒・1回24〜56px / タスクバー直上を歩く / 下段は20種の表情', 14)
                 for column, ((key, name), mascot, motion) in enumerate(zip(CHARACTERS.items(), mascots, motions)):
                     left = 24 + column * 294
                     text(p, left + 8, 160, name, 16, True)
@@ -79,6 +78,7 @@ def main():
                     p.drawLine(left + 8, 367, left + 264, 367)
                     xs[column] = motion.advance(1 / 30, xs[column], 0, 150, True)
                     mascot.frame_index = motion.frame()
+                    mascot.flipped = motion.facing < 0
                     mascot.bob, mascot.sway, mascot.scale_x, mascot.scale_y = motion.pose()
                     mascot.previous_frame = None
                     p.drawPixmap(left + 8 + round(xs[column]), 207, mascot.grab())

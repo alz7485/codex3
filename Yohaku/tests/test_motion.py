@@ -3,6 +3,51 @@ from companion.motion import Motion
 
 
 class MotionTests(unittest.TestCase):
+    def test_uninterrupted_idle_has_frequent_short_walks_without_long_front_holds(self):
+        for pick in (lambda a, b: a, lambda a, b: b):
+            with self.subTest(range_end=pick(0, 1)):
+                motion = Motion(uniform=pick)
+                x, starts, distances = 200.0, [], []
+                previous_walking, trip_distance, stationary, longest_pause = False, 0.0, 0.0, 0.0
+                for step in range(3000):
+                    previous_x = x
+                    x = motion.advance(.02, x, 0, 500, True)
+                    if motion.walking:
+                        if not previous_walking:
+                            starts.append((step + 1) * .02)
+                        trip_distance += abs(x - previous_x)
+                        stationary = 0.0
+                    else:
+                        stationary += .02
+                        longest_pause = max(longest_pause, stationary)
+                        if previous_walking:
+                            distances.append(trip_distance)
+                            trip_distance = 0.0
+                    previous_walking = motion.walking
+                self.assertLessEqual(starts[0], 4.5)
+                self.assertGreaterEqual(len(starts), 6)
+                self.assertLessEqual(longest_pause, 5.7)
+                self.assertTrue(distances)
+                self.assertTrue(all(23.9 <= distance <= 56.1 for distance in distances))
+
+    def test_reading_a_bubble_keeps_still_then_resumes_after_a_short_pause(self):
+        motion = Motion(uniform=lambda a, b: b)
+        motion.wait = 55  # A long pause must not survive a completed interaction.
+        for _ in range(600):
+            self.assertEqual(motion.advance(.1, 150, 0, 300, False), 150)
+            self.assertFalse(motion.walking)
+        x = 150
+        first_move = None
+        for step in range(30):
+            previous = x
+            x = motion.advance(.1, x, 0, 300, True)
+            self.assertLessEqual(abs(x - previous), 2)
+            if x != previous and first_move is None:
+                first_move = (step + 1) * .1
+        self.assertIsNotNone(first_move)
+        self.assertGreaterEqual(first_move, .8)
+        self.assertLessEqual(first_move, 2.0)
+
     def test_facing_is_retained_when_a_walk_finishes(self):
         motion = Motion(uniform=lambda a, b: a)
         motion.wait = 0
