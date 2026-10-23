@@ -81,28 +81,10 @@ QTabWidget::pane { border: 1px solid #dce4dd; background: #fafbf9; }
 QTabBar::tab { background: #edf1ee; padding: 9px 17px; color: #65736a; }
 QTabBar::tab:selected { background: #fafbf9; color: #385c4a; border-top: 2px solid #385c4a; }
 QWidget#speechChoiceRow { background: transparent; }
-QPushButton#speechChoice { border: 1px solid; border-radius: 7px; padding: 7px 10px; font-size: 12px; font-weight: 500; text-align: left; }
-QPushButton#speechChoice:focus { border-width: 2px; padding: 6px 9px; }
-QPushButton#speechChoice[speechAction="calendar"] { background: #fff0bd; color: #6b460e; border-color: #cdaa54; }
-QPushButton#speechChoice[speechAction="calendar"]:hover { background: #ffe4a0; }
-QPushButton#speechChoice[speechAction="calendar"]:pressed { background: #f6d67d; }
-QPushButton#speechChoice[speechAction="calendar"]:focus { border-color: #8a5d10; }
-QPushButton#speechChoice[speechAction="activity"] { background: #deedff; color: #234e7a; border-color: #95b8db; }
-QPushButton#speechChoice[speechAction="activity"]:hover { background: #cde2fc; }
-QPushButton#speechChoice[speechAction="activity"]:pressed { background: #b7d3f4; }
-QPushButton#speechChoice[speechAction="activity"]:focus { border-color: #315f92; }
-QPushButton#speechChoice[speechAction="settings"] { background: #e1f0e6; color: #285a3e; border-color: #98bea4; }
-QPushButton#speechChoice[speechAction="settings"]:hover { background: #cce5d5; }
-QPushButton#speechChoice[speechAction="settings"]:pressed { background: #b4d9c0; }
-QPushButton#speechChoice[speechAction="settings"]:focus { border-color: #386a49; }
-QPushButton#speechChoice[speechAction="hide"] { background: #e5e8ed; color: #3e4857; border-color: #adb5c0; }
-QPushButton#speechChoice[speechAction="hide"]:hover { background: #d6dce4; }
-QPushButton#speechChoice[speechAction="hide"]:pressed { background: #c4cdd9; }
-QPushButton#speechChoice[speechAction="hide"]:focus { border-color: #5d6b7e; }
-QPushButton#speechChoice[speechAction="dismiss"] { background: #ffffff; color: #55615b; border-color: #ccd4ce; }
-QPushButton#speechChoice[speechAction="dismiss"]:hover { background: #f1f5f0; }
-QPushButton#speechChoice[speechAction="dismiss"]:pressed { background: #e3eae2; }
-QPushButton#speechChoice[speechAction="dismiss"]:focus { border-color: #60776a; }
+QPushButton#speechChoice { background: #e8f0e6; color: #385b43; border: 1px solid #afc4b2; border-radius: 7px; padding: 7px 10px; font-size: 12px; font-weight: 500; text-align: left; }
+QPushButton#speechChoice:hover { background: #d9e8d6; border-color: #7e9e84; }
+QPushButton#speechChoice:pressed { background: #c7dcc3; border-color: #5e8166; }
+QPushButton#speechChoice:focus { border: 2px solid #52765c; padding: 6px 9px; }
 QTreeWidget { background: white; border: 1px solid #e1e7e1; border-radius: 10px; outline: none; }
 QTreeWidget::item { padding: 9px 5px; }
 QTreeWidget::item:selected { background: #e5eee1; color: #263b43; }
@@ -127,6 +109,65 @@ def button(text, callback=None, name=None):
     if name:
         result.setObjectName(name)
     return result
+
+
+@lru_cache(maxsize=5)
+def speech_action_icon(action):
+    """Small matching line icons, without relying on emoji fonts or external files."""
+    icon = QIcon()
+    for scale in (1, 2, 3):
+        pixmap = QPixmap(20 * scale, 20 * scale)
+        pixmap.setDevicePixelRatio(scale)
+        pixmap.fill(Qt.GlobalColor.transparent)
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setPen(QPen(QColor('#385b43'), 1.5, Qt.PenStyle.SolidLine,
+                            Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+        path = QPainterPath()
+        if action == 'calendar':
+            painter.drawRoundedRect(QRectF(3, 4, 14, 13), 2, 2)
+            painter.drawLine(3, 8, 17, 8)
+            painter.drawLine(6, 2, 6, 6)
+            painter.drawLine(14, 2, 14, 6)
+            painter.drawLine(6, 11, 8, 11)
+            painter.drawLine(12, 11, 14, 11)
+            painter.drawLine(6, 14, 8, 14)
+        elif action == 'activity':
+            path.moveTo(2, 6)
+            path.lineTo(2, 4)
+            path.lineTo(8, 4)
+            path.lineTo(10, 6)
+            path.lineTo(17, 6)
+            path.lineTo(17, 9)
+            path.moveTo(2, 6)
+            path.lineTo(2, 16)
+            path.lineTo(16, 16)
+            path.lineTo(19, 9)
+            path.lineTo(5, 9)
+            path.lineTo(2, 16)
+        elif action == 'settings':
+            for index in range(32):
+                angle = index * math.tau / 32
+                radius = 8 if index % 4 in (1, 2) else 6.4
+                x, y = 10 + radius * math.cos(angle), 10 + radius * math.sin(angle)
+                path.moveTo(x, y) if index == 0 else path.lineTo(x, y)
+            path.closeSubpath()
+            painter.drawEllipse(QRectF(7, 7, 6, 6))
+        elif action == 'hide':
+            path.moveTo(2, 10)
+            path.cubicTo(6, 3, 14, 3, 18, 10)
+            path.cubicTo(14, 17, 6, 17, 2, 10)
+            painter.drawEllipse(QRectF(7, 7, 6, 6))
+            painter.drawLine(3, 17, 17, 3)
+        elif action == 'dismiss':
+            painter.drawEllipse(QRectF(2.5, 2.5, 15, 15))
+            path.moveTo(6, 10)
+            path.lineTo(9, 13)
+            path.lineTo(14, 7)
+        painter.drawPath(path)
+        painter.end()
+        icon.addPixmap(pixmap)
+    return icon
 
 
 def box(parent=None, margins=0, spacing=10):
@@ -867,7 +908,8 @@ class InteractionBubble(Bubble):
         self.buttons = {}
         for key, title in (("calendar", "予定を聞く"), ("activity", "ファイル起動履歴を見る"), ("settings", "設定を開く"), ("hide", "非表示にする"), ("dismiss", "用事はない")):
             choice = button(title, lambda checked=False, k=key: self.selected.emit(k), "speechChoice")
-            choice.setProperty('speechAction', key)
+            choice.setIcon(speech_action_icon(key))
+            choice.setIconSize(QSize(18, 18))
             self.buttons[key] = choice
             choices.addWidget(choice)
         layout.addWidget(self.choice_row)
