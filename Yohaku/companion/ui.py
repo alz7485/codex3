@@ -832,9 +832,11 @@ class InteractionBubble(Bubble):
         layout.removeWidget(self.text)
         self.content_scroll = QScrollArea()
         self.content_scroll.setWidgetResizable(True)
+        self.content_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.content_scroll.setFrameShape(QFrame.Shape.NoFrame)
         self.content_scroll.setStyleSheet("QScrollArea, QScrollArea > QWidget > QWidget { background: transparent; }")
         self.content_scroll.setWidget(self.text)
+        self.available_height = None
         self.text.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
         self.text.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         layout.addWidget(self.content_scroll)
@@ -867,12 +869,32 @@ class InteractionBubble(Bubble):
         if event.type() == QEvent.Type.MouseButtonPress and event.button() == Qt.MouseButton.RightButton:
             self.call_requested.emit()
             return True
+        if (event.type() == QEvent.Type.MouseButtonRelease
+                and watched is self.content_scroll.verticalScrollBar()):
+            return False  # Reading a long message must not dismiss it while scrolling.
         return super().eventFilter(watched, event)
 
-    def resize_text(self):
-        height = self.text.heightForWidth(self.width() - 36)
-        self.content_scroll.setFixedHeight(max(1, height) if self.kind == 'message'
-                                          else max(1, min(200, height)))
+    def resize_text(self, available_height=None):
+        if available_height is not None:
+            self.available_height = max(1, available_height)
+        screen = self.screen() or QApplication.primaryScreen()
+        maximum = self.available_height or (screen.availableGeometry().height() - 16 if screen else 600)
+        # Measure the fixed chrome/choices separately from the scrollable body.
+        self.text.setMinimumHeight(0)
+        self.content_scroll.setFixedHeight(1)
+        self.layout().invalidate()
+        self.layout().activate()
+        chrome = self.layout().sizeHint().height() - 1
+        cap = max(1, maximum - chrome)
+        if self.kind != 'message':
+            cap = min(200, cap)
+        width = max(1, self.width() - 36)
+        height = max(1, self.text.heightForWidth(width))
+        if height > cap:
+            width = max(1, width - self.content_scroll.verticalScrollBar().sizeHint().width())
+            height = max(1, self.text.heightForWidth(width))
+        self.text.setMinimumHeight(height)
+        self.content_scroll.setFixedHeight(min(height, cap))
         self.layout().invalidate()
         self.layout().activate()
         # QWidget.adjustSize() can impose a 100px minimum on a top-level window.
@@ -889,22 +911,15 @@ class InteractionBubble(Bubble):
         self.text.setText(text)
         self.choice_row.show()
         self.resize_text()
+        self.content_scroll.verticalScrollBar().setValue(0)
         self.show()
         self.raise_()
         self.activateWindow()
         self.buttons["calendar"].setFocus()
 
     def content(self, key, heading, text):
-        self.notice = None
-        self.departure_row.hide()
-        self.set_kind("calendar" if key == "calendar" else "message")
-        self.timer.start(self.duration_ms)
+        self.display(Notice(heading, text, kind="calendar" if key == "calendar" else "message"))
         self.current = key
-        self.interactive = True
-        self.heading.setText(heading)
-        self.text.setText(text)
-        self.choice_row.show()
-        self.resize_text()
 
     def display(self, notice):
         self.notice = notice
@@ -916,6 +931,7 @@ class InteractionBubble(Bubble):
         self.heading.setText(notice.heading)
         self.text.setText(notice.text)
         self.resize_text()
+        self.content_scroll.verticalScrollBar().setValue(0)
         self.show()  # WA_ShowWithoutActivating keeps automatic notices passive.
         self.timer.start(self.duration_ms)
 
@@ -993,6 +1009,7 @@ class HistoryWindow(QMainWindow):
         self.calendar.setMaximumWidth(310)
         self.calendar.setLocale(QLocale(QLocale.Language.Japanese, QLocale.Country.Japan))
         self.calendar.setVerticalHeaderFormat(QCalendarWidget.VerticalHeaderFormat.NoVerticalHeader)
+        self.calendar.setMinimumHeight(self.calendar.sizeHint().height())
         self.calendar.setDateRange(QDate.currentDate().addMonths(-3), QDate.currentDate())
         self.calendar.setAccessibleName("ファイル履歴を表示する日付")
         self.calendar.selectionChanged.connect(self.refresh_requested.emit)
@@ -1057,6 +1074,10 @@ class HistoryWindow(QMainWindow):
                 item.setToolTip(2, path)
                 self.table.addTopLevelItem(item)
             self.last_rows = (list(rows), bool(query))
+        # An explicit 500px minimum otherwise overrides Qt's layout minimum
+        # and lets the calendar overlap the controls below it.
+        self.ensurePolished()
+        self.setMinimumSize(self.minimumSize().expandedTo(self.minimumSizeHint()))
 
     def closeEvent(self, event):
         event.ignore()
@@ -1445,6 +1466,8 @@ class Controller(QObject):
         if point != self.resident.pos():
             self.resident.move(point)
         for bubble in (self.bubble,):
+            if bubble.available_height != area.height() - 16:
+                bubble.resize_text(area.height() - 16)
             x = self.resident.x() + self.resident.width() / 2 - bubble.width() / 2
             x = max(area.left() + 8, min(area.right() - bubble.width() - 8, x))
             above = self.resident.y() - bubble.height() - 8
@@ -1808,6 +1831,12 @@ class Controller(QObject):
             return
         now = datetime.now().astimezone()
         self.engine.last_display = now
+        if key in ('calendar', 'activity', 'settings'):
+            self.interaction.timer.stop()
+            self.interaction.hide()
+            self.interaction.choice_row.hide()
+            self.interaction.current = None
+            self.interaction.interactive = False
         if key == "calendar":
             self.motion.react(self.dialogue.rule("calendar_intro")["expression"], speaking=True)
             fresh = self.connected_at is not None and (now - self.connected_at).total_seconds() < 300
@@ -1823,7 +1852,6 @@ class Controller(QObject):
             self.interaction.content(key, CHARACTERS[self.settings.character], self.engine.phrase("calendar_intro") + "\n\n" + text)
         elif key == "activity":
             self.motion.react(self.dialogue.rule("activity_open")["expression"])
-            self.interaction.content(key, CHARACTERS[self.settings.character], self.engine.phrase("activity_open"))
             self.history_window.calendar.setDateRange(QDate.currentDate().addMonths(-3), QDate.currentDate())
             self.refresh_history()
             self.history_window.show()
@@ -1839,7 +1867,6 @@ class Controller(QObject):
             self.bubble.hide()
         elif key == "settings":
             self.motion.react(self.dialogue.rule("settings_open")["expression"])
-            self.interaction.content(key, CHARACTERS[self.settings.character], self.engine.phrase("settings_open"))
             self.show_panel()
         self.position()
 
@@ -1894,6 +1921,7 @@ class Controller(QObject):
         if not error:
             try:
                 self.activity_tracker.ingest(snapshot, datetime.now().astimezone())
+                self.activity_error = '\n'.join(getattr(snapshot, 'warnings', ()))
             except Exception:
                 self.activity_error = "履歴を保存できません。保存先の権限をご確認ください。"
         self.panel.activity_status.setText(self.activity_error or "記録中 · 5秒ごとに確認 · 保存は3か月 / 最大15,000件")

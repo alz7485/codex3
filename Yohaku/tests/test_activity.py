@@ -6,7 +6,7 @@ import unittest
 from types import ModuleType, SimpleNamespace
 from unittest.mock import Mock, patch
 
-from companion.activity import FileHistory, FileTracker, FileObservation, MAX_HISTORY_RECORDS, retention_start
+from companion.activity import FileHistory, FileTracker, FileObservation, FileSnapshot, MAX_HISTORY_RECORDS, retention_start
 
 
 class FileHistoryTests(unittest.TestCase):
@@ -52,6 +52,78 @@ class FileHistoryTests(unittest.TestCase):
         self.tracker.ingest([b], self.now + timedelta(seconds=10))
         self.tracker.ingest([a, b], self.now + timedelta(seconds=30))
         self.assertEqual(len(self.rows()), 3)
+
+    def test_failed_sqlite_save_retries_office_and_recent_without_loss_or_duplicates(self):
+        for recent in (False, True):
+            for delay in (5, 20):
+                with self.subTest(recent=recent, delay=delay):
+                    self.history.clear()
+                    self.tracker.configure(True, self.now)
+                    self.tracker.ingest([], self.now)
+                    stamp = self.now + timedelta(seconds=5)
+                    item = self.file(opened=stamp if recent else None)
+                    with patch.object(self.history, 'append', side_effect=sqlite3.OperationalError('locked')):
+                        with self.assertRaises(sqlite3.OperationalError):
+                            self.tracker.ingest([item], stamp)
+                    self.assertEqual(self.tracker.previous_office, set())
+                    self.assertEqual(self.tracker.last_recorded, {})
+                    self.assertEqual(self.tracker.recent_seen, {})
+                    self.tracker.ingest([item], stamp + timedelta(seconds=delay))
+                    self.tracker.ingest([item], stamp + timedelta(seconds=60))
+                    self.assertEqual(len(self.rows()), 1)
+
+    def test_incomplete_source_keeps_known_files_but_complete_close_allows_reopen(self):
+        item = self.file()
+        self.tracker.configure(True, self.now)
+        self.tracker.ingest([item], self.now)
+        self.tracker.ingest(FileSnapshot([], ['Excel']), self.now + timedelta(seconds=5))
+        self.tracker.ingest([item], self.now + timedelta(seconds=10))
+        self.assertEqual(self.rows(), [])
+        self.tracker.ingest([], self.now + timedelta(seconds=20))
+        self.tracker.ingest([item], self.now + timedelta(seconds=40))
+        self.assertEqual(len(self.rows()), 1)
+
+    def test_initial_busy_source_recovers_as_baseline_then_tracks_new_files(self):
+        self.tracker.configure(True, self.now)
+        self.tracker.ingest(FileSnapshot([], ['Excel']), self.now)
+        self.tracker.ingest([self.file()], self.now + timedelta(seconds=5))
+        self.assertEqual(self.rows(), [])
+        self.tracker.ingest([self.file(), self.file('新規.xlsx')], self.now + timedelta(seconds=10))
+        self.assertEqual([row[0] for row in self.rows()], ['新規.xlsx'])
+
+    def test_busy_office_adapter_marks_incomplete_and_does_not_invent_reopen(self):
+        from companion.activity import opened_file_snapshot
+        com = ModuleType('pythoncom')
+        com.CoInitialize, com.CoUninitialize = Mock(), Mock()
+        package, client = ModuleType('win32com'), ModuleType('win32com.client')
+        package.client = client
+        shell = ModuleType('win32com.shell')
+        shell.shell = SimpleNamespace(SHGetFolderPath=lambda *_: self.temp.name)
+        shell.shellcon = SimpleNamespace(CSIDL_RECENT=8)
+        class NoInstance(Exception):
+            hresult = -2147221021
+        busy = False
+        def document(_):
+            if busy:
+                raise RuntimeError('RPC_E_CALL_REJECTED')
+            return SimpleNamespace(Path='C:/work', FullName='C:/work/test.docx', Name='test.docx')
+        office = SimpleNamespace(Documents=SimpleNamespace(Count=1, Item=document))
+        def active(name):
+            if name == 'Word.Application':
+                return office
+            raise NoInstance()
+        client.GetActiveObject = Mock(side_effect=active)
+        self.tracker.configure(True, self.now)
+        modules = {'pythoncom':com, 'win32com':package, 'win32com.client':client, 'win32com.shell':shell}
+        with patch.dict('sys.modules', modules), patch('sys.platform', 'win32'):
+            for seconds, busy in ((0, False), (5, True), (10, False)):
+                snapshot = opened_file_snapshot()
+                self.assertEqual(snapshot.incomplete_sources, {'Word'} if busy else set())
+                self.assertEqual(bool(snapshot.warnings), busy)
+                self.tracker.ingest(snapshot, self.now + timedelta(seconds=seconds))
+        self.assertEqual(self.rows(), [])
+        self.assertEqual(com.CoInitialize.call_count, 3)
+        self.assertEqual(com.CoUninitialize.call_count, 3)
 
     def test_off_and_reenable_do_not_import_preexisting_files(self):
         self.tracker.configure(True, self.now)

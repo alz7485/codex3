@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from companion.core import CHARACTERS, Engine, Event, Settings, is_quiet, load_json, save_json
 
@@ -45,6 +46,19 @@ class NotificationTests(unittest.TestCase):
         second = Engine(self.settings, self.path)
         second.last_display = self.now
         self.assertIsNone(second.next_notice(self.now, [self.event], connected=True))
+
+    def test_calendar_save_failure_retries_without_consuming_notice_or_cooldown(self):
+        previous = self.engine.last_display
+        with patch.object(Path, 'replace', side_effect=PermissionError('temporary lock')):
+            with self.assertRaises(OSError):
+                self.engine.next_notice(self.now, [self.event], connected=True)
+        self.assertNotIn(self.event.key, self.engine.notified)
+        self.assertEqual(self.engine.last_display, previous)
+        self.engine.persist(self.now)  # Unrelated later saves must not mark it seen.
+        reloaded = Engine(self.settings, self.path)
+        self.assertTrue(reloaded.next_notice(self.now + timedelta(seconds=15), [self.event], connected=True).important)
+        self.assertIsNone(reloaded.next_notice(self.now + timedelta(seconds=30), [self.event], connected=True))
+        self.assertIsNone(Engine(self.settings, self.path).next_notice(self.now + timedelta(seconds=45), [self.event], connected=True))
 
     def test_subject_not_displayed_or_persisted_by_default(self):
         notice = self.engine.next_notice(self.now, [self.event], connected=True)

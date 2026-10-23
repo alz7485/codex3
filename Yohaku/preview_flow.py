@@ -11,6 +11,7 @@ import tempfile
 from PySide6.QtCore import QDate, Qt
 from PySide6.QtGui import QColor, QFont, QPainter, QPixmap
 from companion.core import Notice
+from companion.metadata import VERSION
 from companion.ui import HistoryWindow, InteractionBubble, Mascot, create_application
 
 
@@ -23,7 +24,7 @@ def main(export_gif=False):
             ('予算.xlsx', 'C:\\work\\総務部\\予算.xlsx', 'Excel', (now - timedelta(minutes=30)).isoformat()),
             ('議事録.docx', 'C:\\work\\会議\\議事録.docx', 'Word', (now - timedelta(hours=1)).isoformat())]
     history = HistoryWindow()
-    history.resize(1000, 580)
+    history.resize(1000, 500)
     history.calendar.setSelectedDate(QDate(now.year, now.month, now.day))
     history.set_records(rows, '記録オン · 表示例（合成データ） · 過去3か月')
     history.show()
@@ -52,7 +53,7 @@ def main(export_gif=False):
         painter.setPen(QColor(color))
         painter.drawText(x, y, value)
 
-    text(65, 48, 'Yohaku  /  v0.14.2', 12, True)
+    text(65, 48, f'Yohaku  /  v{VERSION}', 12, True)
     text(65, 99, '左で一言。右で呼び出し。', 30, True)
     text(65, 135, '予定は淡い黄、新着通知は淡い青。履歴と設定は専用画面へ。', 17)
     for i, caption in enumerate(('01  右クリックで呼び出し', '02  左クリックで一言', '03  予定を聞く')):
@@ -79,7 +80,7 @@ def main(export_gif=False):
     painter.drawPixmap(100, 95, bubbles[0].grab())
     painter.drawPixmap(328, 101 + bubbles[0].height(), mascot.grab())
     text(40, 591, '問いかけの下に、5つの選択肢を1行ずつ。', 14)
-    text(40, 624, 'v0.14.2 / 実装画面のプレビュー', 12, color='#65786a')
+    text(40, 624, f'v{VERSION} / 実装画面のプレビュー', 12, color='#65786a')
     painter.end()
     click_preview.save(str(destination / 'click-menu.png'))
 
@@ -97,7 +98,7 @@ def main(export_gif=False):
                     bubble.content('calendar', 'つづり', 'このあとの予定はこちらです。\n\n14:00–14:30  [未承諾] 予定あり\n15:00–15:30  予定あり')
                     caption = '予定も、同じ吹き出しで。'
                 else:
-                    bubble.content('activity', 'つづり', '履歴を開きました。\n日付を選んで、振り返ってみましょう。')
+                    bubble.hide()
                     caption = '履歴だけ、専用の画面が開きます。'
                 mascot.frame_index = 1 if index % 45 in (40, 41) else (2 if index < 50 else 0)
                 app.processEvents()
@@ -105,16 +106,17 @@ def main(export_gif=False):
                 canvas.fill(QColor('#e7ede6'))
                 painter = QPainter(canvas)
                 painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-                text(40, 46, 'Yohaku  /  v0.14.2', 12, True)
+                text(40, 46, f'Yohaku  /  v{VERSION}', 12, True)
                 text(40, 95, caption, 25, True)
-                painter.drawPixmap(580, 163, bubble.grab())
+                if index < 70:
+                    painter.drawPixmap(580, 163, bubble.grab())
                 painter.drawPixmap(805, 169 + bubble.height(), mascot.grab())
                 if index >= 70:
                     text(40, 170, 'ファイル履歴の専用ウィンドウ', 16, True)
                     painter.drawPixmap(40, 190, history.grab().scaled(510, 320, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
                 else:
                     text(40, 255, '普段の吹き出しの中に', 20, True)
-                    text(40, 295, 'キャラの問いかけと、5つの選択肢。', 17)
+                    text(40, 295, '問いかけと5択。選択後は本文だけ。', 17)
                     text(40, 350, '予定を聞く', 16)
                     text(40, 385, 'ファイル起動履歴を見る', 16)
                     text(40, 420, '設定を開く', 16)

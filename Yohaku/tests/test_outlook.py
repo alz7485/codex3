@@ -45,7 +45,7 @@ class OutlookReadTests(unittest.TestCase):
                                      MeetingStatus=status, ResponseStatus=response, StartUTC=start,
                                      EndUTC=start+timedelta(minutes=30), Subject='会議の件名')
 
-    def request(self, gid='AABB', start=START, response=5, cancelled=False, missing=False):
+    def request(self, gid='AABB', start=START, response=5, cancelled=False, missing=False, extra=None):
         properties = {
             f'{APPOINTMENT}/820D0040': start,
             f'{APPOINTMENT}/820E0040': start + timedelta(minutes=30),
@@ -53,6 +53,7 @@ class OutlookReadTests(unittest.TestCase):
             f'{APPOINTMENT}/82180003': response,
             f'{MEETING}/00030102': bytes.fromhex(gid),
         }
+        properties.update(extra or {})
         def get_property(uri):
             key = uri.split('/id/')[1]
             if missing or key not in properties: raise RuntimeError('not available')
@@ -164,6 +165,76 @@ class OutlookReadTests(unittest.TestCase):
         self.assertEqual(len(week), 2)
         legacy = hashlib.sha256(f'appointment/{START.astimezone().isoformat()}'.encode()).hexdigest()
         self.assertEqual(result[0].legacy_key, legacy)
+
+    def test_rescheduled_requests_and_calendar_do_not_keep_old_start(self):
+        moved = START + timedelta(hours=1)
+        requests = [self.request(start=moved), self.request()]
+        for appointments in ([], [self.appointment(start=moved)]):
+            result, _, _ = self.read(appointments, requests)
+            self.assertEqual([e.start for e in result], [moved])
+
+    def test_latest_move_outside_day_suppresses_old_in_range_request(self):
+        tomorrow = START + timedelta(days=1)
+        requests = [self.request(start=tomorrow), self.request()]
+        result, _, _ = self.read(requests=requests)
+        self.assertEqual(result, [])
+        result, _, _ = self.read(requests=requests, whole_week=True)
+        self.assertEqual([e.start for e in result], [tomorrow])
+        all_day_update = self.request(extra={f'{APPOINTMENT}/8215000B': True})
+        result, _, _ = self.read(requests=[all_day_update, self.request()])
+        self.assertEqual(result, [])
+
+    def test_latest_cancellation_after_move_suppresses_all_old_versions(self):
+        moved = START + timedelta(hours=1)
+        result, _, _ = self.read([self.appointment()], [self.request(start=moved, cancelled=True), self.request()])
+        self.assertEqual(result, [])
+        result, _, _ = self.read(requests=[self.request(start=moved), self.request(cancelled=True)])
+        self.assertEqual([e.start for e in result], [moved])
+
+    def test_recurring_moved_exception_matches_original_date_and_keeps_other_days(self):
+        tomorrow = START + timedelta(days=1)
+        moved = START + timedelta(hours=1)
+        occurrence = {f'{APPOINTMENT}/8223000B': True, f'{APPOINTMENT}/82280040': START}
+        next_occurrence = {f'{APPOINTMENT}/8223000B': True, f'{APPOINTMENT}/82280040': tomorrow}
+        result, _, _ = self.read(requests=[self.request(start=moved, extra=occurrence), self.request(extra=occurrence),
+                                          self.request(start=tomorrow, extra=next_occurrence)], whole_week=True)
+        self.assertEqual([e.start for e in result], [moved, tomorrow])
+        result, _, _ = self.read(requests=[self.request(start=moved, cancelled=True, extra=occurrence),
+                                          self.request(extra=occurrence), self.request(start=tomorrow, extra=next_occurrence)], whole_week=True)
+        self.assertEqual([e.start for e in result], [tomorrow])
+
+    def test_global_object_id_occurrence_date_matches_clean_calendar_identity(self):
+        clean = '040000008200E00074C5B7101A82E008' + '00000000' + 'AABBCCDD'
+        instance = clean[:32] + '07EA0A17' + clean[40:]  # 2026-10-23 original instance
+        appointment = self.appointment(gid=clean, start=START + timedelta(hours=1))
+        appointment.IsRecurring = True
+        result, _, _ = self.read([appointment], [self.request(gid=instance)])
+        self.assertEqual([e.start for e in result], [appointment.StartUTC])
+
+    def test_comparable_revision_uses_newer_update_and_ignores_stale_cancel(self):
+        appointment = self.appointment()
+        appointment.PropertyAccessor = types.SimpleNamespace(GetProperty=lambda uri: 2 if uri.endswith('/82010003') else None)
+        moved = START + timedelta(days=1)
+        update = self.request(start=moved, extra={f'{APPOINTMENT}/82010003': 3})
+        result, _, _ = self.read([appointment], [update, self.request()])
+        self.assertEqual(result, [])  # The latest revision moved out of today's view.
+        old_cancel = self.request(cancelled=True, extra={f'{APPOINTMENT}/82010003': 1})
+        result, _, _ = self.read([appointment], [old_cancel])
+        self.assertEqual([e.start for e in result], [START])
+        appointment.IsRecurring = True
+        old_cancel = self.request(cancelled=True, extra={f'{APPOINTMENT}/82010003': 1, f'{APPOINTMENT}/8223000B': True})
+        result, _, _ = self.read([appointment], [old_cancel])
+        self.assertEqual([e.start for e in result], [START])
+
+    def test_recurring_series_cancel_keeps_only_a_later_reinvited_occurrence(self):
+        tomorrow = START + timedelta(days=1)
+        cancellation = self.request(cancelled=True, extra={f'{APPOINTMENT}/8223000B': True})
+        occurrence = {f'{APPOINTMENT}/8223000B': True, f'{APPOINTMENT}/82280040': tomorrow}
+        invitation = self.request(start=tomorrow, extra=occurrence)
+        result, _, _ = self.read(requests=[cancellation, invitation], whole_week=True)
+        self.assertEqual(result, [])
+        result, _, _ = self.read(requests=[invitation, cancellation], whole_week=True)
+        self.assertEqual([e.start for e in result], [tomorrow])
 
 
 if __name__ == '__main__': unittest.main()

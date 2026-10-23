@@ -16,7 +16,7 @@ from companion.ui import Controller, Panel, Resident, blend_frames, character_fr
 from PySide6.QtCore import QEvent, QPoint, QPointF, QRect, QDate, Qt
 from PySide6.QtGui import QColor, QMouseEvent, QPixmap
 from PySide6.QtTest import QTest
-from PySide6.QtWidgets import QPushButton
+from PySide6.QtWidgets import QPushButton, QTableView
 
 
 class UserInterfaceTests(unittest.TestCase):
@@ -268,6 +268,64 @@ class UserInterfaceTests(unittest.TestCase):
             self.assertEqual(heights[2] - heights[1], heights[1] - heights[0])
         finally:
             bubble.hide()
+
+    def test_long_message_stays_inside_screen_and_scrolls_without_dismissal(self):
+        c, bubble = self.controller, self.controller.bubble
+        original_height = bubble.available_height
+        try:
+            for height in (600, 800, 1040):
+                with patch.object(c, 'resident_area', return_value=QRect(0, 0, 1920, height)):
+                    bubble.display(Notice('', '\n'.join(f'{i:02d} 長いメッセージ' for i in range(80))))
+                    c.position()
+                    self.app.processEvents()
+                    self.assertTrue(c.resident_area().contains(bubble.geometry()))
+                    bar = bubble.content_scroll.verticalScrollBar()
+                    self.assertGreater(bar.maximum(), 0)
+                    QTest.mouseClick(bar, Qt.MouseButton.LeftButton, pos=QPoint(5, 20))
+                    self.assertTrue(bubble.isVisible())
+                    bar.setValue(bar.maximum())
+                    self.app.processEvents()
+                    viewport = bubble.content_scroll.viewport()
+                    bottom = bubble.text.mapTo(viewport, QPoint(0, bubble.text.height() - 1)).y()
+                    self.assertLess(bottom, viewport.height())
+                    bubble.display(Notice('', '短い本文'))
+                    self.app.processEvents()
+                    self.assertLess(bubble.height(), 100)
+                    self.assertEqual(bar.maximum(), 0)
+        finally:
+            bubble.available_height = original_height
+            bubble.hide()
+
+    def test_history_calendar_all_dates_fit_at_minimum_window_size(self):
+        window = self.controller.history_window
+        old_size = window.size()
+        try:
+            window.calendar.setDateRange(QDate(2026, 7, 1), QDate(2026, 10, 31))
+            window.calendar.setCurrentPage(2026, 10)
+            window.calendar.setSelectedDate(QDate(2026, 10, 23))
+            for query in ('', '予算'):
+                window.calendar.setSelectedDate(QDate(2026, 10, 1))
+                window.set_records([('予算.xlsx', 'C:/work/予算.xlsx', 'Excel', datetime.now().astimezone().isoformat())],
+                                   '記録オン', query=query)
+                window.show()
+                window.resize(1000, 500)
+                self.app.processEvents()
+                table = window.calendar.findChild(QTableView)
+                model = table.model()
+                self.assertGreaterEqual(window.calendar.height(), window.calendar.sizeHint().height())
+                today_button = next(b for b in window.findChildren(QPushButton) if b.text() == '今日に戻る')
+                self.assertFalse(window.calendar.geometry().intersects(today_button.geometry()))
+                for row in range(1, model.rowCount()):
+                    for col in range(model.columnCount()):
+                        self.assertTrue(table.viewport().rect().contains(table.visualRect(model.index(row, col))))
+                target = [model.index(row, col) for row in range(1, model.rowCount())
+                          for col in range(model.columnCount()) if model.data(model.index(row, col)) == 30][-1]
+                QTest.mouseClick(table.viewport(), Qt.MouseButton.LeftButton, pos=table.visualRect(target).center())
+                self.assertEqual(window.calendar.selectedDate(), QDate(2026, 10, 30))
+        finally:
+            window.resize(old_size)
+            window.today()
+            window.hide()
 
     def test_clicking_message_text_and_background_closes_only_the_bubble(self):
         c = self.controller
@@ -650,7 +708,7 @@ class UserInterfaceTests(unittest.TestCase):
     def test_app_has_brand_name_version_and_windows_icon(self):
         c = self.controller
         self.assertEqual(self.app.applicationDisplayName(), "Yohaku")
-        self.assertEqual(self.app.applicationVersion(), "0.14.3")
+        self.assertEqual(self.app.applicationVersion(), "0.14.4")
         self.assertFalse(c.brand_icon.isNull())
         self.assertEqual(c.panel.windowIcon().cacheKey(), c.brand_icon.cacheKey())
         c.panel.character_buttons["B"].click()
@@ -884,6 +942,33 @@ class UserInterfaceTests(unittest.TestCase):
         QTest.qWait(20)
         self.assertFalse(c.bubble.isVisible())
         self.assertTrue(c.resident.isVisible())
+
+    def test_call_actions_close_menu_and_calendar_becomes_dismissible_message(self):
+        c = self.controller
+        try:
+            c.open_choices()
+            c.bubble.buttons['calendar'].click()
+            self.assertTrue(c.bubble.isVisible())
+            self.assertEqual(c.bubble.kind, 'calendar')
+            self.assertEqual(c.bubble.current, 'calendar')
+            self.assertFalse(c.bubble.interactive)
+            self.assertFalse(c.bubble.choice_row.isVisible())
+            QTest.mouseClick(c.bubble.text, Qt.MouseButton.LeftButton, pos=QPoint(8, 8))
+            self.assertFalse(c.bubble.isVisible())
+            for action, window in (('activity', c.history_window), ('settings', c.panel)):
+                window.hide()
+                c.open_choices()
+                c.bubble.buttons[action].click()
+                self.assertTrue(window.isVisible())
+                self.assertFalse(c.bubble.isVisible())
+                self.assertFalse(c.bubble.choice_row.isVisible())
+                self.assertFalse(c.bubble.timer.isActive())
+                self.assertIsNone(c.bubble.current)
+                window.hide()
+        finally:
+            c.panel.hide()
+            c.history_window.hide()
+            c.bubble.hide()
 
     def test_dialogue_editor_save_updates_running_engine_and_bubble_timer(self):
         from copy import deepcopy

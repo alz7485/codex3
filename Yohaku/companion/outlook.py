@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+from dataclasses import dataclass
 import hashlib
 import sys
 
@@ -59,13 +60,99 @@ def event_from(item, start, end, show_titles, response=''):
     return Event(key, start, end, str(optional(item, 'Subject', '') or '') if show_titles else '', response, legacy_key)
 
 
-def merge_events(appointments, requests, excluded):
-    # Calendar is authoritative when a request has already become an appointment.
-    merged = {event.key: event for event in appointments if event.key not in excluded}
-    for event in requests:
-        if event.key not in excluded:
-            merged.setdefault(event.key, event)
-    return sorted(merged.values(), key=lambda event: event.start)
+@dataclass
+class Meeting:
+    event: Event
+    identity: str
+    occurrence: str
+    recurring: bool | None
+    cancelled: bool = False
+    eligible: bool = True
+    sequence: int | None = None
+
+
+def meeting_from(item, event, cancelled=False, eligible=True):
+    identity = global_identity(item)
+    occurrence = ''
+    # GlobalObjectId embeds the original occurrence date. Clean only its date
+    # bytes so an exception moved to another day still matches its old request.
+    if identity.startswith('040000008200E00074C5B7101A82E008') and len(identity) >= 40:
+        raw = bytes.fromhex(identity)
+        if any(raw[16:20]):
+            occurrence = f'{int.from_bytes(raw[16:18], "big"):04d}-{raw[18]:02d}-{raw[19]:02d}'
+        identity = (raw[:16] + b'\0' * 4 + raw[20:]).hex().upper()
+    original = named_property(item, APPOINTMENT, '82280040')
+    if original is not None:
+        occurrence = utc_time(original).date().isoformat()
+    recurring = optional(item, 'IsRecurring', named_property(item, APPOINTMENT, '8223000B'))
+    sequence = named_property(item, APPOINTMENT, '82010003')
+    return Meeting(event, identity or event.key, occurrence, recurring, cancelled, eligible,
+                   sequence if isinstance(sequence, int) else None)
+
+
+def merge_events(appointments, requests, lower, upper):
+    # Resolve revisions before the date filter: a move outside this view also
+    # supersedes the old in-range invitation. Inbox is already newest first.
+    starts = {}
+    for meeting in appointments:
+        if meeting.recurring is None:
+            starts.setdefault(meeting.identity, set()).add(meeting.event.start)
+    repeated = {identity for identity, values in starts.items() if len(values) > 1}
+
+    def key(meeting):
+        occurrence = meeting.occurrence
+        if not occurrence and (meeting.recurring or meeting.identity in repeated):
+            occurrence = meeting.event.start.date().isoformat()
+        return meeting.identity, occurrence
+
+    latest = {}
+    cancelled_series = {}
+    for index, meeting in enumerate(requests):
+        logical = key(meeting)
+        if logical not in latest:
+            latest[logical] = (meeting, index)
+            if meeting.cancelled and meeting.recurring and not meeting.occurrence:
+                cancelled_series.setdefault(meeting.identity, (meeting, index))
+    merged = {}
+    calendar = {}
+    blocked = set()
+    for meeting in appointments:
+        logical = key(meeting)
+        if meeting.cancelled:
+            blocked.add(logical)
+        else:
+            merged[logical] = meeting.event
+            calendar[logical] = meeting
+    for logical, (meeting, index) in latest.items():
+        saved = calendar.get(logical)
+        if (saved and saved.sequence is not None and meeting.sequence is not None
+                and meeting.sequence < saved.sequence):
+            continue  # A stale Inbox revision must not cancel a newer Calendar copy.
+        if meeting.cancelled:
+            blocked.add(logical)
+        elif meeting.eligible:
+            if (saved and saved.sequence is not None and meeting.sequence is not None
+                    and meeting.sequence > saved.sequence):
+                merged[logical] = meeting.event
+            else:
+                # Without comparable revisions the existing Calendar is authoritative.
+                merged.setdefault(logical, meeting.event)
+
+    def series_active(logical):
+        cancellation = cancelled_series.get(logical[0])
+        if cancellation is None:
+            return True
+        cancelled, cancelled_at = cancellation
+        saved = calendar.get(logical)
+        if (saved and saved.sequence is not None and cancelled.sequence is not None
+                and saved.sequence > cancelled.sequence):
+            return True
+        meeting, index = latest.get(logical, (None, cancelled_at))
+        return index < cancelled_at and meeting.eligible and not meeting.cancelled
+
+    return sorted((event for logical, event in merged.items()
+                   if logical not in blocked and series_active(logical)
+                   and lower <= event.start < upper), key=lambda event: event.start)
 
 
 def read_calendar(show_titles: bool = False, whole_week: bool = False) -> list[Event]:
@@ -87,7 +174,7 @@ def read_calendar(show_titles: bool = False, whole_week: bool = False) -> list[E
             lower -= timedelta(days=lower.weekday())
         upper = lower + timedelta(days=7 if whole_week else 1)
         namespace = outlook.GetNamespace('MAPI')
-        warnings, appointments, requests, excluded = [], [], [], set()
+        warnings, appointments, requests = [], [], []
         sources = 0
 
         def outlook_date(value):
@@ -119,10 +206,7 @@ def read_calendar(show_titles: bool = False, whole_week: bool = False) -> list[E
                             event = event_from(item, start, end, show_titles,
                                                '未承諾' if status in (1, 3) and response in (0, 5)
                                                else '仮承諾' if response == 2 else '')
-                            if status in (5, 7) or response == 4:
-                                excluded.add(event.key)
-                            else:
-                                appointments.append(event)
+                            appointments.append(meeting_from(item, event, status in (5, 7) or response == 4))
                 except Exception:
                     warnings.append('読み取れない予定を除いて表示しています。')
                 item = bounded.GetNext()
@@ -138,7 +222,6 @@ def read_calendar(show_titles: bool = False, whole_week: bool = False) -> list[E
             invitations.Sort('[ReceivedTime]', True)
             item, scanned = invitations.GetFirst(), 0
             sources += 1
-            seen_requests = set()
             while item is not None and scanned < 2048:
                 scanned += 1
                 try:
@@ -148,19 +231,15 @@ def read_calendar(show_titles: bool = False, whole_week: bool = False) -> list[E
                         end = named_property(item, APPOINTMENT, '820E0040')
                         if start is None or end is None:
                             warnings.append('開催日時を読み取れない会議案内があります。')
-                        elif not named_property(item, APPOINTMENT, '8215000B', False):
+                        else:
                             start, end = utc_time(start), utc_time(end)
-                            if lower <= start < upper and end > start:
+                            if end > start:
                                 event = event_from(item, start, end, show_titles, '未承諾')
-                                if event.key not in seen_requests:
-                                    seen_requests.add(event.key)  # Most recent request wins.
-                                    if message_class.endswith('.canceled'):
-                                        excluded.add(event.key)
-                                    response = named_property(item, APPOINTMENT, '82180003', 5)
-                                    request_type = optional(item, 'MeetingRequestType', 0) or 0
-                                    if (not message_class.endswith('.canceled') and response not in (3, 4)
-                                            and not (int(request_type) & 524288)):
-                                        requests.append(event)
+                                response = named_property(item, APPOINTMENT, '82180003', 5)
+                                request_type = optional(item, 'MeetingRequestType', 0) or 0
+                                requests.append(meeting_from(item, event, message_class.endswith('.canceled'),
+                                                             response not in (3, 4) and not (int(request_type) & 524288)
+                                                             and not named_property(item, APPOINTMENT, '8215000B', False)))
                 except Exception:
                     warnings.append('読み取れない会議案内を除いて表示しています。')
                 item = invitations.GetNext()
@@ -170,7 +249,7 @@ def read_calendar(show_titles: bool = False, whole_week: bool = False) -> list[E
             warnings.append('未承諾の会議案内を確認できません。取得できた予定表のみ表示しています。')
         if not sources:
             raise RuntimeError('予定表と会議案内を読み取れませんでした。Outlookの状態・社内設定をご確認ください。')
-        return CalendarEvents(merge_events(appointments, requests, excluded), complete=not warnings, warnings=warnings)
+        return CalendarEvents(merge_events(appointments, requests, lower, upper), complete=not warnings, warnings=warnings)
     except RuntimeError:
         raise
     except Exception:

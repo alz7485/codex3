@@ -297,6 +297,7 @@ class Engine:
             delta = (event.start - now).total_seconds()
             if (connected and reminder["enabled"] and 0 < delta <= options["meeting_lead_minutes"] * 60
                     and event.key not in self.notified and event.legacy_key not in self.notified):
+                previous_display = self.last_display
                 self.notified[event.key] = (event.end + timedelta(days=1)).timestamp()
                 minutes = max(1, int((delta + 59) // 60))
                 text = self.phrase("meeting")
@@ -305,7 +306,13 @@ class Engine:
                 if self.settings.show_titles and event.title:
                     text = event.title[:60] + "\n" + text
                 self.last_display = now
-                self.persist(now)
+                try:
+                    self.persist(now)
+                except OSError:
+                    # No notice reached the UI. Retry after storage recovers.
+                    self.notified.pop(event.key, None)
+                    self.last_display = previous_display
+                    raise
                 status = f" · {event.response}" if event.response else ""
                 return Notice(f"予定まで あと{minutes}分{status}", text, True, reminder["expression"], "calendar")
         if allow_reminders:

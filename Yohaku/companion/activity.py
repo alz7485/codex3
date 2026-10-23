@@ -36,6 +36,18 @@ class FileObservation:
         return self.path.replace("/", "\\").casefold()
 
 
+class FileSnapshot(list):
+    """Observations plus sources whose missing entries cannot imply a close."""
+    def __init__(self, values=(), incomplete_sources=()):
+        super().__init__(values)
+        self.incomplete_sources = set(incomplete_sources)
+
+    @property
+    def warnings(self):
+        return tuple(f'{source}の文書を一部確認できません。次回の確認で再試行します。'
+                     for source in sorted(self.incomplete_sources))
+
+
 def opened_file_snapshot() -> list[FileObservation]:
     if sys.platform != "win32":
         raise RuntimeError("ファイル履歴はWindowsで利用できます。")
@@ -44,22 +56,30 @@ def opened_file_snapshot() -> list[FileObservation]:
     from win32com.shell import shell, shellcon
     pythoncom.CoInitialize()
     try:
-        result = []
+        result = FileSnapshot()
         for application, collection, title in (("Excel.Application", "Workbooks", "Excel"),
                                                ("Word.Application", "Documents", "Word"),
                                                ("PowerPoint.Application", "Presentations", "PowerPoint")):
             try:
                 office = win32com.client.GetActiveObject(application)
                 documents = getattr(office, collection)
-                for index in range(1, min(int(documents.Count), 256) + 1):
+                count = int(documents.Count)
+                if count > 256:
+                    result.incomplete_sources.add(title)
+                for index in range(1, min(count, 256) + 1):
                     try:
                         document = documents.Item(index)
                         if not str(document.Path):
                             continue  # Unsaved document, no stable file identity.
                         result.append(FileObservation(str(document.FullName), str(document.Name), title))
                     except Exception:
+                        result.incomplete_sources.add(title)
                         continue  # Busy Office or closing document: retry next scan.
-            except Exception:
+            except Exception as error:
+                # MK_E_UNAVAILABLE means no running instance; other failures
+                # leave its document state unknown rather than empty.
+                if getattr(error, 'hresult', None) != -2147221021:
+                    result.incomplete_sources.add(title)
                 continue  # Never start an Office instance.
         try:
             recent = Path(shell.SHGetFolderPath(0, shellcon.CSIDL_RECENT, 0, 0))
@@ -165,6 +185,8 @@ class FileTracker:
         self.enabled = False
         self.since = None
         self.previous_office = set()
+        self.office_sources = {}
+        self.unbaselined_sources = set()
         self.recent_seen = {}
         self.last_recorded = {}
         self.baselined = False
@@ -173,6 +195,8 @@ class FileTracker:
         self.enabled = enabled
         self.since = now
         self.previous_office.clear()
+        self.office_sources.clear()
+        self.unbaselined_sources.clear()
         self.recent_seen.clear()
         self.last_recorded.clear()
         self.baselined = False
@@ -182,24 +206,31 @@ class FileTracker:
             return
         office = {item.key: item for item in snapshot if item.opened is None}
         recent = {item.key: item for item in snapshot if item.opened is not None}
+        incomplete = set(getattr(snapshot, 'incomplete_sources', ()))
         candidates = {}
         if self.baselined:
             for key, item in recent.items():
                 if item.opened >= self.since and self.recent_seen.get(key) != item.opened:
                     candidates[key] = item
             for key, item in office.items():
-                if key not in self.previous_office:
+                if key not in self.previous_office and item.source not in self.unbaselined_sources:
                     timestamp = candidates[key].opened if key in candidates else now
                     candidates[key] = FileObservation(item.path, item.name, item.source, timestamp)
         additions = []
+        recorded = dict(self.last_recorded)
         for key, item in candidates.items():
             stamp = item.opened or now
             previous = self.last_recorded.get(key)
             if previous is None or abs((stamp - previous).total_seconds()) > 15:
                 additions.append(item)
-                self.last_recorded[key] = stamp
+                recorded[key] = stamp
         self.history.append(additions, now)
-        self.previous_office = set(office)
+        # Commit deduplication and baselines only after the DB transaction.
+        retained = {key: source for key, source in self.office_sources.items() if source in incomplete}
+        retained.update({key: item.source for key, item in office.items()})
+        self.office_sources = retained
+        self.previous_office = set(retained)
+        self.unbaselined_sources = ((self.unbaselined_sources & incomplete) if self.baselined else incomplete)
         self.recent_seen = {key: item.opened for key, item in recent.items()}
-        self.last_recorded = {key: stamp for key, stamp in self.last_recorded.items() if (now - stamp).total_seconds() < 86400}
+        self.last_recorded = {key: stamp for key, stamp in recorded.items() if (now - stamp).total_seconds() < 86400}
         self.baselined = True

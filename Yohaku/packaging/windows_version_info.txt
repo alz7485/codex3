@@ -1,14 +1,14 @@
 # UTF-8 Windows executable resource, consumed by PyInstaller.
 VSVersionInfo(
-    ffi=FixedFileInfo(filevers=(0, 14, 3, 0), prodvers=(0, 14, 3, 0),
+    ffi=FixedFileInfo(filevers=(0, 14, 4, 0), prodvers=(0, 14, 4, 0),
                       mask=0x3f, flags=0x0, OS=0x40004, fileType=0x1,
                       subtype=0x0, date=(0, 0)),
     kids=[StringFileInfo([StringTable('041104b0', [
         StringStruct('FileDescription', 'Yohaku — デスクトップの小さな同僚'),
-        StringStruct('FileVersion', '0.14.3'),
+        StringStruct('FileVersion', '0.14.4'),
         StringStruct('InternalName', 'Yohaku'),
         StringStruct('OriginalFilename', 'Yohaku.exe'),
         StringStruct('ProductName', 'Yohaku'),
-        StringStruct('ProductVersion', '0.14.3'),
+        StringStruct('ProductVersion', '0.14.4'),
     ])]), VarFileInfo([VarStruct('Translation', [1041, 1200])])],
 )
