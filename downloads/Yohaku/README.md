@@ -1,4 +1,4 @@
-# Yohaku v0.14.4
+# Yohaku v0.14.5
 
 <img src="../../Yohaku/companion/assets/app/yohaku.png" width="112" alt="Yohakuのアイコン">
 
@@ -6,13 +6,14 @@
 
 | ダウンロード | サイズ | 検証 |
 |---|---|---|
-| [ZIP 1/2](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.14.4-source-part1-of-2.zip) | 12.19 MB | [SHA-256](Yohaku-v0.14.4-source-part1-of-2.zip.sha256) |
-| [ZIP 2/2](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.14.4-source-part2-of-2.zip) | 12.19 MB | [SHA-256](Yohaku-v0.14.4-source-part2-of-2.zip.sha256) |
+| [ZIP 1/2](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.14.5-source-part1-of-2.zip) | 12.19 MB | [SHA-256](Yohaku-v0.14.5-source-part1-of-2.zip.sha256) |
+| [ZIP 2/2](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.14.5-source-part2-of-2.zip) | 12.19 MB | [SHA-256](Yohaku-v0.14.5-source-part2-of-2.zip.sha256) |
 
 **両方のZIPを同じ場所へ展開し、Yohakuフォルダーを統合してください。** 共通のREADME・マニフェスト等は同一内容なので、上書き確認は許可します。片方だけでは必要な素材・コードが揃いません。
 
 それぞれ普通のZIPで、片方ずつテキスト化・復元できます。連結専用のバイナリ分割ではなく、画像やコードの途中では切っていません。実行・onedirビルドに必要な素材、4キャラ、アイコン、設定初期値、直接コマンドを含みます。ビルド済みEXEは含みません。
 
+- v0.14.5：呼び出しの選択肢を用途別に色分け。予定は黄、ファイル履歴は青、設定は緑、非表示はグレー、「用事はない」は白。ホバー・押下の背景色とキーボード選択時の枠も区別できます。
 - v0.14.4：監査で確定した6件を修正。通知・ファイル履歴の保存失敗後は再試行し、Officeの一時取得失敗を閉じたとは判断しません。同じ会議の変更前・取消済み案内を除き、長文は画面内でスクロール、履歴カレンダーは日付の必要高を確保します。
 - 呼び出しの操作：予定を聞くと5択を閉じ、予定本文だけの吹き出しを表示。クリックで閉じます。履歴・設定は呼び出しを閉じて専用画面を開きます。
 - こまめな歩行：初回2〜4秒、歩行後の小休止2〜5秒、1回24〜56pxに変更。歩く速さと滑らかな加減速を保ち、吹き出し・操作後は長い待ち時間を引き継がず再開します。待機中のしぐさも増やし、キャラ上にポインターを置いたままでも停止し続けないようにしました。
@@ -51,12 +52,12 @@ py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements-build.txt
 .\.venv\Scripts\python.exe -m PyInstaller --noconfirm --clean Yohaku.spec
 .\.venv\Scripts\python.exe scripts\collect_licenses.py dist\Yohaku
-.\.venv\Scripts\python.exe -c "import shutil; shutil.make_archive('Yohaku-v0.14.4-windows-x64-onedir', 'zip', 'dist', 'Yohaku')"
+.\.venv\Scripts\python.exe -c "import shutil; shutil.make_archive('Yohaku-v0.14.5-windows-x64-onedir', 'zip', 'dist', 'Yohaku')"
 ```
 
 Python 3.12の場合は、1行目を `py -3.12 -m venv .venv` に置き換えます。
 
-出力は `dist\Yohaku\Yohaku.exe` と `Yohaku-v0.14.4-windows-x64-onedir.zip`。
+出力は `dist\Yohaku\Yohaku.exe` と `Yohaku-v0.14.5-windows-x64-onedir.zip`。
 EXEだけを取り出さず、onedir ZIP全体を展開して配布してください。
 GitHubの「Actions」→「Build Yohaku Windows onedir」→「Run workflow」でも作成できます。
 

@@ -81,8 +81,28 @@ QTabWidget::pane { border: 1px solid #dce4dd; background: #fafbf9; }
 QTabBar::tab { background: #edf1ee; padding: 9px 17px; color: #65736a; }
 QTabBar::tab:selected { background: #fafbf9; color: #385c4a; border-top: 2px solid #385c4a; }
 QWidget#speechChoiceRow { background: transparent; }
-QPushButton#speechChoice { background: transparent; border: 1px solid #dce5da; border-radius: 7px; padding: 7px 10px; color: #41634d; font-size: 12px; font-weight: 500; text-align: left; }
-QPushButton#speechChoice:hover, QPushButton#speechChoice:focus { background: #edf4e9; border-color: #7a9a81; }
+QPushButton#speechChoice { border: 1px solid; border-radius: 7px; padding: 7px 10px; font-size: 12px; font-weight: 500; text-align: left; }
+QPushButton#speechChoice:focus { border-width: 2px; padding: 6px 9px; }
+QPushButton#speechChoice[speechAction="calendar"] { background: #fff0bd; color: #6b460e; border-color: #cdaa54; }
+QPushButton#speechChoice[speechAction="calendar"]:hover { background: #ffe4a0; }
+QPushButton#speechChoice[speechAction="calendar"]:pressed { background: #f6d67d; }
+QPushButton#speechChoice[speechAction="calendar"]:focus { border-color: #8a5d10; }
+QPushButton#speechChoice[speechAction="activity"] { background: #deedff; color: #234e7a; border-color: #95b8db; }
+QPushButton#speechChoice[speechAction="activity"]:hover { background: #cde2fc; }
+QPushButton#speechChoice[speechAction="activity"]:pressed { background: #b7d3f4; }
+QPushButton#speechChoice[speechAction="activity"]:focus { border-color: #315f92; }
+QPushButton#speechChoice[speechAction="settings"] { background: #e1f0e6; color: #285a3e; border-color: #98bea4; }
+QPushButton#speechChoice[speechAction="settings"]:hover { background: #cce5d5; }
+QPushButton#speechChoice[speechAction="settings"]:pressed { background: #b4d9c0; }
+QPushButton#speechChoice[speechAction="settings"]:focus { border-color: #386a49; }
+QPushButton#speechChoice[speechAction="hide"] { background: #e5e8ed; color: #3e4857; border-color: #adb5c0; }
+QPushButton#speechChoice[speechAction="hide"]:hover { background: #d6dce4; }
+QPushButton#speechChoice[speechAction="hide"]:pressed { background: #c4cdd9; }
+QPushButton#speechChoice[speechAction="hide"]:focus { border-color: #5d6b7e; }
+QPushButton#speechChoice[speechAction="dismiss"] { background: #ffffff; color: #55615b; border-color: #ccd4ce; }
+QPushButton#speechChoice[speechAction="dismiss"]:hover { background: #f1f5f0; }
+QPushButton#speechChoice[speechAction="dismiss"]:pressed { background: #e3eae2; }
+QPushButton#speechChoice[speechAction="dismiss"]:focus { border-color: #60776a; }
 QTreeWidget { background: white; border: 1px solid #e1e7e1; border-radius: 10px; outline: none; }
 QTreeWidget::item { padding: 9px 5px; }
 QTreeWidget::item:selected { background: #e5eee1; color: #263b43; }
@@ -847,6 +867,7 @@ class InteractionBubble(Bubble):
         self.buttons = {}
         for key, title in (("calendar", "予定を聞く"), ("activity", "ファイル起動履歴を見る"), ("settings", "設定を開く"), ("hide", "非表示にする"), ("dismiss", "用事はない")):
             choice = button(title, lambda checked=False, k=key: self.selected.emit(k), "speechChoice")
+            choice.setProperty('speechAction', key)
             self.buttons[key] = choice
             choices.addWidget(choice)
         layout.addWidget(self.choice_row)
