@@ -94,6 +94,22 @@ class DialogueEditorTests(unittest.TestCase):
         self.assertEqual(self.store.rule('click_angry')['expression'], 'troubled')
         self.assertEqual(data['phrases']['控えめな皮肉屋']['click_angry'][0], '連打はゆっくりお願いします。')
 
+    def test_resource_thresholds_and_phrases_can_be_saved_in_the_editor(self):
+        e = self.editor
+        for key, metric, threshold in (('cpu_high', 'cpu_percent', 88), ('memory_high', 'memory_percent', 92)):
+            row = next(i for i, rule in enumerate(e.draft['rules']) if rule['id'] == key)
+            e.rule_list.setCurrentRow(row)
+            self.assertEqual(e.metric_selector.currentData(), metric)
+            e.metric_minimum.setValue(threshold)
+            e.phrase_topics.setCurrentRow(row)
+            e.line_edit.setPlainText(f'使用率は約{{{metric}}}%です。')
+        self.assertTrue(e.save())
+        saved = read_document(self.store.path)
+        self.assertEqual(self.store.rule('cpu_high')['condition']['minimum'], 88)
+        self.assertEqual(self.store.rule('memory_high')['condition']['minimum'], 92)
+        self.assertEqual(saved['phrases'][e.voice.currentText()]['cpu_high'][0], '使用率は約{cpu_percent}%です。')
+        self.assertEqual(saved['phrases'][e.voice.currentText()]['memory_high'][0], '使用率は約{memory_percent}%です。')
+
     def test_unread_threshold_and_priority_can_be_saved_in_the_editor(self):
         e = self.editor
         row = next(i for i, rule in enumerate(e.draft['rules']) if rule['id'] == 'mail_unread')

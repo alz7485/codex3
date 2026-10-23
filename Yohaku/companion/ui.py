@@ -25,7 +25,7 @@ from .motion import Motion
 from .dialogue import AUTO_PERSONALITY, BUBBLE_MS, PROFILES, DialogueError, DialogueStore, voice_for
 from .outlook import read_calendar
 from .metadata import APP_DISPLAY_NAME, VERSION
-from .context import UsageLedger, input_idle_seconds, desktop_file_count, office_file_count, work_metrics
+from .context import ResourceSampler, UsageLedger, input_idle_seconds, desktop_file_count, office_file_count, work_metrics
 from .mail import OutlookMailWatcher
 from .preferences import PRESETS, snapped_y
 from .departure import attendance_url, system_uptime_seconds
@@ -582,11 +582,11 @@ class Panel(QMainWindow):
         monitor = QFrame(objectName='card')
         monitor_box = box(monitor, 18, 10)
         monitor_box.addWidget(label('PCの状態と受信通知', 'section'))
-        self.context_check = QCheckBox('操作の有無・時間とファイル件数を会話に使う')
+        self.context_check = QCheckBox('操作時間・ファイル件数・CPUとメモリ使用率を会話に使う')
         self.context_check.setChecked(self.settings.context_enabled)
         self.context_check.toggled.connect(lambda value: self.update_setting('context_enabled', value))
         monitor_box.addWidget(self.context_check)
-        monitor_box.addWidget(label('入力内容は記録せず、最後の操作からの秒数で推定します。アプリ起動中だけの集計です。Office文書数とデスクトップの件数も使います。', 'muted', True))
+        monitor_box.addWidget(label('入力内容は記録せず、最後の操作からの秒数で推定します。Office文書数・デスクトップ件数・PC全体のCPUとメモリ使用率も使います。使用率はアプリ起動中だけ確認し、保存しません。', 'muted', True))
         self.context_status = label('集計を準備しています。', 'muted', True)
         monitor_box.addWidget(self.context_status)
         monitor_box.addWidget(button('操作時間・アプリ使用日の集計を削除', self.clear_usage_requested.emit))
@@ -1612,6 +1612,9 @@ class Controller(QObject):
 
     def configure_context(self):
         self.context_generation += 1
+        self.resource_sampler = ResourceSampler()
+        self.resource_values = {}
+        self.resource_at = None
         self.context_values = {}
         self.context_at = None
         self.last_usage_time = time.monotonic()
@@ -1639,6 +1642,8 @@ class Controller(QObject):
         now = datetime.now().astimezone()
         clock = time.monotonic()
         dt, self.last_usage_time = clock - self.last_usage_time, clock
+        self.resource_values = self.resource_sampler.sample(clock)
+        self.resource_at = now
         try:
             idle = input_idle_seconds()
         except Exception:
@@ -1668,6 +1673,10 @@ class Controller(QObject):
         active, idle = metrics.get('daily_active_minutes'), metrics.get('idle_minutes')
         self.panel.context_status.setText('操作あり 約{}分 / 操作なし経過 約{}分 · アプリ起動中の推定値'.format(
             round(active) if active is not None else '取得不可', round(idle) if idle is not None else '取得不可'))
+        cpu, memory = metrics.get('cpu_percent'), metrics.get('memory_percent')
+        self.panel.context_status.setText(self.panel.context_status.text() + '\nCPU {} / メモリ {}'.format(
+            f'{cpu:.0f}%' if cpu is not None else '計測中・取得不可',
+            f'{memory:.0f}%' if memory is not None else '取得不可'))
 
     def context_received(self, generation, values, error):
         self.context_busy = False
@@ -1685,6 +1694,8 @@ class Controller(QObject):
             values.update({key: app_usage[key] for key in ('missed_yesterday', 'days_since_last_use')})
         if self.settings.context_enabled and self.usage is not None:
             values.update(self.usage.metrics(now))
+            if self.resource_at and 0 <= (now - self.resource_at).total_seconds() < 15:
+                values.update(self.resource_values)
             if self.context_at and 0 <= (now - self.context_at).total_seconds() < 180:
                 values.update(self.context_values)
         fresh = self.connected and self.connected_at and 0 <= (now - self.connected_at).total_seconds() < 300

@@ -708,7 +708,7 @@ class UserInterfaceTests(unittest.TestCase):
     def test_app_has_brand_name_version_and_windows_icon(self):
         c = self.controller
         self.assertEqual(self.app.applicationDisplayName(), "Yohaku")
-        self.assertEqual(self.app.applicationVersion(), "0.14.6")
+        self.assertEqual(self.app.applicationVersion(), "0.15.0")
         self.assertFalse(c.brand_icon.isNull())
         self.assertEqual(c.panel.windowIcon().cacheKey(), c.brand_icon.cacheKey())
         c.panel.character_buttons["B"].click()
@@ -1062,6 +1062,46 @@ class UserInterfaceTests(unittest.TestCase):
         finally:
             c.settings.outlook_enabled,c.settings.mail_enabled,c.settings.mail_show_senders,c.settings.quiet_start,c.settings.quiet_end,c.engine.paused_until=old
             c.user_hidden=False;c.bubble.hide()
+
+    def test_resource_data_expires_and_disabling_context_stops_sampling(self):
+        c = self.controller
+        old = c.settings.context_enabled
+        now = datetime.now().astimezone()
+        try:
+            c.settings.context_enabled = True
+            c.resource_values = {'cpu_percent':90, 'memory_percent':88}
+            c.resource_at = now
+            c.refresh_context_metrics(now)
+            self.assertEqual(c.engine.context['cpu_percent'], 90)
+            self.assertEqual(c.engine.context['memory_percent'], 88)
+            c.refresh_context_metrics(now + timedelta(seconds=15))
+            self.assertNotIn('cpu_percent', c.engine.context)
+            self.assertNotIn('memory_percent', c.engine.context)
+            c.panel.update_setting('context_enabled', False)
+            with patch.object(c.resource_sampler, 'sample') as sample:
+                c.sample_context()
+                sample.assert_not_called()
+            self.assertNotIn('cpu_percent', c.engine.context)
+            self.assertNotIn('memory_percent', c.engine.context)
+        finally:
+            c.panel.update_setting('context_enabled', old)
+
+    def test_resource_sampling_works_while_office_worker_is_busy_and_is_not_persisted(self):
+        c = self.controller
+        old = (c.settings.context_enabled, c.context_busy)
+        try:
+            c.settings.context_enabled, c.context_busy = True, True
+            with patch.object(c.resource_sampler, 'sample', return_value={'cpu_percent':90, 'memory_percent':92}):
+                c.sample_context()
+            self.assertEqual(c.engine.context['cpu_percent'], 90)
+            self.assertIn('CPU 90% / メモリ 92%', c.panel.context_status.text())
+            c.usage.persist()
+            stored = (c.path / 'usage.json').read_text()
+            self.assertNotIn('cpu_percent', stored)
+            self.assertNotIn('memory_percent', stored)
+        finally:
+            c.context_busy = old[1]
+            c.panel.update_setting('context_enabled', old[0])
 
     def test_context_disable_and_stale_result_do_not_restore_aggregate_data(self):
         c=self.controller

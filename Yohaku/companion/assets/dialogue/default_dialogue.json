@@ -272,6 +272,26 @@
         "少しだけ怒っています。少し、休憩をください。",
         "その熱意は受け取りました。指にも休暇をどうぞ。",
         "私にも、心の余白が必要なんです。"
+      ],
+      "cpu_high": [
+        "直近のCPU使用率は約{cpu_percent}%。PCも、なかなかの働き者ですね。",
+        "CPUが約{cpu_percent}%で動いています。待ち時間には、こちらもひと呼吸どうぞ。",
+        "CPUは少し忙しそうです。直近の平均は約{cpu_percent}%。急かしても、足は増えませんから。"
+      ],
+      "cpu_low": [
+        "直近のCPU使用率は約{cpu_percent}%。PCのほうには、余裕があるようです。",
+        "CPUは約{cpu_percent}%で落ち着いています。静かに働くのも、なかなかの技術です。",
+        "CPUの使用率は約{cpu_percent}%。この余裕、少し分けてもらいたいですね。"
+      ],
+      "memory_high": [
+        "メモリ使用率は約{memory_percent}%。机の上と同じで、必要なものから残しておきましょう。",
+        "メモリが約{memory_percent}%使われています。使い終えたアプリがあれば、保存してひと休みさせてもよさそうです。",
+        "メモリの余裕は少なめで、約{memory_percent}%使用中です。片づけは、保存してからどうぞ。"
+      ],
+      "memory_low": [
+        "メモリ使用率は約{memory_percent}%。PCの作業机には、まだ余裕がありますね。",
+        "メモリは約{memory_percent}%使用中。空きがあるのは、よいことです。",
+        "いまのメモリ使用率は約{memory_percent}%。余白、こちらにもありました。"
       ]
     },
     "冷静な案内役": {
@@ -523,6 +543,26 @@
         "ただいま、少し不機嫌です。休憩時間を要求します。",
         "応答は正常です。連打はここまででお願いします。",
         "落ち着いて呼んでいただけると、助かります。"
+      ],
+      "cpu_high": [
+        "直近のCPU使用率は平均約{cpu_percent}%です。処理負荷が高めの状態です。",
+        "CPU使用率は直近の平均で約{cpu_percent}%です。操作の待ち時間があれば、処理完了を待つことをおすすめします。",
+        "CPUは平均約{cpu_percent}%で稼働しています。必要に応じて、不要な処理がないか確認できます。"
+      ],
+      "cpu_low": [
+        "直近のCPU使用率は平均約{cpu_percent}%です。CPU負荷は低めです。",
+        "CPUは直近の平均で約{cpu_percent}%使用中です。処理能力に余裕があります。",
+        "CPU使用率は平均約{cpu_percent}%で落ち着いています。現在の状態をお知らせします。"
+      ],
+      "memory_high": [
+        "メモリ使用率は約{memory_percent}%です。空きが少ないため、使い終えたアプリがあれば保存して閉じる方法があります。",
+        "PC全体のメモリを約{memory_percent}%使用中です。動作が気になる場合は、不要なアプリを確認してください。",
+        "メモリ使用率が約{memory_percent}%と高めです。整理する際は、先に作業内容を保存してください。"
+      ],
+      "memory_low": [
+        "メモリ使用率は約{memory_percent}%です。空き容量に余裕があります。",
+        "PC全体のメモリを約{memory_percent}%使用中です。使用率は低めです。",
+        "メモリ使用率は約{memory_percent}%で、空きには余裕があります。"
       ]
     },
     "元気な応援係": {
@@ -774,6 +814,26 @@
         "少し怒っています。落ち着いてから、また呼んでください。",
         "こちらも休憩が必要です。ひと呼吸、お願いします！",
         "連打は反則です。次は、ゆっくり呼んでくださいね。"
+      ],
+      "cpu_high": [
+        "直近のCPU使用率は約{cpu_percent}%です。PCも頑張っていますね。待つ間は少し肩を休めましょう！",
+        "CPUが平均約{cpu_percent}%で動いています。処理が終わるまで、一緒にひと息つきませんか？",
+        "CPUは少し忙しそうで、直近は約{cpu_percent}%です。焦らず、一つずつ進めましょう。"
+      ],
+      "cpu_low": [
+        "直近のCPU使用率は約{cpu_percent}%です。PCには余裕がありそうですね！",
+        "CPUは平均約{cpu_percent}%で落ち着いています。こちらも落ち着いて、次の一歩をどうぞ。",
+        "CPU使用率は直近で約{cpu_percent}%。少し静かな時間ですね。私ものんびり見守ります！"
+      ],
+      "memory_high": [
+        "メモリは約{memory_percent}%使用中です。使い終えたアプリがあれば、保存してから整理しましょう！",
+        "PCのメモリが約{memory_percent}%使われています。作業を保存して、必要なものを確認してみてもよさそうです。",
+        "メモリの使用率は約{memory_percent}%で高めです。片づけるときは、保存を忘れずに！"
+      ],
+      "memory_low": [
+        "メモリ使用率は約{memory_percent}%です。まだ余裕がありますね！",
+        "メモリは約{memory_percent}%使用中です。作業場所に余白があると、少し安心しますね。",
+        "いまのメモリ使用率は約{memory_percent}%。空きには余裕があるようです！"
       ]
     },
     "のんびりした同僚": {
@@ -1025,6 +1085,26 @@
         "ちょっと怒った。少しそっとしてくれたら、元に戻るよ。",
         "もう、連打はおしまい。ゆっくり呼んでね。",
         "むすっ。お茶休憩をはさんでから、また話そう。"
+      ],
+      "cpu_high": [
+        "CPUは直近で約{cpu_percent}%。PCも忙しそうだね。待つ間に、お茶をひと口どう？",
+        "直近のCPU使用率は平均約{cpu_percent}%だよ。急がず、処理が落ち着くのを待とうか。",
+        "CPUが約{cpu_percent}%で動いてるね。待ち時間も、休憩にしてしまおう。"
+      ],
+      "cpu_low": [
+        "直近のCPU使用率は約{cpu_percent}%。PCも、のんびりしてるみたいだね。",
+        "CPUは平均約{cpu_percent}%だよ。静かな時間に、お茶でもどう？",
+        "CPUの使用率は直近で約{cpu_percent}%。こちらは落ち着いてるね。"
+      ],
+      "memory_high": [
+        "メモリは約{memory_percent}%使用中だよ。使い終えたアプリは、保存してからお休みさせようか。",
+        "メモリの使用率は約{memory_percent}%。少し手狭になってきたね。必要なものだけ残してみる？",
+        "メモリが約{memory_percent}%使われてるね。整理はゆっくり、保存は先にどうぞ。"
+      ],
+      "memory_low": [
+        "メモリ使用率は約{memory_percent}%。まだ余白があるね。お茶を置く場所もありそう。",
+        "メモリは約{memory_percent}%使用中だよ。空きには余裕があるみたい。",
+        "いまのメモリ使用率は約{memory_percent}%。PCの中も、ゆったりしてるね。"
       ]
     }
   },
@@ -1804,6 +1884,66 @@
       "expression": "angry",
       "weight": 1,
       "cooldown_minutes": 0
+    },
+    {
+      "id": "cpu_high",
+      "label": "CPUが忙しい",
+      "enabled": true,
+      "trigger": "auto",
+      "condition": {
+        "kind": "metric_range",
+        "metric": "cpu_percent",
+        "minimum": 80,
+        "maximum": 100
+      },
+      "expression": "think",
+      "weight": 2,
+      "cooldown_minutes": 60
+    },
+    {
+      "id": "cpu_low",
+      "label": "CPUに余裕がある",
+      "enabled": true,
+      "trigger": "auto",
+      "condition": {
+        "kind": "metric_range",
+        "metric": "cpu_percent",
+        "minimum": 0,
+        "maximum": 20
+      },
+      "expression": "relaxed",
+      "weight": 1,
+      "cooldown_minutes": 120
+    },
+    {
+      "id": "memory_high",
+      "label": "メモリ使用率が高い",
+      "enabled": true,
+      "trigger": "auto",
+      "condition": {
+        "kind": "metric_range",
+        "metric": "memory_percent",
+        "minimum": 85,
+        "maximum": 100
+      },
+      "expression": "think",
+      "weight": 2,
+      "cooldown_minutes": 60
+    },
+    {
+      "id": "memory_low",
+      "label": "メモリに余裕がある",
+      "enabled": true,
+      "trigger": "auto",
+      "condition": {
+        "kind": "metric_range",
+        "metric": "memory_percent",
+        "minimum": 0,
+        "maximum": 50
+      },
+      "expression": "relaxed",
+      "weight": 1,
+      "cooldown_minutes": 120
     }
   ],
   "options": {
@@ -1828,5 +1968,6 @@
   "mail_wording_version": 1,
   "click_reactions_version": 1,
   "anonymous_mail_version": 1,
-  "naming_version": 1
+  "naming_version": 1,
+  "resource_context_version": 1
 }

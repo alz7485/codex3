@@ -18,6 +18,7 @@ KINDS = {'always': 'いつでも', 'time_range': '時間帯', 'weekday': '曜日
          'session_range': '起動からの経過', 'before_meeting': '予定の前', 'after_meeting': '予定のあと', 'metric_range': 'PC・ファイル・予定の集計値', 'all': 'すべての条件（AND）', 'any': 'いずれかの条件（OR）'}
 ACTION_IDS = ('calendar_intro', 'calendar_unavailable', 'calendar_empty', 'activity_open', 'settings_open', 'no_conversation', 'reminder_disabled', 'click_concern', 'click_angry')
 NEW_RULE_IDS = ('idle_short', 'idle_long', 'active_long', 'daily_busy', 'daily_light', 'many_open_files', 'few_open_files', 'desktop_busy', 'desktop_tidy', 'before_start', 'before_end', 'ending_soon', 'after_hours', 'repeat_file', 'missed_yesterday', 'week_busy', 'week_light', 'today_busy', 'today_light')
+RESOURCE_RULE_IDS = ('cpu_high', 'cpu_low', 'memory_high', 'memory_low')
 MAX_BYTES = 2 * 1024 * 1024
 
 
@@ -131,7 +132,7 @@ def upgrade(document):
     if not isinstance(document, dict) or type(document.get('schema_version')) is not int or document.get('schema_version') not in (1, 2):
         return document
     if document['schema_version'] == 2:
-        return upgrade_names(upgrade_comfort(upgrade_click_reactions(upgrade_mail(document))))
+        return upgrade_resources(upgrade_names(upgrade_comfort(upgrade_click_reactions(upgrade_mail(document)))))
     result = deepcopy(document)
     base = json.loads(DEFAULT_PATH.read_text(encoding='utf-8'))
     result['schema_version'] = 2
@@ -148,7 +149,27 @@ def upgrade(document):
                 for voice, bank in result['phrases'].items():
                     if isinstance(bank, dict) and voice in base['phrases']:
                         bank[rule['id']] = deepcopy(base['phrases'][voice][rule['id']])
-    return upgrade_names(upgrade_comfort(upgrade_click_reactions(upgrade_mail(result))))
+    return upgrade_resources(upgrade_names(upgrade_comfort(upgrade_click_reactions(upgrade_mail(result)))))
+
+
+def upgrade_resources(document):
+    """Add resource topics once; preserve edits and subsequent topic deletions."""
+    if document.get('resource_context_version') == 1:
+        return document
+    result = deepcopy(document)
+    base = json.loads(DEFAULT_PATH.read_text(encoding='utf-8'))
+    if isinstance(result.get('rules'), list) and isinstance(result.get('phrases'), dict):
+        existing = {r.get('id') for r in result['rules'] if isinstance(r, dict) and isinstance(r.get('id'), str)}
+        for key in RESOURCE_RULE_IDS:
+            if len(result['rules']) >= 200:
+                break
+            if key not in existing:
+                result['rules'].append(deepcopy(next(r for r in base['rules'] if r['id'] == key)))
+                for voice, bank in result['phrases'].items():
+                    if isinstance(bank, dict) and voice in base['phrases']:
+                        bank[key] = deepcopy(base['phrases'][voice][key])
+    result['resource_context_version'] = 1
+    return result
 
 
 LEGACY_SELF_REFERENCES = {

@@ -10,4 +10,6 @@ METRICS = {
     'days_since_last_use': '前回アプリ使用日からの日数', 'weekly_events': '今週の時間指定の予定数',
     'daily_events': '今日の時間指定の予定数', 'next_event_minutes': '次の予定まで（分）',
     'unread_mail_count': 'Outlook受信トレイの未読メール数',
+    'cpu_percent': 'CPU使用率（直近約1分の平均・%）',
+    'memory_percent': 'メモリ使用率（PC全体・%）',
 }

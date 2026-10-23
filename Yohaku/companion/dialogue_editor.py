@@ -104,7 +104,7 @@ class DialogueEditor(QMainWindow):
         self.line_edit.setMaximumHeight(150)
         self.line_edit.textChanged.connect(self.update_line)
         layout.addWidget(self.line_edit)
-        layout.addWidget(label('1話題1〜200件、1件1〜1000文字。本文に {idle_minutes}・{file_name}・{file_open_count}・{hours_to_end}・{weekly_events} 等の差し込みが使えます。', 'muted', True))
+        layout.addWidget(label('1話題1〜200件、1件1〜1000文字。本文に {idle_minutes}・{file_name}・{file_open_count}・{hours_to_end}・{weekly_events}・{cpu_percent}・{memory_percent} 等の差し込みが使えます。CPU・メモリの値は%です。', 'muted', True))
         split.addWidget(content)
         split.setSizes([240, 650])
         outer.addWidget(split)

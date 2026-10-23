@@ -2,15 +2,98 @@
 from __future__ import annotations
 
 import ctypes
+from collections import deque
 from ctypes import wintypes
 from datetime import datetime, timedelta
 import os
+import math
 from pathlib import Path
 import sys
 
 from .core import load_json, save_json
 
 from .metrics import METRICS
+
+
+class _FileTime(ctypes.Structure):
+    _fields_ = [('low', ctypes.c_uint32), ('high', ctypes.c_uint32)]
+
+
+class _MemoryStatus(ctypes.Structure):
+    _fields_ = [('length', ctypes.c_uint32), ('load', ctypes.c_uint32),
+                *[(key, ctypes.c_uint64) for key in
+                  ('total_phys', 'available_phys', 'total_page', 'available_page',
+                   'total_virtual', 'available_virtual', 'available_extended')]]
+
+
+def system_cpu_times():
+    """Cumulative Windows idle/kernel/user times; kernel already includes idle."""
+    if sys.platform != 'win32':
+        return None
+    idle, kernel, user = _FileTime(), _FileTime(), _FileTime()
+    read = ctypes.windll.kernel32.GetSystemTimes
+    read.argtypes = [ctypes.POINTER(_FileTime)] * 3
+    read.restype = wintypes.BOOL
+    if not read(ctypes.byref(idle), ctypes.byref(kernel), ctypes.byref(user)):
+        return None
+    return tuple((value.high << 32) | value.low for value in (idle, kernel, user))
+
+
+def physical_memory_percent():
+    """System physical RAM in use; no process or document information."""
+    if sys.platform != 'win32':
+        return None
+    info = _MemoryStatus()
+    info.length = ctypes.sizeof(info)
+    read = ctypes.windll.kernel32.GlobalMemoryStatusEx
+    read.argtypes = [ctypes.POINTER(_MemoryStatus)]
+    read.restype = wintypes.BOOL
+    if not read(ctypes.byref(info)) or not 0 <= info.available_phys <= info.total_phys or not info.total_phys:
+        return None
+    return 100 * (info.total_phys - info.available_phys) / info.total_phys
+
+
+class ResourceSampler:
+    """Nonblocking samples. CPU is a rolling ~60s average, with >=10s warmup."""
+    def __init__(self, cpu_provider=system_cpu_times, memory_provider=physical_memory_percent):
+        self.cpu_provider = cpu_provider
+        self.memory_provider = memory_provider
+        self.previous = None
+        self.samples = deque(maxlen=128)
+
+    def sample(self, now):
+        result = {'cpu_percent': None, 'memory_percent': None}
+        try:
+            memory = self.memory_provider()
+            if type(memory) in (int, float) and math.isfinite(memory) and 0 <= memory <= 100:
+                result['memory_percent'] = memory
+        except Exception:
+            pass
+        try:
+            current = self.cpu_provider()
+            if (not isinstance(current, (tuple, list)) or len(current) != 3
+                    or any(type(value) is not int or value < 0 for value in current)):
+                raise ValueError('CPU counters unavailable')
+        except Exception:
+            self.previous = None
+            self.samples.clear()
+            return result
+        if self.previous is not None:
+            before, counters = self.previous
+            delta = [value - old for value, old in zip(current, counters)]
+            total = delta[1] + delta[2]
+            if 0 < now - before <= 15 and min(delta) >= 0 and 0 <= delta[0] <= total and total > 0:
+                self.samples.append((now, now - before, delta[0], total))
+            else:
+                self.samples.clear()  # Sleep, reset or unknown interval: start over.
+        self.previous = (now, current)
+        while self.samples and now - self.samples[0][0] >= 60:
+            self.samples.popleft()
+        if sum(value[1] for value in self.samples) >= 10:
+            idle = sum(value[2] for value in self.samples)
+            total = sum(value[3] for value in self.samples)
+            result['cpu_percent'] = 100 * (total - idle) / total
+        return result
 
 
 def input_idle_seconds():
