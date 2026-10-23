@@ -16,7 +16,7 @@ INTERVALS = (10, 20, 30, 60, 90, 120)  # Legacy UI/import compatibility.
 DEFAULT_PATH = Path(__file__).parent / 'assets/dialogue/default_dialogue.json'
 KINDS = {'always': 'いつでも', 'time_range': '時間帯', 'weekday': '曜日',
          'session_range': '起動からの経過', 'before_meeting': '予定の前', 'after_meeting': '予定のあと', 'metric_range': 'PC・ファイル・予定の集計値', 'all': 'すべての条件（AND）', 'any': 'いずれかの条件（OR）'}
-ACTION_IDS = ('calendar_intro', 'calendar_unavailable', 'calendar_empty', 'activity_open', 'settings_open', 'no_conversation', 'reminder_disabled')
+ACTION_IDS = ('calendar_intro', 'calendar_unavailable', 'calendar_empty', 'activity_open', 'settings_open', 'no_conversation', 'reminder_disabled', 'click_concern', 'click_angry')
 NEW_RULE_IDS = ('idle_short', 'idle_long', 'active_long', 'daily_busy', 'daily_light', 'many_open_files', 'few_open_files', 'desktop_busy', 'desktop_tidy', 'before_start', 'before_end', 'ending_soon', 'after_hours', 'repeat_file', 'missed_yesterday', 'week_busy', 'week_light', 'today_busy', 'today_light')
 MAX_BYTES = 2 * 1024 * 1024
 
@@ -55,6 +55,12 @@ def validate(document):
         _require(isinstance(value, str) and re.fullmatch(r'(?:[01][0-9]|2[0-3]):[0-5][0-9]', value), '勤務時間はHH:mmで指定してください。')
     _require(options['work_start'] < options['work_end'], '始業は終業より前にしてください。')
     _require(_integer(options.get('active_threshold_seconds'), 5, 600), '操作あり判定は5〜600秒にしてください。')
+    _require(type(options.get('click_reactions')) is bool, '連打への反応はtrue/falseにしてください。')
+    for key, bounds in {'click_window_seconds': (1, 30), 'click_concern_count': (2, 30),
+                        'click_angry_count': (3, 60), 'click_recovery_seconds': (1, 120)}.items():
+        _require(_integer(options.get(key), *bounds), f'{key} は{bounds[0]}〜{bounds[1]}の整数にしてください。')
+    _require(options['click_angry_count'] > options['click_concern_count'], '怒る回数は困る回数より多くしてください。')
+    _require(options['click_recovery_seconds'] >= options['click_window_seconds'], '連打のリセット時間は判定期間以上にしてください。')
     phrases = document.get('phrases')
     _require(isinstance(phrases, dict) and set(phrases) == set(VOICE_NAMES), '4種の性格のセリフを指定してください。')
     profiles = document.get('profiles')
@@ -124,7 +130,7 @@ def upgrade(document):
     if not isinstance(document, dict) or type(document.get('schema_version')) is not int or document.get('schema_version') not in (1, 2):
         return document
     if document['schema_version'] == 2:
-        return upgrade_mail(document)
+        return upgrade_click_reactions(upgrade_mail(document))
     result = deepcopy(document)
     base = json.loads(DEFAULT_PATH.read_text(encoding='utf-8'))
     result['schema_version'] = 2
@@ -141,7 +147,29 @@ def upgrade(document):
                 for voice, bank in result['phrases'].items():
                     if isinstance(bank, dict) and voice in base['phrases']:
                         bank[rule['id']] = deepcopy(base['phrases'][voice][rule['id']])
-    return upgrade_mail(result)
+    return upgrade_click_reactions(upgrade_mail(result))
+
+
+def upgrade_click_reactions(document):
+    """Extend old documents once, preserving all existing edits and switches."""
+    if document.get('click_reactions_version') == 1:
+        return document
+    result = deepcopy(document)
+    base = json.loads(DEFAULT_PATH.read_text(encoding='utf-8'))
+    if isinstance(result.get('options'), dict):
+        for key, value in base['options'].items():
+            if key.startswith('click_'):
+                result['options'].setdefault(key, value)
+    if isinstance(result.get('rules'), list) and isinstance(result.get('phrases'), dict):
+        existing = {r.get('id') for r in result['rules'] if isinstance(r, dict) and isinstance(r.get('id'), str)}
+        for key in ('click_concern', 'click_angry'):
+            if key not in existing:
+                result['rules'].append(deepcopy(next(r for r in base['rules'] if r['id'] == key)))
+                for voice, bank in result['phrases'].items():
+                    if isinstance(bank, dict) and voice in base['phrases']:
+                        bank[key] = deepcopy(base['phrases'][voice][key])
+    result['click_reactions_version'] = 1
+    return result
 
 
 LEGACY_MAIL_WORDING = {

@@ -1,12 +1,40 @@
 """Frame-independent eased locomotion, breathing, gestures and expression state."""
 import math
 import random
+from collections import deque
 
 EXPRESSION_FRAMES = {
     "neutral": 0, "blink": 1, "happy": 2, "notice": 3, "think": 4, "sleepy": 5,
     "proud": 6, "concern": 7, "wink": 8, "laugh": 9, "curious": 10,
     "relaxed": 11, "nod": 12, "talk": 13, "greet": 14, "stretch": 15,
+    "front": 24, "front_blink": 25, "troubled": 26, "angry": 27,
 }
+
+
+class ClickReactions:
+    """Session-only left-click bursts, measured with a monotonic clock."""
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self.clicks = deque(maxlen=60)
+        self.last = None
+        self.stage = 0
+
+    def click(self, now, options):
+        if not options['click_reactions']:
+            self.reset()
+            return None
+        if self.last is not None and (now < self.last or now - self.last >= options['click_recovery_seconds']):
+            self.reset()
+        self.last = now
+        while self.clicks and now - self.clicks[0] > options['click_window_seconds']:
+            self.clicks.popleft()
+        self.clicks.append(now)
+        count = len(self.clicks)
+        self.stage = max(self.stage, 2 if count >= options['click_angry_count'] else
+                         1 if count >= options['click_concern_count'] else 0)
+        return ('click_concern' if self.stage == 1 else 'click_angry') if self.stage else None
 
 
 class Motion:
@@ -25,6 +53,11 @@ class Motion:
         self.expression_until = 0.0
         self.talk_until = 0.0
         self.idle_at = 12.0
+        self.front_until = 0.0
+
+    def face_front(self, seconds=8.0):
+        self.front_until = self.elapsed + seconds
+        self.walking = False
 
     def react(self, expression, seconds=8.0, speaking=False):
         self.expression = expression if expression in EXPRESSION_FRAMES else "neutral"
@@ -73,11 +106,17 @@ class Motion:
     def frame(self):
         if self.walking:
             return 16 + int(self.gait * 8) % 8
+        # Keep the emotional face visible instead of alternating to the old
+        # side-facing talking frame during repeated-click reactions.
+        if self.expression and self.elapsed < self.expression_until and EXPRESSION_FRAMES[self.expression] >= 24:
+            return EXPRESSION_FRAMES[self.expression]
+        if self.elapsed < self.front_until:
+            return 25 if self.elapsed % 5.2 > 5.02 else 24
         if self.elapsed < self.talk_until and int(self.elapsed * 4) % 2:
             return EXPRESSION_FRAMES["talk"]
         if self.expression and self.elapsed < self.expression_until:
             return EXPRESSION_FRAMES[self.expression]
-        return 1 if self.elapsed % 5.2 > 5.02 else 0
+        return 25 if self.elapsed % 5.2 > 5.02 else 24
 
     def pose(self):
         """Continuous transforms between sprite frames; amplitudes are in logical pixels."""

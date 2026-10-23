@@ -13,7 +13,8 @@ from .metrics import METRICS
 from .ui import box, button, label
 
 EXPRESSION_LABELS = dict(zip(EXPRESSION_FRAMES, ('通常', 'まばたき', '笑顔', 'お知らせ', '考え中', '眠そう',
-    '得意げ', '気遣い', 'ウインク', '大笑い', '首かしげ', 'くつろぎ', 'うなずき', '発話', '挨拶', '伸び')))
+    '得意げ', '気遣い', 'ウインク', '大笑い', '首かしげ', 'くつろぎ', 'うなずき', '発話', '挨拶', '伸び',
+    '正面', '正面・まばたき', '正面・困る', '正面・怒る')))
 
 
 def spin(minimum, maximum, suffix=''):
@@ -204,10 +205,16 @@ class DialogueEditor(QMainWindow):
             'selection_policy': QComboBox(),
             'work_start': time_edit(), 'work_end': time_edit(),
             'active_threshold_seconds': spin(5, 600, ' 秒'),
+            'click_reactions': QCheckBox('連打されたときに困る・怒る反応をする'),
+            'click_window_seconds': spin(1, 30, ' 秒'),
+            'click_concern_count': spin(2, 30, ' 回'),
+            'click_angry_count': spin(3, 60, ' 回'),
+            'click_recovery_seconds': spin(1, 120, ' 秒'),
         }
         self.options['selection_policy'].addItem('未使用・久しぶりの話題を優先', 'least_recent')
         self.options['selection_policy'].addItem('出現しやすさで抽選', 'weighted')
-        titles = ('自動会話の間隔', '吹き出しの表示時間', '予定のお知らせ', '同じセリフを避ける数', '会議中', '連続する話題', '話題の選び方', '始業時刻', '定時（終業時刻）', '操作ありと判定する最終操作からの秒数')
+        titles = ('自動会話の間隔', '吹き出しの表示時間', '予定のお知らせ', '同じセリフを避ける数', '会議中', '連続する話題', '話題の選び方', '始業時刻', '定時（終業時刻）', '操作ありと判定する最終操作からの秒数',
+                  'クリックへの反応', '連打を数える期間', '困る反応を始める回数', '怒る反応を始める回数', '最後のクリックから通常に戻るまで')
         for (key, widget), title in zip(self.options.items(), titles):
             widget.setAccessibleName(title)
             form.addRow(title, widget)

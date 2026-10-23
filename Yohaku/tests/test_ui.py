@@ -68,6 +68,57 @@ class UserInterfaceTests(unittest.TestCase):
         finally:
             bubble.hide()
 
+    def test_left_click_burst_front_faces_and_static_recovery(self):
+        c = self.controller
+        old = (c.settings.animation, c.settings.quiet_start, c.settings.quiet_end)
+        try:
+            c.settings.animation = False
+            c.settings.quiet_start = c.settings.quiet_end = '00:00'
+            c.update_animation_policy()
+            c.engine.click_reactions.reset()
+            for index in range(7):
+                QTest.mouseClick(c.resident, Qt.MouseButton.LeftButton, pos=QPoint(40, 40))
+                self.assertEqual(c.resident.frame_index, 24 if index < 3 else 26 if index < 6 else 27)
+                self.assertFalse(c.resident.flipped)
+            self.assertEqual(c.bubble.kind, 'message')
+            self.assertTrue(c.static_pose_timer.isActive())
+            c.update_animation_policy()  # Periodic checks must preserve the reaction.
+            self.assertEqual(c.resident.frame_index, 27)
+            self.assertEqual(c.bubble.duration_ms, c.dialogue.data['options']['bubble_seconds'] * 1000)
+            with patch('companion.ui.time.monotonic', return_value=c.engine.click_reactions.last + 10):
+                c.show_message()
+            self.assertEqual(c.resident.frame_index, 24)
+            # Test timer delivery without adding a ten-second wall-clock delay.
+            c.resident.frame_index = 27
+            c.static_pose_timer.start(1)
+            QTest.qWait(20)
+            self.assertEqual(c.resident.frame_index, 24)
+            self.assertEqual(c.motion.frame(), 24)  # Re-enabling must not revive anger.
+        finally:
+            c.settings.animation, c.settings.quiet_start, c.settings.quiet_end = old
+            c.engine.click_reactions.reset()
+            c.static_pose_timer.stop()
+            c.bubble.hide()
+            c.update_animation_policy()
+
+    def test_right_click_and_drag_do_not_count_as_repeated_clicks(self):
+        c = self.controller
+        c.engine.click_reactions.reset()
+        try:
+            for _ in range(8):
+                QTest.mouseClick(c.resident, Qt.MouseButton.RightButton, pos=QPoint(40, 40))
+            self.assertIsNone(c.engine.click_reactions.last)
+            self.assertEqual(c.bubble.kind, 'menu')
+            # Release from a drag must take the drag_finished path, not clicked.
+            with patch.object(c, 'position'), patch('companion.ui.save_json'):
+                for _ in range(8):
+                    QTest.mousePress(c.resident, Qt.MouseButton.LeftButton, pos=QPoint(40, 40))
+                    c.resident.dragging = True
+                    QTest.mouseRelease(c.resident, Qt.MouseButton.LeftButton, pos=QPoint(40, 40))
+            self.assertIsNone(c.engine.click_reactions.last)
+        finally:
+            c.bubble.hide()
+
     def test_frame_transition_preserves_alpha_and_interpolates_color(self):
         a, b = QPixmap(8, 8), QPixmap(8, 8)
         a.fill(QColor(200, 0, 0, 255))
@@ -480,7 +531,7 @@ class UserInterfaceTests(unittest.TestCase):
     def test_app_has_brand_name_version_and_windows_icon(self):
         c = self.controller
         self.assertEqual(self.app.applicationDisplayName(), "余白 / YOHAKU")
-        self.assertEqual(self.app.applicationVersion(), "0.11.2")
+        self.assertEqual(self.app.applicationVersion(), "0.12.0")
         self.assertFalse(c.brand_icon.isNull())
         self.assertEqual(c.panel.windowIcon().cacheKey(), c.brand_icon.cacheKey())
         c.panel.character_buttons["B"].click()
@@ -634,14 +685,14 @@ class UserInterfaceTests(unittest.TestCase):
         try:
             for key in CHARACTERS:
                 frames = character_frames(key)
-                self.assertEqual(len(frames), 24)
+                self.assertEqual(len(frames), 28)
                 digests = set()
                 for frame in frames:
                     image = frame.toImage()
                     digests.add(hashlib.sha256(bytes(image.bits())).hexdigest())
-                self.assertEqual(len(digests), 24)
+                self.assertEqual(len(digests), 28)
                 c.panel.character_buttons[key].click()
-                for index in range(24):
+                for index in range(28):
                     self.assertTrue(frames[index].hasAlphaChannel())
                     c.resident.frame_index = index
                     self.assertFalse(c.resident.grab().isNull())
@@ -849,7 +900,7 @@ class UserInterfaceTests(unittest.TestCase):
             self.assertNotEqual(c.motion_x, 200)
             c.panel.animation_check.click()
             self.assertFalse(c.animation_timer.isActive())
-            self.assertIsNone(c.resident.frame_index)
+            self.assertEqual(c.resident.frame_index, 24)
             self.assertFalse(c.panel.walking_check.isEnabled())
         finally:
             c.settings.quiet_start, c.settings.quiet_end = start, end

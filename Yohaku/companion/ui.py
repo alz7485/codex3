@@ -146,7 +146,29 @@ def character_frames(character):
         painter.end()
         cleaned.append(clipped)
         bounds = bounds.united(rect)
-    return tuple(frame.copy(bounds) for frame in cleaned)
+    frames = tuple(frame.copy(bounds) for frame in cleaned)
+    # Dedicated front-view artwork: rows A/B/E/F, columns normal/blink/
+    # troubled/angry. Keep a shared canvas and the existing neutral baseline
+    # so switching between a walk and a front pose does not change size.
+    front = QPixmap(str(path.parent / 'front_reactions.png'))
+    if front.isNull():
+        raise RuntimeError('正面向き画像を読み込めません: front_reactions.png')
+    left, top, w, h = {'A': (35, 25, 270, 282), 'B': (40, 315, 270, 294),
+                       'E': (45, 620, 264, 300), 'F': (30, 925, 280, 313)}[character]
+    target = QSize(bounds.width(), content[0].height())
+    front_frames = []
+    for column in range(4):
+        source = front.copy(left + column * 300, top, w, h)
+        source = source.scaled(target, Qt.AspectRatioMode.KeepAspectRatio,
+                               Qt.TransformationMode.SmoothTransformation)
+        frame = QPixmap(bounds.size())
+        frame.fill(Qt.GlobalColor.transparent)
+        painter = QPainter(frame)
+        painter.drawPixmap((bounds.width() - source.width()) // 2,
+                           content[0].bottom() - bounds.top() + 1 - source.height(), source)
+        painter.end()
+        front_frames.append(frame)
+    return frames + tuple(front_frames)
 
 
 
@@ -961,6 +983,9 @@ class Controller(QObject):
         self.interaction = self.bubble  # One actual speech window for all modes.
         self.history_window = HistoryWindow()
         self.motion = Motion()
+        self.static_pose_timer = QTimer(self)
+        self.static_pose_timer.setSingleShot(True)
+        self.static_pose_timer.timeout.connect(self.reset_static_pose)
         self.motion_x = float(self.settings.position_x) if self.settings.position_set else None
         self.motion_y = self.settings.position_y if self.settings.position_set else None
         self.last_motion_time = time.monotonic()
@@ -1165,6 +1190,7 @@ class Controller(QObject):
         self.engine.last_category = None
         self.engine.recent = []  # Old indices may refer to deleted/reordered lines.
         self.engine.last_display = datetime.now().astimezone()
+        self.engine.click_reactions.reset()
 
     def resident_area(self):
         if self.motion_x is None or self.motion_y is None:
@@ -1239,7 +1265,12 @@ class Controller(QObject):
                 self.animation_timer.start()
         else:
             self.animation_timer.stop()
-            self.resident.frame_index = None
+            # A periodic policy check must not shorten a user-requested static
+            # reaction. Its wall-clock timer restores the neutral front pose.
+            if not self.static_pose_timer.isActive() or self.motion.walking:
+                self.motion.react('front', seconds=0)
+                self.motion.front_until = 0
+                self.resident.frame_index = 24
             self.resident.flipped = False
             self.resident.bob = self.resident.sway = 0
             self.resident.scale_x = self.resident.scale_y = 1.0
@@ -1265,7 +1296,7 @@ class Controller(QObject):
             self.resident.previous_frame = self.resident.frame_index
             self.resident.frame_changed_at = now
             self.resident.frame_index = frame
-        self.resident.flipped = self.motion.facing < 0
+        self.resident.flipped = frame < 24 and self.motion.facing < 0
         (self.resident.bob, self.resident.sway,
          self.resident.scale_x, self.resident.scale_y) = self.motion.pose()
         self.position()
@@ -1452,17 +1483,44 @@ class Controller(QObject):
         self.refresh_context_metrics(now)
         self.engine.last_display = now
         fresh = self.connected and self.connected_at is not None and (now - self.connected_at).total_seconds() < 300
-        notice = self.engine.conversation(now, self.events, fresh)
+        notice = self.engine.click_reaction(time.monotonic())
+        reacting = notice is not None
+        if notice is None:
+            notice = self.engine.conversation(now, self.events, fresh)
         if notice is None:
             notice = Notice(CHARACTERS[self.settings.character], self.engine.phrase('no_conversation'), expression='think')
-        self.motion.react(notice.expression, speaking=True)
+        seconds = self.dialogue.data['options']['click_recovery_seconds'] if reacting else 8
+        self.motion.react(notice.expression, seconds=seconds, speaking=True)
+        self.motion.face_front(seconds if not reacting else 0)
+        # Show the requested pose immediately, including with animation off.
+        frame = self.motion.frame()
+        previous = self.resident.frame_index
+        self.resident.frame_index = frame
+        self.resident.flipped = False
+        self.resident.previous_frame = previous if self.animation_timer.isActive() and previous != frame else None
+        self.resident.frame_changed_at = time.monotonic()
+        self.resident.update()
+        self.static_pose_timer.start(seconds * 1000)
         self.bubble.display(notice)
         self.position()
+
+    def reset_static_pose(self):
+        if not self.animation_timer.isActive():
+            self.motion.react('front', seconds=0)
+            self.motion.front_until = 0
+            self.resident.frame_index = 24
+            self.resident.previous_frame = None
+            self.resident.flipped = False
+            self.resident.update()
 
     def open_choices(self):
         if self.hidden or self.user_hidden:
             return
         self.motion.react(self.dialogue.rule("call")["expression"])
+        self.motion.face_front()
+        self.resident.frame_index = 24
+        self.resident.flipped = False
+        self.resident.update()
         self.engine.last_display = datetime.now().astimezone()
         self.interaction.open_choices(self.engine.phrase("call"), CHARACTERS[self.settings.character])
         self.position()

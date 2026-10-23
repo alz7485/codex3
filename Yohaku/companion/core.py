@@ -11,6 +11,7 @@ from typing import Callable
 
 from .dialogue import AUTO_PERSONALITY, PHRASES, DialogueStore, matches, voice_for
 from .departure import DEFAULT_MESSAGE, attendance_url, departure_body
+from .motion import ClickReactions
 
 
 CHARACTERS = {
@@ -148,6 +149,7 @@ class Engine:
         self.last_category = None
         self.session_spoken = False
         self.context = {}
+        self.click_reactions = ClickReactions()
         raw = self.state.get("notified", {})
         self.notified = raw if isinstance(raw, dict) else {}
         self.departure_date = self.state.get('departure_date', '')
@@ -179,6 +181,14 @@ class Engine:
         if category == 'mail_received' and values.get('mail_from') and '{mail_from}' not in template:
             template = '{mail_from}メールが来ました。\n' + template
         return re.sub(r'\{([a-z_]+)\}', lambda match: values.get(match.group(1), match.group(0)), template)
+
+    def click_reaction(self, monotonic_time):
+        category = self.click_reactions.click(monotonic_time, self.dialogue.data['options'])
+        if category:
+            text = self.phrase(category)
+            if text:
+                return Notice('', text, expression=self.dialogue.rule(category)['expression'])
+        return None
 
     def conversation(self, now: datetime, events: list[Event] = (), connected=False, manual=True) -> Notice | None:
         """Evaluate validated declarative JSON rules; no expressions or code execution."""

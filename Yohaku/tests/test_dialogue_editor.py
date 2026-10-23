@@ -68,6 +68,30 @@ class DialogueEditorTests(unittest.TestCase):
         self.assertTrue(e.save())
         self.assertIsNone(self.store.rule(key))
 
+    def test_click_reaction_options_text_and_expression_are_editable(self):
+        e = self.editor
+        row = next(i for i, rule in enumerate(e.draft['rules']) if rule['id'] == 'click_angry')
+        e.phrase_topics.setCurrentRow(row)
+        e.line_edit.setPlainText('連打はゆっくりお願いします。')
+        e.rule_list.setCurrentRow(row)
+        self.assertEqual(e.expression.currentData(), 'angry')
+        self.assertFalse(e.kind.isEnabled())
+        e.expression.setCurrentIndex(e.expression.findData('troubled'))
+        e.options['click_concern_count'].setValue(5)
+        e.options['click_angry_count'].setValue(9)
+        e.options['click_window_seconds'].setValue(6)
+        e.options['click_recovery_seconds'].setValue(12)
+        e.options['click_reactions'].setChecked(False)
+        self.assertTrue(e.save())
+        data = read_document(self.store.path)
+        self.assertEqual(data['options']['click_angry_count'], 9)
+        self.assertEqual(data['options']['click_concern_count'], 5)
+        self.assertEqual(data['options']['click_window_seconds'], 6)
+        self.assertEqual(data['options']['click_recovery_seconds'], 12)
+        self.assertFalse(data['options']['click_reactions'])
+        self.assertEqual(self.store.rule('click_angry')['expression'], 'troubled')
+        self.assertEqual(data['phrases']['控えめな皮肉屋']['click_angry'][0], '連打はゆっくりお願いします。')
+
     def test_unread_threshold_and_priority_can_be_saved_in_the_editor(self):
         e = self.editor
         row = next(i for i, rule in enumerate(e.draft['rules']) if rule['id'] == 'mail_unread')

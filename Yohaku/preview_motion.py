@@ -13,7 +13,8 @@ from companion.motion import Motion
 from companion.ui import Mascot, create_application
 
 LABELS = ('通常', 'まばたき', '笑顔', 'お知らせ', '考え中', '眠そう', '得意げ', '気遣い',
-          'ウインク', '大笑い', '首かしげ', 'くつろぎ', 'うなずき', '発話', '挨拶', '伸び')
+          'ウインク', '大笑い', '首かしげ', 'くつろぎ', 'うなずき', '発話', '挨拶', '伸び', '正面', '正面まばたき', '困る', '怒る')
+FRAMES = tuple(range(16)) + (24, 25, 26, 27)
 
 
 def main():
@@ -32,11 +33,11 @@ def main():
         painter.setPen(QColor('#344f3f'))
         painter.drawText(x, y, value)
 
-    board = QPixmap(1600, 960)
+    board = QPixmap(2000, 960)
     board.fill(QColor('#e7ede6'))
     painter = QPainter(board)
-    text(painter, 40, 45, 'Y O H A K U  /  v0.11.2', 14, True)
-    text(painter, 40, 95, '4つの性格。16の表情としぐさ。', 32, True)
+    text(painter, 40, 45, 'Y O H A K U  /  v0.12.0', 14, True)
+    text(painter, 40, 95, '4つの性格。20の表情としぐさ。', 32, True)
     for row, (key, name) in enumerate(CHARACTERS.items()):
         y = 150 + row * 190
         text(painter, 40, y, f'{key}  {name} / {PROFILES[key][0]}', 17, True)
@@ -44,7 +45,7 @@ def main():
         mascot.setFixedSize(88, 118)
         for index, caption in enumerate(LABELS):
             x = 40 + index * 96
-            mascot.frame_index = index
+            mascot.frame_index = FRAMES[index]
             mascot.previous_frame = None
             painter.drawPixmap(x, y + 9, mascot.grab())
             text(painter, x + 4, y + 151, caption, 11)
@@ -61,13 +62,13 @@ def main():
             mascot.setFixedSize(138, 160)
         with tempfile.TemporaryDirectory(prefix='yohaku-motion-') as temporary:
             xs = [0.0] * 4
-            for frame in range(192):
+            for frame in range(240):
                 canvas = QPixmap(1200, 640)
                 canvas.fill(QColor('#e7ede6'))
                 p = QPainter(canvas)
-                text(p, 32, 38, 'Y O H A K U  /  v0.11.2', 13, True)
+                text(p, 32, 38, 'Y O H A K U  /  v0.12.0', 13, True)
                 text(p, 32, 81, 'ひと息ついて、表情もひとつ。', 29, True)
-                text(p, 32, 112, '8コマの歩行 + 加減速・呼吸・体の揺れ / 下段は16種の表情としぐさ', 14)
+                text(p, 32, 112, '8コマの歩行 + 加減速・呼吸・体の揺れ / 下段は20種の表情としぐさ', 14)
                 for column, ((key, name), mascot, motion) in enumerate(zip(CHARACTERS.items(), mascots, motions)):
                     left = 24 + column * 294
                     text(p, left + 8, 160, f'{key}  {name}', 16, True)
@@ -80,7 +81,7 @@ def main():
                     mascot.previous_frame = None
                     p.drawPixmap(left + 8 + round(xs[column]), 207, mascot.grab())
                     expression = frame // 12
-                    mascot.frame_index = expression
+                    mascot.frame_index = FRAMES[expression]
                     mascot.bob = mascot.sway = 0
                     mascot.scale_x = mascot.scale_y = 1
                     p.drawPixmap(left + 64, 410, mascot.grab())

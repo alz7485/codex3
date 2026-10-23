@@ -56,13 +56,13 @@ class MotionTests(unittest.TestCase):
     def test_blink_reaction_expiration_and_small_screen_clamp(self):
         motion = Motion()
         motion.elapsed = 5.1
-        self.assertEqual(motion.frame(), 1)
+        self.assertEqual(motion.frame(), 25)
         motion.react("happy", 1)
         self.assertEqual(motion.frame(), 2)
         motion.react("notice", 1)
         self.assertEqual(motion.frame(), 3)
         motion.elapsed += 2
-        self.assertEqual(motion.frame(), 0)
+        self.assertEqual(motion.frame(), 24)
         self.assertEqual(motion.advance(0.1, 100, 10, 10, True), 10)
 
 

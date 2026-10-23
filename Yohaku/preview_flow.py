@@ -52,7 +52,7 @@ def main(export_gif=False):
         painter.setPen(QColor(color))
         painter.drawText(x, y, value)
 
-    text(65, 48, 'Y O H A K U  /  v0.11.2', 12, True)
+    text(65, 48, 'Y O H A K U  /  v0.12.0', 12, True)
     text(65, 99, '左で一言。右で呼び出し。', 30, True)
     text(65, 135, '予定は淡い黄、新着通知は淡い青。履歴と設定は専用画面へ。', 17)
     for i, caption in enumerate(('01  右クリックで呼び出し', '02  左クリックで一言', '03  予定を聞く')):
@@ -79,7 +79,7 @@ def main(export_gif=False):
     painter.drawPixmap(100, 95, bubbles[0].grab())
     painter.drawPixmap(328, 101 + bubbles[0].height(), mascot.grab())
     text(40, 591, '問いかけの下に、4つの選択肢を1行ずつ。', 14)
-    text(40, 624, 'v0.11.2 / 実装画面のプレビュー', 12, color='#65786a')
+    text(40, 624, 'v0.12.0 / 実装画面のプレビュー', 12, color='#65786a')
     painter.end()
     click_preview.save(str(destination / 'click-menu.png'))
 
@@ -105,7 +105,7 @@ def main(export_gif=False):
                 canvas.fill(QColor('#e7ede6'))
                 painter = QPainter(canvas)
                 painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-                text(40, 46, 'Y O H A K U  /  v0.11.2', 12, True)
+                text(40, 46, 'Y O H A K U  /  v0.12.0', 12, True)
                 text(40, 95, caption, 25, True)
                 painter.drawPixmap(580, 163, bubble.grab())
                 painter.drawPixmap(805, 169 + bubble.height(), mascot.grab())
