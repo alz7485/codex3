@@ -36,7 +36,7 @@ def main():
         painter.setPen(QColor(color))
         painter.drawText(x, y, value)
 
-    text(56, 55, "Y O H A K U   /   DESKTOP COMPANION", 12, "#677c6b", True)
+    text(56, 55, "Yohaku   /   DESKTOP COMPANION", 12, "#677c6b", True)
     text(56, 104, "仕事のそばに、小さな余白。", 30, "#2c4536", True)
     text(56, 136, "Windows常駐アプリ  ·  表情と歩行  ·  音声なし  ·  外部AIなし", 14)
     # The panel is drawn with its real dimensions, 920 × 740 logical pixels.
@@ -65,7 +65,7 @@ def main():
     text(1024, 771, "吹き出しは約1分で閉じます。", 13)
     text(56, 986, "実装画面によるデザインプレビュー", 13, "#617566")
     text(56, 1016, "予定表は未接続の表示です。Windows / 従来版Outlookでの実機検証は別途必要です。", 12, "#617566")
-    text(1168, 1016, "PROTOTYPE  /  0.14.1", 12, "#617566", True)
+    text(1168, 1016, "PROTOTYPE  /  0.14.2", 12, "#617566", True)
     painter.end()
     board.save(str(destination / "design-preview.png"))
     panel.set_page(1)
@@ -75,7 +75,7 @@ def main():
     sheet.fill(QColor("#e5ebe4"))
     painter = QPainter(sheet)
     painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-    text(44, 48, "Y O H A K U   /   v0.14.1", 12, "#677c6b", True)
+    text(44, 48, "Yohaku   /   v0.14.2", 12, "#677c6b", True)
     text(44, 99, "今日はいっしょに、誰と働く？", 30, "#2c4536", True)
     text(44, 133, "4種類のキャラクターを設定から切り替え。見た目と性格は、それぞれ選べます。", 15)
     painter.drawPixmap(44, 171, panel.grab())

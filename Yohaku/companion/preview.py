@@ -12,7 +12,7 @@ class PreviewWindow(QMainWindow):
     def __init__(self, settings, dialogue):
         super().__init__()
         self.settings, self.dialogue = settings, dialogue
-        self.setWindowTitle('表情・通知のプレビュー — 余白')
+        self.setWindowTitle('表情・通知のプレビュー — Yohaku')
         self.resize(540, 640)
         root = QWidget(objectName='panel')
         self.setCentralWidget(root)

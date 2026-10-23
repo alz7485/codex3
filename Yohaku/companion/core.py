@@ -16,10 +16,10 @@ from .reminders import ReminderStore, due_time
 
 
 CHARACTERS = {
-    "A": "余白ノート",
-    "B": "事務ロボ",
-    "E": "まじめなペンギン",
-    "F": "お茶ねこ",
+    "A": "つづり",
+    "B": "ビット",
+    "E": "ペギー",
+    "F": "きなこ",
 }
 
 

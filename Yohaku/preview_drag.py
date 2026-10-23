@@ -32,7 +32,7 @@ def main():
             painter.setPen(QColor('#344f3f'))
             painter.drawText(x, y, value)
 
-        text(40, 42, f'Y O H A K U  /  v{VERSION}', 13, True)
+        text(40, 42, f'Yohaku  /  v{VERSION}', 13, True)
         text(40, 90, '好きな場所に。言葉は、そのまま。', 30, True)
         text(40, 125, 'ドラッグで移動・位置を保存。左クリックで一言、右クリックで呼び出し。', 16)
         with patch.object(controller, 'resident_area', return_value=QRect(0, 0, 380, 560)):
@@ -45,7 +45,7 @@ def main():
                 text(left + 5, 175, caption, 16, True)
                 painter.fillRect(QRect(left, 197, 380, 560), QColor('#f3f6f1'))
                 if index == 2:
-                    controller.bubble.open_choices('お呼びですか？', '余白ノート')
+                    controller.bubble.open_choices('お呼びですか？', 'つづり')
                 else:
                     controller.bubble.display(Notice('', '少しだけ、目に白紙の時間を。\nひと息ついてから、続きをどうぞ。'))
                 controller.drag_character(point)

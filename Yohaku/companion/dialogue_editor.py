@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (QCheckBox, QComboBox, QFileDialog, QFormLayout, Q
     QSplitter, QTabWidget, QVBoxLayout, QWidget)
 
 from .dialogue import DialogueError, KINDS, VOICE_NAMES, defaults, read_document, validate
+from .core import CHARACTERS
 from .motion import EXPRESSION_FRAMES
 from .metrics import METRICS
 from .ui import box, button, label
@@ -33,7 +34,7 @@ class DialogueEditor(QMainWindow):
         self.loading = True
         self.dirty = False
         self.draft = deepcopy(store.data)
-        self.setWindowTitle('余白 — 会話の編集')
+        self.setWindowTitle('Yohaku — 会話の編集')
         self.resize(1020, 800)
         self.setMinimumSize(800, 620)
         root = QWidget(objectName='panel')
@@ -225,7 +226,7 @@ class DialogueEditor(QMainWindow):
             else: widget.currentIndexChanged.connect(self.update_options)
         form.addRow(label('静かな時間・おやすみ・非表示中の停止は通常の設定に従います。', 'muted', True))
         self.profile_key = QComboBox()
-        self.profile_key.addItems(['A 余白ノート', 'B 事務ロボ', 'E まじめなペンギン', 'F お茶ねこ'])
+        self.profile_key.addItems(list(CHARACTERS.values()))
         self.profile_voice = QComboBox()
         self.profile_voice.addItems(VOICE_NAMES)
         self.description = QLineEdit()

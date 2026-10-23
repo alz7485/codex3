@@ -32,7 +32,7 @@ def main():
         painter = QPainter(board)
         font = QFont(app.font()); font.setPixelSize(25); font.setBold(True)
         painter.setFont(font); painter.setPen(QColor('#344f3f'))
-        painter.drawText(32, 45, f'YOHAKU v{VERSION} / 距離感を選んで、表情を試す。')
+        painter.drawText(32, 45, f'Yohaku v{VERSION} / 距離感を選んで、表情を試す。')
         painter.drawPixmap(24, 80, panel.grab())
         painter.drawPixmap(978, 80, preview.grab())
         font.setPixelSize(15); font.setBold(False); painter.setFont(font)

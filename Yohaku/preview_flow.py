@@ -28,11 +28,11 @@ def main(export_gif=False):
     history.set_records(rows, '記録オン · 表示例（合成データ） · 過去3か月')
     history.show()
     bubbles = [InteractionBubble() for _ in range(3)]
-    bubbles[0].open_choices('お呼びですか？', '余白ノート')
-    bubbles[1].open_choices(name='余白ノート')
-    bubbles[1].display(Notice('余白ノート', '操作が続いていますね。\nそろそろ、目に白紙の時間をどうぞ。'))
-    bubbles[2].open_choices(name='余白ノート')
-    bubbles[2].content('calendar', '余白ノート', 'このあとの予定はこちらです。\n\n14:00–14:30  [未承諾] 予定あり\n15:00–15:30  予定あり\n\n件名は隠しておきますね。')
+    bubbles[0].open_choices('お呼びですか？', 'つづり')
+    bubbles[1].open_choices(name='つづり')
+    bubbles[1].display(Notice('つづり', '操作が続いていますね。\nそろそろ、目に白紙の時間をどうぞ。'))
+    bubbles[2].open_choices(name='つづり')
+    bubbles[2].content('calendar', 'つづり', 'このあとの予定はこちらです。\n\n14:00–14:30  [未承諾] 予定あり\n15:00–15:30  予定あり\n\n件名は隠しておきますね。')
     mascot = Mascot(90, character='A')
     mascot.frame_index = 2
     mascot.show()
@@ -52,7 +52,7 @@ def main(export_gif=False):
         painter.setPen(QColor(color))
         painter.drawText(x, y, value)
 
-    text(65, 48, 'Y O H A K U  /  v0.14.0', 12, True)
+    text(65, 48, 'Yohaku  /  v0.14.2', 12, True)
     text(65, 99, '左で一言。右で呼び出し。', 30, True)
     text(65, 135, '予定は淡い黄、新着通知は淡い青。履歴と設定は専用画面へ。', 17)
     for i, caption in enumerate(('01  右クリックで呼び出し', '02  左クリックで一言', '03  予定を聞く')):
@@ -79,7 +79,7 @@ def main(export_gif=False):
     painter.drawPixmap(100, 95, bubbles[0].grab())
     painter.drawPixmap(328, 101 + bubbles[0].height(), mascot.grab())
     text(40, 591, '問いかけの下に、5つの選択肢を1行ずつ。', 14)
-    text(40, 624, 'v0.14.0 / 実装画面のプレビュー', 12, color='#65786a')
+    text(40, 624, 'v0.14.2 / 実装画面のプレビュー', 12, color='#65786a')
     painter.end()
     click_preview.save(str(destination / 'click-menu.png'))
 
@@ -88,16 +88,16 @@ def main(export_gif=False):
             bubble = bubbles[0]
             for index in range(90):
                 if index < 25:
-                    bubble.open_choices('お呼びですか？', '余白ノート')
+                    bubble.open_choices('お呼びですか？', 'つづり')
                     caption = '右クリックで呼び出し＋5択。'
                 elif index < 50:
-                    bubble.display(Notice('余白ノート', '肩の力を抜きましょう。\nひと息つくのも、仕事のうちです。'))
+                    bubble.display(Notice('つづり', '肩の力を抜きましょう。\nひと息つくのも、仕事のうちです。'))
                     caption = '左クリックで、一言。'
                 elif index < 70:
-                    bubble.content('calendar', '余白ノート', 'このあとの予定はこちらです。\n\n14:00–14:30  [未承諾] 予定あり\n15:00–15:30  予定あり')
+                    bubble.content('calendar', 'つづり', 'このあとの予定はこちらです。\n\n14:00–14:30  [未承諾] 予定あり\n15:00–15:30  予定あり')
                     caption = '予定も、同じ吹き出しで。'
                 else:
-                    bubble.content('activity', '余白ノート', '履歴を開きました。\n日付を選んで、振り返ってみましょう。')
+                    bubble.content('activity', 'つづり', '履歴を開きました。\n日付を選んで、振り返ってみましょう。')
                     caption = '履歴だけ、専用の画面が開きます。'
                 mascot.frame_index = 1 if index % 45 in (40, 41) else (2 if index < 50 else 0)
                 app.processEvents()
@@ -105,7 +105,7 @@ def main(export_gif=False):
                 canvas.fill(QColor('#e7ede6'))
                 painter = QPainter(canvas)
                 painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-                text(40, 46, 'Y O H A K U  /  v0.14.0', 12, True)
+                text(40, 46, 'Yohaku  /  v0.14.2', 12, True)
                 text(40, 95, caption, 25, True)
                 painter.drawPixmap(580, 163, bubble.grab())
                 painter.drawPixmap(805, 169 + bubble.height(), mascot.grab())

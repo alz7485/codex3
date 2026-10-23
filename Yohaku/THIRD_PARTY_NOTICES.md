@@ -12,4 +12,4 @@ PyInstaller is used to build the application.
 The build script copies license texts available in installed distribution metadata
 into `third-party-licenses/` in the onedir folder. Keep that folder with the
 distribution. The executable uses the packaged Qt/Python libraries in `_internal/`.
-The original YOHAKU source and build scripts accompany the source ZIP.
+The original Yohaku source and build scripts accompany the source ZIP.

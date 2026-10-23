@@ -40,7 +40,7 @@ def main():
         painter.setFont(font)
         painter.setPen(QColor('#344f3f'))
         painter.drawText(x, y, value)
-    text(35, 42, f'Y O H A K U  /  v{VERSION}', 13, True)
+    text(35, 42, f'Yohaku  /  v{VERSION}', 13, True)
     text(35, 88, '帰る前に、ひと声。', 30, True)
     text(35, 123, '初期17:00。メッセージとPC起動時間を知らせ、勤怠サイトへ進むか選びます。', 16)
     painter.drawPixmap(35, 155, panel.grab())

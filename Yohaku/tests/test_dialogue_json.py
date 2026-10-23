@@ -197,3 +197,29 @@ class DialogueJsonTests(unittest.TestCase):
         self.engine.persist(self.now)
         self.assertNotIn('山田', self.engine.history_path.read_text())
         self.assertNotIn('山田', self.store.path.read_text())
+
+    def test_naming_upgrade_replaces_stock_self_references_and_keeps_custom_json(self):
+        from companion.dialogue import LEGACY_SELF_REFERENCES, upgrade
+        legacy = deepcopy(self.store.data)
+        legacy.pop('naming_version')
+        voice = legacy['profiles']['A']['voice']
+        legacy['phrases'][voice]['call'] = [
+            'はい、余白の出番ですか？', '自分で書いた余白の呼びかけです。', '予定に余白がありますね。']
+        legacy['profiles']['A']['tagline'] = '自分の代表的な一言'
+        legacy['options']['interval_minutes'] = 23
+        self.path.write_text(json.dumps(legacy, ensure_ascii=False), encoding='utf-8')
+        original_bytes = self.path.read_bytes()
+        restored = DialogueStore(self.path)
+        self.assertFalse(restored.error)
+        expected = deepcopy(legacy)
+        expected['naming_version'] = 1
+        expected['phrases'][voice]['call'][0] = LEGACY_SELF_REFERENCES['はい、余白の出番ですか？']
+        self.assertEqual(restored.data, expected)
+        self.assertEqual(self.path.read_bytes(), original_bytes)
+        self.assertEqual(upgrade(restored.data), restored.data)
+        restored.save(restored.data)
+        self.assertEqual(self.path.with_suffix('.json.bak').read_bytes(), original_bytes)
+        # Later deliberate edits of the stock wording must survive subsequent loads.
+        restored.data['phrases'][voice]['call'][0] = 'はい、余白の出番ですか？'
+        restored.save(restored.data)
+        self.assertEqual(DialogueStore(self.path).data['phrases'][voice]['call'][0], 'はい、余白の出番ですか？')

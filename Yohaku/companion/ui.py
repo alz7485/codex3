@@ -283,7 +283,7 @@ class Panel(QMainWindow):
         super().__init__()
         self.settings = settings
         self.dialogue = dialogue
-        self.setWindowTitle("余白 — デスクトップの小さな同僚")
+        self.setWindowTitle("Yohaku — デスクトップの小さな同僚")
         self.setMinimumSize(880, 680)
         self.resize(920, 740)
         root = QWidget(objectName="panel")
@@ -295,14 +295,14 @@ class Panel(QMainWindow):
         rail.setFixedWidth(190)
         left = box(rail, 22, 9)
         left.addSpacing(10)
-        brand = label("余白")
-        brand.setStyleSheet("font-size: 30px; font-weight: 600; letter-spacing: 5px;")
+        brand = label("Yohaku")
+        brand.setStyleSheet("font-size: 28px; font-weight: 600; letter-spacing: 1px;")
         left.addWidget(brand)
-        left.addWidget(label("Y O H A K U", "eyebrow"))
+        left.addWidget(label("DESKTOP COMPANION", "eyebrow"))
         left.addSpacing(43)
         self.tabs = []
         self.pages = QStackedWidget()
-        for index, title in enumerate(("今日の余白", "キャラと通知")):
+        for index, title in enumerate(("今日のようす", "キャラと通知")):
             tab = button(title, lambda checked=False, i=index: self.set_page(i), "nav")
             tab.setCheckable(True)
             left.addWidget(tab)
@@ -490,12 +490,12 @@ class Panel(QMainWindow):
         card = QFrame(objectName="card")
         form = box(card, 18, 11)
         row = QHBoxLayout()
-        row.addWidget(label("余白の性格", "section"))
+        row.addWidget(label("キャラの性格", "section"))
         row.addStretch()
         personality = QComboBox()
         personality.addItems([AUTO_PERSONALITY, *PHRASES])
         personality.setCurrentText(self.settings.personality)
-        personality.setAccessibleName("余白の性格")
+        personality.setAccessibleName("キャラの性格")
         personality.currentTextChanged.connect(lambda v: self.update_setting("personality", v))
         row.addWidget(personality)
         form.addLayout(row)
@@ -679,7 +679,7 @@ class Resident(Mascot):
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setToolTip("余白 · 左クリックで一言／右クリックで呼び出し／ドラッグで移動")
+        self.setToolTip("Yohaku · 左クリックで一言／右クリックで呼び出し／ドラッグで移動")
         self.press_position = None
         self.press_origin = None
         self.dragging = False
@@ -878,7 +878,7 @@ class InteractionBubble(Bubble):
         # QWidget.adjustSize() can impose a 100px minimum on a top-level window.
         self.resize(self.width(), self.layout().sizeHint().height())
 
-    def open_choices(self, text="お呼びですか？", name="余白"):
+    def open_choices(self, text="お呼びですか？", name="Yohaku"):
         self.notice = None
         self.departure_row.hide()
         self.set_kind("menu")
@@ -960,7 +960,7 @@ class HistoryWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("ファイル履歴 — 余白")
+        self.setWindowTitle("ファイル履歴 — Yohaku")
         self.resize(1180, 620)
         self.setMinimumSize(1000, 500)
         root = QWidget(objectName="panel")
@@ -1168,13 +1168,13 @@ class Controller(QObject):
         self.menu.addSeparator()
         self.menu.addAction("Outlookから切断", self.disconnect)
         self.menu.addSeparator()
-        self.menu.addAction("余白を終了", self.request_quit)
+        self.menu.addAction("Yohakuを終了", self.request_quit)
         self.resident.context_requested.connect(lambda _: self.open_choices())
         self.bubble.call_requested.connect(self.open_choices)
         self.bubble.attendance_requested.connect(self.open_attendance)
         self.tray = QSystemTrayIcon(self)
         self.apply_character()
-        self.tray.setToolTip("余白 — 左クリックで表示切り替え / 右クリックでメニュー")
+        self.tray.setToolTip("Yohaku — 左クリックで表示切り替え / 右クリックでメニュー")
         self.tray.setContextMenu(self.menu)
         self.tray.activated.connect(self.tray_activated)
         self.tray.show()
@@ -1253,7 +1253,7 @@ class Controller(QObject):
             if self.reminder_editor:
                 self.reminder_editor.hide()
         self.visibility_action.setText("キャラを非表示" if visible else "キャラを表示")
-        self.tray.setToolTip("余白 — " + ("画面共有モード中" if self.hidden else "非表示 · 左クリックで表示" if self.user_hidden else "左クリックで非表示 / 右クリックでメニュー"))
+        self.tray.setToolTip("Yohaku — " + ("画面共有モード中" if self.hidden else "非表示 · 左クリックで表示" if self.user_hidden else "左クリックで非表示 / 右クリックでメニュー"))
         self.update_mode()
         self.update_animation_policy()
         if visible:
@@ -2149,11 +2149,11 @@ def run():
     try:
         path.mkdir(parents=True, exist_ok=True)
     except OSError:
-        QMessageBox.critical(None, "余白", "設定の保存先を作成できません。ユーザーフォルダーの権限をご確認ください。")
+        QMessageBox.critical(None, "Yohaku", "設定の保存先を作成できません。ユーザーフォルダーの権限をご確認ください。")
         return
     lock = QLockFile(str(path / "instance.lock"))
     if not lock.tryLock(0):
-        QMessageBox.information(None, "余白", "余白はすでに起動しているか、保存先を使用できません。タスクトレイをご確認ください。")
+        QMessageBox.information(None, "Yohaku", "Yohakuはすでに起動しているか、保存先を使用できません。タスクトレイをご確認ください。")
         return
     controller = Controller(app)
     app.aboutToQuit.connect(controller.bubble.hide)

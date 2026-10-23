@@ -19,7 +19,7 @@ class ReminderEditor(QMainWindow):
         self.draft = deepcopy(store.data)
         self.loading = False
         self.dirty = False
-        self.setWindowTitle('余白 — 通知の登録')
+        self.setWindowTitle('Yohaku — 通知の登録')
         self.resize(860, 730)
         self.setMinimumSize(760, 680)
         root = QWidget(objectName='panel')

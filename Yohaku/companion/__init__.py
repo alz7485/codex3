@@ -1,1 +1,1 @@
-"""余白 — a quiet, local desktop companion."""
+"""Yohaku — a quiet, local desktop companion."""

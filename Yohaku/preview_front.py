@@ -24,9 +24,9 @@ def main():
         p.setPen(QColor('#344f3f'))
         p.drawText(x, y, value)
 
-    text(36, 38, f'Y O H A K U  /  v{VERSION}', 14, True)
+    text(36, 38, f'Yohaku  /  v{VERSION}', 14, True)
     text(36, 81, 'こちらを向いて、気持ちをひとつ。', 30, True)
-    text(36, 112, '正面と連打への反応 / ペンギンは翼2本 / お茶ねこの目を少し猫らしく。', 17)
+    text(36, 112, '正面と連打への反応 / ペンギンは翼2本 / きなこの目を少し猫らしく。', 17)
     for x, caption in zip((265, 505, 745, 985), ('正面', 'まばたき', '4回で困る', '7回で少し怒る')):
         text(x, 150, caption, 16, True)
     with tempfile.TemporaryDirectory() as temporary:
@@ -36,7 +36,7 @@ def main():
             mascot = Mascot(130, character=character)
             mascot.show()
             app.processEvents()
-            text(36, y + 57, character + '  ' + name, 18, True)
+            text(36, y + 57, name, 18, True)
             for column, frame in enumerate((24, 25, 26, 27)):
                 mascot.frame_index = frame
                 mascot.previous_frame = None

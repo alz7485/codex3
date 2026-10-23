@@ -131,7 +131,7 @@ def upgrade(document):
     if not isinstance(document, dict) or type(document.get('schema_version')) is not int or document.get('schema_version') not in (1, 2):
         return document
     if document['schema_version'] == 2:
-        return upgrade_comfort(upgrade_click_reactions(upgrade_mail(document)))
+        return upgrade_names(upgrade_comfort(upgrade_click_reactions(upgrade_mail(document))))
     result = deepcopy(document)
     base = json.loads(DEFAULT_PATH.read_text(encoding='utf-8'))
     result['schema_version'] = 2
@@ -148,7 +148,34 @@ def upgrade(document):
                 for voice, bank in result['phrases'].items():
                     if isinstance(bank, dict) and voice in base['phrases']:
                         bank[rule['id']] = deepcopy(base['phrases'][voice][rule['id']])
-    return upgrade_comfort(upgrade_click_reactions(upgrade_mail(result)))
+    return upgrade_names(upgrade_comfort(upgrade_click_reactions(upgrade_mail(result))))
+
+
+LEGACY_SELF_REFERENCES = {
+    'はい、余白の出番ですか？': 'はい、私の出番ですか？',
+    'ご用件を、余白にどうぞ。': 'ご用件は、私にどうぞ。',
+    '余白の準備はできています。予定は詰めすぎずに。': 'こちらの準備はできています。予定は詰めすぎずに。',
+    '月曜の余白です。今週も、適度によろしく。': '月曜日ですね。今週も、適度によろしく。',
+    '余白という名前なので、少し黙っていても仕事のうちです。': '少し黙っていても、見守るのは仕事のうちです。',
+    'しばらく静かですね。余白の出番、と受け取っておきます。': 'しばらく静かですね。私の出番、と受け取っておきます。',
+    '余白にも、心の余白が必要なんです。': '私にも、心の余白が必要なんです。',
+}
+
+
+def upgrade_names(document):
+    """Replace only exact stock self-references; retain user-authored text and rules."""
+    if document.get('naming_version') == 1:
+        return document
+    result = deepcopy(document)
+    if isinstance(result.get('phrases'), dict):
+        for bank in result['phrases'].values():
+            if not isinstance(bank, dict):
+                continue
+            for key, lines in bank.items():
+                if isinstance(lines, list):
+                    bank[key] = [LEGACY_SELF_REFERENCES.get(line, line) if isinstance(line, str) else line for line in lines]
+    result['naming_version'] = 1
+    return result
 
 
 def upgrade_comfort(document):
