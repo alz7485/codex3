@@ -4,11 +4,12 @@ import json
 
 from PySide6.QtCore import Qt, QTime, Signal
 from PySide6.QtWidgets import (QCheckBox, QComboBox, QFileDialog, QFormLayout, QHBoxLayout,
-    QLineEdit, QListWidget, QMainWindow, QMessageBox, QPlainTextEdit, QScrollArea, QSpinBox, QTimeEdit,
+    QLineEdit, QListWidget, QDoubleSpinBox, QMainWindow, QMessageBox, QPlainTextEdit, QScrollArea, QSpinBox, QTimeEdit,
     QSplitter, QTabWidget, QVBoxLayout, QWidget)
 
 from .dialogue import DialogueError, KINDS, VOICE_NAMES, defaults, read_document, validate
 from .motion import EXPRESSION_FRAMES
+from .metrics import METRICS
 from .ui import box, button, label
 
 EXPRESSION_LABELS = dict(zip(EXPRESSION_FRAMES, ('通常', 'まばたき', '笑顔', 'お知らせ', '考え中', '眠そう',
@@ -101,7 +102,7 @@ class DialogueEditor(QMainWindow):
         self.line_edit.setMaximumHeight(150)
         self.line_edit.textChanged.connect(self.update_line)
         layout.addWidget(self.line_edit)
-        layout.addWidget(label('1話題につき1〜200件、1件1〜1000文字。空のセリフは保存できません。', 'muted', True))
+        layout.addWidget(label('1話題1〜200件、1件1〜1000文字。本文に {idle_minutes}・{file_name}・{file_open_count}・{hours_to_end}・{weekly_events} 等の差し込みが使えます。', 'muted', True))
         split.addWidget(content)
         split.setSizes([240, 650])
         outer.addWidget(split)
@@ -149,11 +150,20 @@ class DialogueEditor(QMainWindow):
             row.addWidget(day)
         self.minimum = spin(0, 43200, ' 分')
         self.maximum = spin(0, 43200, ' 分')
-        self.no_maximum = QCheckBox('上限なし（起動からの経過のみ）')
+        self.no_maximum = QCheckBox('上限なし')
         self.first_only = QCheckBox('起動後、最初の会話だけで使う')
+        self.metric_selector = QComboBox()
+        for key, title in METRICS.items(): self.metric_selector.addItem(title, key)
+        self.metric_minimum, self.metric_maximum = QDoubleSpinBox(), QDoubleSpinBox()
+        for field in (self.metric_minimum, self.metric_maximum):
+            field.setRange(-43200, 100000)
+            field.setDecimals(3)
+        self.details = QPlainTextEdit()
+        self.details.setMaximumHeight(170)
+        self.details.setAccessibleName('AND ORの詳細条件JSON配列')
         for title, widget in [('話題名', self.rule_label), ('有効・無効', self.rule_enabled), ('発生方法', self.rule_trigger),
                               ('表情', self.expression), ('出現しやすさ', self.weight), ('同じ話題の間隔', self.cooldown),
-                              ('発生条件', self.kind), ('開始時刻', self.start_time), ('終了時刻', self.end_time),
+                              ('発生条件', self.kind), ('集計値', self.metric_selector), ('集計値の下限', self.metric_minimum), ('集計値の上限', self.metric_maximum), ('詳細条件JSON配列', self.details), ('開始時刻', self.start_time), ('終了時刻', self.end_time),
                               ('曜日', day_row), ('経過／開始までの下限', self.minimum), ('上限', self.maximum),
                               ('', self.no_maximum), ('', self.first_only)]:
             widget.setAccessibleName(title or widget.text())
@@ -170,6 +180,10 @@ class DialogueEditor(QMainWindow):
             widget.valueChanged.connect(self.update_rule)
         for widget in (self.expression, self.kind):
             widget.currentIndexChanged.connect(self.update_rule)
+        self.metric_selector.currentIndexChanged.connect(self.update_rule)
+        self.metric_minimum.valueChanged.connect(self.update_rule)
+        self.metric_maximum.valueChanged.connect(self.update_rule)
+        self.details.textChanged.connect(self.update_rule)
         self.start_time.timeChanged.connect(self.update_rule)
         self.end_time.timeChanged.connect(self.update_rule)
 
@@ -186,15 +200,18 @@ class DialogueEditor(QMainWindow):
             'suppress_during_meetings': QCheckBox('予定の開催中は自動雑談をしない'),
             'avoid_consecutive_topic': QCheckBox('同じ話題を続けて選ばない'),
             'selection_policy': QComboBox(),
+            'work_start': time_edit(), 'work_end': time_edit(),
+            'active_threshold_seconds': spin(5, 600, ' 秒'),
         }
         self.options['selection_policy'].addItem('未使用・久しぶりの話題を優先', 'least_recent')
         self.options['selection_policy'].addItem('出現しやすさで抽選', 'weighted')
-        titles = ('自動会話の間隔', '吹き出しの表示時間', '予定のお知らせ', '同じセリフを避ける数', '会議中', '連続する話題', '話題の選び方')
+        titles = ('自動会話の間隔', '吹き出しの表示時間', '予定のお知らせ', '同じセリフを避ける数', '会議中', '連続する話題', '話題の選び方', '始業時刻', '定時（終業時刻）', '操作ありと判定する最終操作からの秒数')
         for (key, widget), title in zip(self.options.items(), titles):
             widget.setAccessibleName(title)
             form.addRow(title, widget)
             if isinstance(widget, QSpinBox): widget.valueChanged.connect(self.update_options)
             elif isinstance(widget, QCheckBox): widget.toggled.connect(self.update_options)
+            elif isinstance(widget, QTimeEdit): widget.timeChanged.connect(self.update_options)
             else: widget.currentIndexChanged.connect(self.update_options)
         form.addRow(label('静かな時間・おやすみ・非表示中の停止は通常の設定に従います。', 'muted', True))
         self.profile_key = QComboBox()
@@ -226,6 +243,7 @@ class DialogueEditor(QMainWindow):
             value = self.draft['options'][key]
             if isinstance(widget, QSpinBox): widget.setValue(value)
             elif isinstance(widget, QCheckBox): widget.setChecked(value)
+            elif isinstance(widget, QTimeEdit): widget.setTime(QTime.fromString(value, 'HH:mm'))
             else: widget.setCurrentIndex(widget.findData(value))
         self.loading = False
         self.phrase_topics.setCurrentRow(0)
@@ -298,7 +316,7 @@ class DialogueEditor(QMainWindow):
         r = self.draft['rules'][row]
         self.rule_label.setText(r['label'])
         self.rule_enabled.setChecked(r['enabled'])
-        self.rule_trigger.setText({'auto': '自動会話', 'click': 'キャラをクリック', 'reminder': '予定開始前のお知らせ', 'action': '操作に対する返答'}[r['trigger']])
+        self.rule_trigger.setText({'auto': '自動会話', 'click': 'キャラをクリック', 'reminder': '予定開始前のお知らせ', 'action': '操作に対する返答', 'notification': '受信を検知したら通知'}[r['trigger']])
         self.expression.setCurrentIndex(self.expression.findData(r['expression']))
         self.weight.setValue(r['weight'])
         self.cooldown.setValue(r['cooldown_minutes'])
@@ -311,6 +329,12 @@ class DialogueEditor(QMainWindow):
         self.maximum.setValue(c.get('maximum_minutes') or 0)
         self.no_maximum.setChecked(c.get('maximum_minutes') is None)
         self.first_only.setChecked(c.get('first_only', False))
+        self.metric_selector.setCurrentIndex(max(0, self.metric_selector.findData(c.get('metric', 'idle_minutes'))))
+        self.metric_minimum.setValue(c.get('minimum', 0))
+        self.metric_maximum.setValue(c.get('maximum') or 0)
+        if c['kind'] == 'metric_range': self.no_maximum.setChecked(c.get('maximum') is None)
+        children = c.get('conditions', [{'kind': 'metric_range', 'metric': 'idle_minutes', 'minimum': 5, 'maximum': None}])
+        self.details.setPlainText(children if isinstance(children, str) else json.dumps(children, ensure_ascii=False, indent=2))
         self.remove_rule_button.setEnabled(r['trigger'] == 'auto' and r['id'] != 'chat')
         self.loading = False
         self.enable_condition_fields()
@@ -328,12 +352,15 @@ class DialogueEditor(QMainWindow):
         ranged = automatic and kind in ('session_range', 'before_meeting', 'after_meeting')
         self.minimum.setEnabled(ranged)
         self.maximum.setEnabled(ranged and (kind != 'session_range' or not self.no_maximum.isChecked()))
-        self.no_maximum.setEnabled(automatic and kind == 'session_range')
+        self.no_maximum.setEnabled(automatic and kind in ('session_range', 'metric_range'))
+        self.metric_maximum.setEnabled(not self.no_maximum.isChecked())
         self.first_only.setEnabled(automatic and kind == 'session_range')
         for widget, visible in [(self.weight, automatic), (self.cooldown, automatic), (self.kind, automatic),
                 (self.start_time, automatic and kind == 'time_range'), (self.end_time, automatic and kind == 'time_range'),
                 (self.day_row, automatic and kind == 'weekday'), (self.minimum, ranged), (self.maximum, ranged),
-                (self.no_maximum, automatic and kind == 'session_range'), (self.first_only, automatic and kind == 'session_range')]:
+                (self.no_maximum, automatic and kind in ('session_range', 'metric_range')),
+                (self.metric_selector, automatic and kind == 'metric_range'), (self.metric_minimum, automatic and kind == 'metric_range'),
+                (self.metric_maximum, automatic and kind == 'metric_range'), (self.details, automatic and kind in ('all', 'any')), (self.first_only, automatic and kind == 'session_range')]:
             self.rule_form.setRowVisible(widget, visible)
 
     def update_rule(self, *_):
@@ -342,7 +369,16 @@ class DialogueEditor(QMainWindow):
             return
         r = self.draft['rules'][row]
         c = {'kind': self.kind.currentData()}
-        if c['kind'] == 'time_range':
+        if c['kind'] == 'metric_range':
+            c.update(metric=self.metric_selector.currentData(), minimum=self.metric_minimum.value(),
+                     maximum=None if self.no_maximum.isChecked() else self.metric_maximum.value())
+        elif c['kind'] in ('all', 'any'):
+            text = self.details.toPlainText()
+            try:
+                c['conditions'] = json.loads(text)
+            except (json.JSONDecodeError, RecursionError):
+                c['conditions'] = text  # Preserve the draft; validation blocks saving it.
+        elif c['kind'] == 'time_range':
             c.update(start=self.start_time.time().toString('HH:mm'), end=self.end_time.time().toString('HH:mm'))
         elif c['kind'] == 'weekday':
             c['days'] = [i for i, day in enumerate(self.days) if day.isChecked()]
@@ -357,10 +393,10 @@ class DialogueEditor(QMainWindow):
         self.mark_dirty()
 
     def add_rule(self):
-        if len(self.draft['rules']) >= 100:
+        if len(self.draft['rules']) >= 200:
             return
         keys = {r['id'] for r in self.draft['rules']}
-        key = next(f'custom_{i}' for i in range(1, 101) if f'custom_{i}' not in keys)
+        key = next(f'custom_{i}' for i in range(1, 201) if f'custom_{i}' not in keys)
         self.draft['rules'].append(dict(id=key, label='新しい話題', enabled=True, trigger='auto',
             condition={'kind': 'always'}, expression='happy', weight=1, cooldown_minutes=60))
         for bank in self.draft['phrases'].values(): bank[key] = ['ひと息つきませんか。']
@@ -397,7 +433,7 @@ class DialogueEditor(QMainWindow):
         if self.loading:
             return
         for key, widget in self.options.items():
-            self.draft['options'][key] = widget.value() if isinstance(widget, QSpinBox) else widget.isChecked() if isinstance(widget, QCheckBox) else widget.currentData()
+            self.draft['options'][key] = widget.value() if isinstance(widget, QSpinBox) else widget.isChecked() if isinstance(widget, QCheckBox) else widget.time().toString('HH:mm') if isinstance(widget, QTimeEdit) else widget.currentData()
         self.mark_dirty()
 
     def save(self):

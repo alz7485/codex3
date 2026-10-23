@@ -10,6 +10,7 @@ import tempfile
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QFont, QPainter, QPixmap
+from companion.core import Notice
 from companion.ui import HistoryWindow, InteractionBubble, Mascot, create_application
 
 
@@ -28,7 +29,7 @@ def main(export_gif=False):
     bubbles = [InteractionBubble() for _ in range(3)]
     bubbles[0].open_choices('お呼びですか？', '余白ノート')
     bubbles[1].open_choices(name='余白ノート')
-    bubbles[1].content('message', '余白ノート', '肩の力を抜きましょう。\nひと息つくのも、仕事のうちです。')
+    bubbles[1].display(Notice('余白ノート', '操作が続いていますね。\nそろそろ、目に白紙の時間をどうぞ。'))
     bubbles[2].open_choices(name='余白ノート')
     bubbles[2].content('calendar', '余白ノート', 'このあとの予定はこちらです。\n\n14:00–14:30  予定あり\n15:00–15:30  予定あり\n\n件名は隠しておきますね。')
     mascot = Mascot(90, character='A')
@@ -50,10 +51,10 @@ def main(export_gif=False):
         painter.setPen(QColor(color))
         painter.drawText(x, y, value)
 
-    text(65, 48, 'Y O H A K U  /  v0.8.0', 12, True)
-    text(65, 99, 'お呼びですか？ 4つの用事を、吹き出しから。', 30, True)
-    text(65, 135, '予定と一言は吹き出し内。履歴と設定は、それぞれ専用画面へ。', 17)
-    for i, caption in enumerate(('01  キャラをクリック', '02  一言を聞く', '03  予定を聞く')):
+    text(65, 48, 'Y O H A K U  /  v0.9.0', 12, True)
+    text(65, 99, '左で一言。右で呼び出し。', 30, True)
+    text(65, 135, '予定は淡い黄、新着通知は淡い青。履歴と設定は専用画面へ。', 17)
+    for i, caption in enumerate(('01  右クリックで呼び出し', '02  左クリックで一言', '03  予定を聞く')):
         x = 65 + i * 440
         text(x, 186, caption, 17, True)
         painter.drawPixmap(x, 210, bubbles[i].grab())
@@ -73,11 +74,11 @@ def main(export_gif=False):
     click_preview = QPixmap(560, 650)
     click_preview.fill(QColor('#e7ede6'))
     painter = QPainter(click_preview)
-    text(40, 51, 'キャラをクリックすると', 23, True)
+    text(40, 51, 'キャラを右クリックすると', 23, True)
     painter.drawPixmap(100, 95, bubbles[0].grab())
     painter.drawPixmap(328, 101 + bubbles[0].height(), mascot.grab())
     text(40, 591, '問いかけの下に、4つの選択肢を1行ずつ。', 14)
-    text(40, 624, 'v0.8.0 / 実装画面のプレビュー', 12, color='#65786a')
+    text(40, 624, 'v0.9.0 / 実装画面のプレビュー', 12, color='#65786a')
     painter.end()
     click_preview.save(str(destination / 'click-menu.png'))
 
@@ -86,11 +87,11 @@ def main(export_gif=False):
             bubble = bubbles[0]
             for index in range(90):
                 if index < 25:
-                    bubble.content('message', '余白ノート', 'お呼びですか？')
-                    caption = 'クリックすると、問いかけ＋4択。'
+                    bubble.open_choices('お呼びですか？', '余白ノート')
+                    caption = '右クリックで呼び出し＋4択。'
                 elif index < 50:
-                    bubble.content('message', '余白ノート', '肩の力を抜きましょう。\nひと息つくのも、仕事のうちです。')
-                    caption = '一言は、そのまま吹き出しで。'
+                    bubble.display(Notice('余白ノート', '肩の力を抜きましょう。\nひと息つくのも、仕事のうちです。'))
+                    caption = '左クリックで、一言。'
                 elif index < 70:
                     bubble.content('calendar', '余白ノート', 'このあとの予定はこちらです。\n\n14:00–14:30  予定あり\n15:00–15:30  予定あり')
                     caption = '予定も、同じ吹き出しで。'
@@ -103,7 +104,7 @@ def main(export_gif=False):
                 canvas.fill(QColor('#e7ede6'))
                 painter = QPainter(canvas)
                 painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-                text(40, 46, 'Y O H A K U  /  v0.8.0', 12, True)
+                text(40, 46, 'Y O H A K U  /  v0.9.0', 12, True)
                 text(40, 95, caption, 25, True)
                 painter.drawPixmap(580, 163, bubble.grab())
                 painter.drawPixmap(805, 169 + bubble.height(), mascot.grab())

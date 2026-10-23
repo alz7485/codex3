@@ -25,6 +25,8 @@ from .motion import Motion
 from .dialogue import AUTO_PERSONALITY, BUBBLE_MS, PROFILES, DialogueError, DialogueStore, voice_for
 from .outlook import read_calendar
 from .metadata import APP_DISPLAY_NAME, VERSION
+from .context import UsageLedger, input_idle_seconds, desktop_file_count, office_file_count, work_metrics
+from .mail import OutlookMailWatcher
 
 STYLE = """
 QWidget { color: #263b43; font-size: 13px; }
@@ -52,7 +54,7 @@ QPushButton#nav { border: none; background: transparent; color: #738079; text-al
 QPushButton#nav:checked { color: #2f503e; background: #dfe8dd; font-weight: 600; }
 QPushButton#nav:hover { background: #e4ebe1; }
 QPushButton#link { background: transparent; border: none; color: #52745e; padding: 6px; font-size: 12px; }
-QComboBox, QTimeEdit, QDateEdit, QSpinBox, QLineEdit { border: 1px solid #d6ded8; background: white; border-radius: 6px; padding: 8px; min-height: 18px; }
+QComboBox, QTimeEdit, QDateEdit, QSpinBox, QDoubleSpinBox, QLineEdit { border: 1px solid #d6ded8; background: white; border-radius: 6px; padding: 8px; min-height: 18px; }
 QComboBox::drop-down { border: none; width: 23px; }
 QCheckBox { spacing: 10px; }
 QCheckBox::indicator { width: 18px; height: 18px; border: 1px solid #b9c7bc; border-radius: 5px; background: white; }
@@ -208,6 +210,7 @@ class Panel(QMainWindow):
     hide_requested = Signal()
     clear_history_requested = Signal()
     dialogue_requested = Signal()
+    clear_usage_requested = Signal()
 
     def __init__(self, settings, dialogue=None):
         super().__init__()
@@ -425,6 +428,29 @@ class Panel(QMainWindow):
         form.addWidget(label("初期設定は約10分ごと。時間帯・曜日・予定の前後で話題を変え、吹き出しは約1分表示します。会議中・非表示中は自動会話を休みます。", "muted", True))
         form.addWidget(button("会話文・発生ルールを編集", self.dialogue_requested.emit))
         layout.addWidget(card)
+        monitor = QFrame(objectName='card')
+        monitor_box = box(monitor, 18, 10)
+        monitor_box.addWidget(label('PCの状態と受信通知', 'section'))
+        self.context_check = QCheckBox('操作の有無・時間とファイル件数を会話に使う')
+        self.context_check.setChecked(self.settings.context_enabled)
+        self.context_check.toggled.connect(lambda value: self.update_setting('context_enabled', value))
+        monitor_box.addWidget(self.context_check)
+        monitor_box.addWidget(label('入力内容は記録せず、最後の操作からの秒数で推定します。アプリ起動中だけの集計です。Office文書数とデスクトップの件数も使います。', 'muted', True))
+        self.context_status = label('集計を準備しています。', 'muted', True)
+        monitor_box.addWidget(self.context_status)
+        monitor_box.addWidget(button('操作時間・アプリ使用日の集計を削除', self.clear_usage_requested.emit))
+        self.mail_check = QCheckBox('Outlook接続中、新着メール・会議依頼をすぐ知らせる')
+        self.mail_check.setChecked(self.settings.mail_enabled)
+        self.mail_check.toggled.connect(lambda value: self.update_setting('mail_enabled', value))
+        monitor_box.addWidget(self.mail_check)
+        self.mail_subject_check = QCheckBox('新着通知にメールの件名を表示する')
+        self.mail_subject_check.setChecked(self.settings.mail_show_subjects)
+        self.mail_subject_check.toggled.connect(lambda value: self.update_setting('mail_show_subjects', value))
+        monitor_box.addWidget(self.mail_subject_check)
+        monitor_box.addWidget(label('本文・送信者は読みません。件名は初期非表示。予定は淡い黄、新着は淡い青の吹き出しです。非表示・共有・おやすみ・静かな時間中は出しません。', 'muted', True))
+        self.mail_status = label('受信通知はOutlook接続後に開始します。', 'muted', True)
+        monitor_box.addWidget(self.mail_status)
+        layout.addWidget(monitor)
         activity = QFrame(objectName="card")
         activity_box = box(activity, 18, 10)
         activity_box.addWidget(label("開いたファイルの履歴", "section"))
@@ -494,7 +520,7 @@ class Resident(Mascot):
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setToolTip("余白 · クリックで用事を選ぶ／右クリックで非表示")
+        self.setToolTip("余白 · 左クリックで一言／右クリックで呼び出し")
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.RightButton:
@@ -504,7 +530,7 @@ class Resident(Mascot):
 
 
 class Bubble(QFrame):
-    hide_requested = Signal()
+    call_requested = Signal()
 
     def __init__(self):
         super().__init__()
@@ -514,9 +540,10 @@ class Bubble(QFrame):
         self.setObjectName("card")
         self.setFixedWidth(322)
         self.duration_ms = BUBBLE_MS
+        self.kind = "message"
         self.tail_x = 270
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self.customContextMenuRequested.connect(lambda _: self.hide_requested.emit())
+        self.customContextMenuRequested.connect(lambda _: self.call_requested.emit())
         layout = box(self, 18, 10)
         layout.setContentsMargins(18, 14, 18, 30)
         row = QHBoxLayout()
@@ -537,8 +564,10 @@ class Bubble(QFrame):
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        painter.setBrush(QColor("#ffffff"))
-        painter.setPen(QPen(QColor("#dce5dc"), 1))
+        fill, stroke = {'message': ('#ffffff', '#dce5dc'), 'menu': ('#f2f6ef', '#b6c9b2'),
+                        'calendar': ('#fff3d4', '#cfb16c'), 'notification': ('#e7f1ff', '#8caed1')}[self.kind]
+        painter.setBrush(QColor(fill))
+        painter.setPen(QPen(QColor(stroke), 1))
         shape = QPainterPath()
         shape.addRoundedRect(QRectF(self.rect()).adjusted(0.5, 0.5, -0.5, -12.5), 13, 13)
         tail = QPainterPath()
@@ -548,7 +577,12 @@ class Bubble(QFrame):
         tail.closeSubpath()
         painter.drawPath(shape.united(tail))
 
+    def set_kind(self, kind):
+        self.kind = kind if kind in ('message', 'menu', 'calendar', 'notification') else 'message'
+        self.update()
+
     def display(self, notice):
+        self.set_kind('calendar' if notice.important and notice.kind == 'message' else notice.kind)
         self.heading.setText(notice.heading)
         self.text.setText(notice.text)
         self.adjustSize()
@@ -561,7 +595,7 @@ class Bridge(QObject):
 
 
 class InteractionBubble(Bubble):
-    """The usual speech bubble, with four actions on separate rows."""
+    """The usual speech bubble, with four actions on separate rows; remarks are a separate left-click action."""
     selected = Signal(str)
 
     def __init__(self):
@@ -585,7 +619,7 @@ class InteractionBubble(Bubble):
         choices.setContentsMargins(0, 0, 0, 0)
         choices.setSpacing(6)
         self.buttons = {}
-        for key, title in (("calendar", "予定を聞く"), ("activity", "ファイル起動履歴を見る"), ("settings", "設定を開く"), ("message", "一言を聞く")):
+        for key, title in (("calendar", "予定を聞く"), ("activity", "ファイル起動履歴を見る"), ("settings", "設定を開く"), ("hide", "非表示にする")):
             choice = button(title, lambda checked=False, k=key: self.selected.emit(k), "speechChoice")
             self.buttons[key] = choice
             choices.addWidget(choice)
@@ -597,7 +631,7 @@ class InteractionBubble(Bubble):
 
     def eventFilter(self, watched, event):
         if event.type() == QEvent.Type.MouseButtonPress and event.button() == Qt.MouseButton.RightButton:
-            self.hide_requested.emit()
+            self.call_requested.emit()
             return True
         return super().eventFilter(watched, event)
 
@@ -607,6 +641,7 @@ class InteractionBubble(Bubble):
         self.adjustSize()
 
     def open_choices(self, text="お呼びですか？", name="余白"):
+        self.set_kind("menu")
         self.timer.start(self.duration_ms)
         self.current = None
         self.interactive = True
@@ -620,6 +655,7 @@ class InteractionBubble(Bubble):
         self.buttons["calendar"].setFocus()
 
     def content(self, key, heading, text):
+        self.set_kind("calendar" if key == "calendar" else "message")
         self.timer.start(self.duration_ms)
         self.current = key
         self.interactive = True
@@ -629,6 +665,7 @@ class InteractionBubble(Bubble):
         self.resize_text()
 
     def display(self, notice):
+        self.set_kind("calendar" if notice.important and notice.kind == "message" else notice.kind)
         self.current = None
         self.interactive = False
         self.choice_row.hide()
@@ -765,6 +802,25 @@ class Controller(QObject):
         self.activity_bridge.result.connect(self.activity_received)
         self.events = []
         self.connected = False
+        self.weekly_events = None
+        self.daily_events = None
+        self.usage = None
+        self.context_values = {}
+        self.context_at = None
+        self.context_busy = False
+        self.context_generation = 0
+        self.last_usage_time = time.monotonic()
+        self.next_usage_save = time.monotonic() + 60
+        self.next_context_scan = 0
+        self.context_bridge = Bridge()
+        self.context_bridge.result.connect(self.context_received)
+        self.mail_bridge = Bridge()
+        self.mail_bridge.result.connect(self.mail_result)
+        self.mail_generation = 0
+        self.mail_watcher = None
+        self.mail_configuration = None
+        self.mail_count = 0
+        self.mail_last = 0
         self.hidden = False
         self.user_hidden = False
         self.busy = False
@@ -774,12 +830,13 @@ class Controller(QObject):
         self.bridge.result.connect(self.received)
         self.panel.changed.connect(self.save_settings)
         self.panel.dialogue_requested.connect(self.show_dialogue_editor)
+        self.panel.clear_usage_requested.connect(self.clear_usage)
         self.panel.connect_requested.connect(self.refresh)
         self.panel.sample_requested.connect(self.sample)
         self.panel.pause_requested.connect(self.pause)
         self.panel.hide_requested.connect(self.share)
         self.panel.clear_history_requested.connect(self.clear_activity)
-        self.resident.clicked.connect(self.open_choices)
+        self.resident.clicked.connect(self.show_message)
         self.interaction.selected.connect(self.select_content)
         self.history_window.refresh_requested.connect(self.refresh_history)
         self.history_window.settings_requested.connect(self.show_panel)
@@ -793,8 +850,8 @@ class Controller(QObject):
         self.menu.addAction("Outlookから切断", self.disconnect)
         self.menu.addSeparator()
         self.menu.addAction("余白を終了", self.request_quit)
-        self.resident.context_requested.connect(lambda _: self.hide_character())
-        self.bubble.hide_requested.connect(self.hide_character)
+        self.resident.context_requested.connect(lambda _: self.open_choices())
+        self.bubble.call_requested.connect(self.open_choices)
         self.tray = QSystemTrayIcon(self)
         self.apply_character()
         self.tray.setToolTip("余白 — 左クリックで表示切り替え / 右クリックでメニュー")
@@ -822,7 +879,13 @@ class Controller(QObject):
         self.activity_timer = QTimer(self)
         self.activity_timer.setInterval(5000)
         self.activity_timer.timeout.connect(self.poll_activity)
+        self.context_timer = QTimer(self)
+        self.context_timer.setInterval(5000)
+        self.context_timer.timeout.connect(self.sample_context)
         self.configure_activity()
+        self.configure_context()
+        self.configure_mail()
+        self.app.aboutToQuit.connect(self.shutdown)
         if self.dialogue.error:
             self.panel.saved_label.setText(self.dialogue.error)
         self.update_animation_policy()
@@ -963,6 +1026,174 @@ class Controller(QObject):
         self.resident.update()
         self.position()
 
+    def configure_context(self):
+        self.context_generation += 1
+        self.context_values = {}
+        self.context_at = None
+        self.last_usage_time = time.monotonic()
+        self.usage = UsageLedger(self.path / 'usage.json', datetime.now().astimezone())
+        if self.settings.context_enabled:
+            try:
+                self.usage.persist()
+            except OSError:
+                self.panel.context_status.setText('操作時間の保存ができません。今回の起動中だけ集計します。')
+            self.context_timer.start()
+            self.next_context_scan = 0
+            self.sample_context()
+        else:
+            self.context_timer.stop()
+            try:
+                self.usage.persist()
+            except OSError:
+                pass
+            self.panel.context_status.setText('PC状態の集計はオフです。保存済み集計は削除ボタンで消せます。')
+        self.refresh_context_metrics(datetime.now().astimezone())
+
+    def sample_context(self):
+        if not self.settings.context_enabled or self.usage is None:
+            return
+        now = datetime.now().astimezone()
+        clock = time.monotonic()
+        dt, self.last_usage_time = clock - self.last_usage_time, clock
+        try:
+            idle = input_idle_seconds()
+        except Exception:
+            idle = None
+        self.usage.sample(now, dt, idle, self.dialogue.data['options']['active_threshold_seconds'])
+        if clock >= self.next_usage_save:
+            self.next_usage_save = clock + 60
+            try:
+                self.usage.persist()
+            except OSError:
+                self.panel.context_status.setText('集計を保存できません。現在の起動中だけ集計しています。')
+        if clock >= self.next_context_scan and not self.context_busy:
+            self.next_context_scan = clock + 60
+            self.context_busy = True
+            generation = self.context_generation
+            def worker():
+                values = {}
+                for key, provider in (('open_office_files', office_file_count), ('desktop_files', desktop_file_count)):
+                    try:
+                        values[key] = provider()
+                    except Exception:
+                        values[key] = None
+                self.context_bridge.result.emit(generation, values, '')
+            threading.Thread(target=worker, daemon=True).start()
+        self.refresh_context_metrics(now)
+        metrics = self.engine.context
+        active, idle = metrics.get('daily_active_minutes'), metrics.get('idle_minutes')
+        self.panel.context_status.setText('操作あり 約{}分 / 操作なし経過 約{}分 · アプリ起動中の推定値'.format(
+            round(active) if active is not None else '取得不可', round(idle) if idle is not None else '取得不可'))
+
+    def context_received(self, generation, values, error):
+        self.context_busy = False
+        if generation != self.context_generation or not self.settings.context_enabled:
+            return
+        self.context_values = values if not error else {}
+        self.context_at = datetime.now().astimezone()
+        self.refresh_context_metrics(self.context_at)
+
+    def refresh_context_metrics(self, now):
+        options = self.dialogue.data['options']
+        values = work_metrics(now, options['work_start'], options['work_end'])
+        if self.usage is not None:
+            app_usage = self.usage.metrics(now)
+            values.update({key: app_usage[key] for key in ('missed_yesterday', 'days_since_last_use')})
+        if self.settings.context_enabled and self.usage is not None:
+            values.update(self.usage.metrics(now))
+            if self.context_at and 0 <= (now - self.context_at).total_seconds() < 180:
+                values.update(self.context_values)
+        fresh = self.connected and self.connected_at and 0 <= (now - self.connected_at).total_seconds() < 300
+        if fresh:
+            values['weekly_events'] = self.weekly_events
+            values['daily_events'] = self.daily_events
+            upcoming = [event for event in self.events if event.start > now]
+            if upcoming:
+                values['next_event_minutes'] = min((event.start - now).total_seconds() / 60 for event in upcoming)
+        if self.settings.file_logging:
+            try:
+                values.update(self.activity_history.repeat_summary(now) or {})
+            except (OSError, sqlite3.Error):
+                pass
+        self.engine.context = values
+
+    def clear_usage(self):
+        try:
+            (self.path / 'usage.json').unlink(missing_ok=True)
+            self.configure_context()
+            self.panel.context_status.setText('操作時間とアプリ使用日の保存集計を削除しました。' + ('集計は再開しています。' if self.settings.context_enabled else ''))
+        except OSError:
+            self.panel.context_status.setText('集計を削除できません。保存先の権限をご確認ください。')
+
+    def configure_mail(self):
+        configuration = (self.settings.outlook_enabled, self.settings.mail_enabled, self.settings.mail_show_subjects)
+        if configuration == self.mail_configuration:
+            return
+        self.mail_configuration = configuration
+        self.mail_generation += 1
+        if self.mail_watcher:
+            self.mail_watcher.stop()
+            self.mail_watcher = None
+        if not (self.settings.outlook_enabled and self.settings.mail_enabled):
+            self.panel.mail_status.setText('受信通知は停止中です。Outlook接続と新着通知の設定を確認してください。')
+            return
+        generation = self.mail_generation
+        self.mail_watcher = OutlookMailWatcher(
+            lambda payload: self.mail_bridge.result.emit(generation, payload, ''),
+            lambda status: self.mail_bridge.result.emit(generation, None, status), self.settings.mail_show_subjects)
+        self.mail_watcher.start()
+
+    def mail_result(self, generation, payload, status):
+        if generation != self.mail_generation:
+            return
+        if payload is None:
+            self.panel.mail_status.setText(status)
+            return
+        now = datetime.now().astimezone()
+        if not (self.settings.mail_enabled and self.settings.outlook_enabled) or self.hidden or self.user_hidden or is_quiet(now, self.settings) or (self.engine.paused_until and now < self.engine.paused_until):
+            return
+        rule = self.dialogue.rule('mail_received')
+        if rule is None or not rule['enabled']:
+            return
+        count = payload.get('count', 0)
+        if type(count) is not int or count <= 0:
+            return
+        clock = time.monotonic()
+        self.mail_count = self.mail_count + count if self.bubble.isVisible() and self.bubble.kind == 'notification' and clock - self.mail_last < 5 else count
+        self.mail_last = clock
+        self.engine.context['mail_count'] = self.mail_count
+        text = self.engine.phrase('mail_received')
+        if self.settings.mail_show_subjects:
+            subjects = payload.get('subjects', [])
+            text += '\n\n' + '\n'.join(str(subject)[:120] for subject in subjects[:3])
+        self.engine.last_display = now
+        self.motion.react(rule['expression'], speaking=True)
+        self.bubble.display(Notice('新着通知 · Outlook', text, True, rule['expression'], 'notification'))
+        self.position()
+
+    def shutdown(self):
+        if self.mail_watcher:
+            self.mail_watcher.stop()
+        if self.usage is not None:
+            try:
+                self.usage.persist()
+            except OSError:
+                pass
+
+    def show_message(self):
+        if self.hidden or self.user_hidden:
+            return
+        now = datetime.now().astimezone()
+        self.refresh_context_metrics(now)
+        self.engine.last_display = now
+        fresh = self.connected and self.connected_at is not None and (now - self.connected_at).total_seconds() < 300
+        notice = self.engine.conversation(now, self.events, fresh)
+        if notice is None:
+            notice = Notice(CHARACTERS[self.settings.character], self.engine.phrase('no_conversation'), expression='think')
+        self.motion.react(notice.expression, speaking=True)
+        self.bubble.display(notice)
+        self.position()
+
     def open_choices(self):
         if self.hidden or self.user_hidden:
             return
@@ -996,10 +1227,9 @@ class Controller(QObject):
             self.history_window.raise_()
             self.history_window.activateWindow()
         elif key == "message":
-            notice = self.engine.conversation(now, self.events, self.connected and self.connected_at is not None and (now - self.connected_at).total_seconds() < 300)
-            if notice:
-                self.motion.react(notice.expression, speaking=True)
-            self.interaction.content(key, CHARACTERS[self.settings.character], notice.text if notice else self.engine.phrase("no_conversation"))
+            self.show_message()
+        elif key == "hide":
+            self.hide_character()
         elif key == "settings":
             self.motion.react(self.dialogue.rule("settings_open")["expression"])
             self.interaction.content(key, CHARACTERS[self.settings.character], self.engine.phrase("settings_open"))
@@ -1082,6 +1312,12 @@ class Controller(QObject):
             self.bubble.heading.setText(CHARACTERS[self.settings.character])
 
     def save_settings(self, key="show_titles"):
+        if key == 'context_enabled':
+            self.configure_context()
+        if key in ('mail_enabled', 'mail_show_subjects'):
+            self.configure_mail()
+            if self.bubble.kind == 'notification':
+                self.bubble.hide()
         if key == 'interval':
             from copy import deepcopy
             candidate = deepcopy(self.dialogue.data)
@@ -1110,6 +1346,8 @@ class Controller(QObject):
             self.panel.saved_label.setText("設定を保存できません。保存先の書き込み権限をご確認ください。")
         # Appearance/personality/frequency changes must not interrupt Outlook or
         # dismiss an already-visible reminder. Only privacy/source changes do.
+        if key == "outlook_enabled":
+            self.configure_mail()
         if key not in ("show_titles", "outlook_enabled"):
             return
         # Invalidate an in-flight read when title visibility changes.
@@ -1132,6 +1370,7 @@ class Controller(QObject):
             save_json(self.path / "settings.json", asdict(self.settings))
         except OSError:
             self.panel.calendar_detail.setText("接続設定を保存できません。今回の起動中のみ接続します。")
+        self.configure_mail()
         self.busy = True
         generation = self.generation
         titles = self.settings.show_titles
@@ -1141,7 +1380,12 @@ class Controller(QObject):
         def worker():
             try:
                 events = read_calendar(titles)
-                self.bridge.result.emit(generation, events, "")
+                try:
+                    week = read_calendar(False, whole_week=True)
+                    weekly = len(week) if getattr(week, 'complete', True) else None
+                except Exception:
+                    weekly = None
+                self.bridge.result.emit(generation, {'events': events, 'weekly': weekly}, "")
             except Exception as error:
                 self.bridge.result.emit(generation, [], str(error) if isinstance(error, RuntimeError) else "予定を取得できませんでした。")
 
@@ -1155,7 +1399,13 @@ class Controller(QObject):
             if self.settings.outlook_enabled:
                 self.refresh()
             return
+        if isinstance(events, dict):
+            self.weekly_events = events.get('weekly')
+            events = events.get('events', [])
+        else:
+            self.weekly_events = None
         self.events = events
+        self.daily_events = len(events) if not error and getattr(events, 'complete', True) else None
         self.connected = not error
         self.connected_at = datetime.now().astimezone() if self.connected else None
         if error:
@@ -1181,6 +1431,7 @@ class Controller(QObject):
 
     def disconnect(self):
         self.settings.outlook_enabled = False
+        self.configure_mail()
         self.save_settings("outlook_enabled")
         self.panel.calendar_detail.setText("切断しました。再接続するまで予定を取得しません。")
         self.panel.connect_button.setText("Outlookに接続")
@@ -1191,6 +1442,14 @@ class Controller(QObject):
 
     def tick(self):
         now = datetime.now().astimezone()
+        if self.usage is not None and not self.settings.context_enabled:
+            self.usage.touch(now)
+            if time.monotonic() >= self.next_usage_save:
+                self.next_usage_save = time.monotonic() + 60
+                try:
+                    self.usage.persist()
+                except OSError:
+                    pass
         if now >= self.next_retention:
             self.next_retention = now + timedelta(hours=1)
             try:
@@ -1201,6 +1460,7 @@ class Controller(QObject):
             self.engine.paused_until = None
             self.update_mode()
         self.update_animation_policy()
+        self.refresh_context_metrics(now)
         fresh = self.connected_at is not None and (now - self.connected_at).total_seconds() < 300
         try:
             notice = self.engine.next_notice(now, self.events, self.hidden or self.user_hidden, self.connected and fresh,

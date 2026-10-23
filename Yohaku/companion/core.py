@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import random
+import re
 from typing import Callable
 
 from .dialogue import AUTO_PERSONALITY, PHRASES, DialogueStore, matches, voice_for
@@ -48,6 +49,9 @@ class Settings:
     animation: bool = True
     walking: bool = True
     file_logging: bool = False
+    context_enabled: bool = True
+    mail_enabled: bool = True
+    mail_show_subjects: bool = False
     personality: str = AUTO_PERSONALITY
     interval: int = 10
     conversation_version: int = 2
@@ -94,6 +98,7 @@ class Notice:
     text: str
     important: bool = False
     expression: str = "happy"
+    kind: str = "message"
 
 
 
@@ -125,6 +130,7 @@ class Engine:
         self.category_last: dict[str, datetime] = {}
         self.last_category = None
         self.session_spoken = False
+        self.context = {}
         raw = self.state.get("notified", {})
         self.notified = raw if isinstance(raw, dict) else {}
 
@@ -142,13 +148,20 @@ class Engine:
         candidates = [i for i, key in enumerate(keys) if key not in window]
         index = self.choose(candidates or list(range(len(phrases))))
         self.recent = (self.recent + [keys[index]])[-64:]
-        return phrases[index]
+        values = {key: str(round(value)) if type(value) in (int, float) else str(value)[:120]
+                  for key, value in self.context.items() if value is not None}
+        end = self.context.get('until_work_end_minutes')
+        if type(end) in (int, float):
+            values['hours_to_end'] = f'{max(0, end) / 60:.1f}'.rstrip('0').rstrip('.')
+        values['work_start'] = self.dialogue.data['options']['work_start']
+        values['work_end'] = self.dialogue.data['options']['work_end']
+        return re.sub(r'\{([a-z_]+)\}', lambda match: values.get(match.group(1), match.group(0)), phrases[index])
 
     def conversation(self, now: datetime, events: list[Event] = (), connected=False, manual=True) -> Notice | None:
         """Evaluate validated declarative JSON rules; no expressions or code execution."""
         options = self.dialogue.data['options']
         candidates = [r for r in self.dialogue.data['rules'] if r['trigger'] == 'auto' and r['enabled']
-                      and matches(r, now, self.started, self.session_spoken, events, connected)]
+                      and matches(r, now, self.started, self.session_spoken, events, connected, self.context)]
         if not candidates:
             return None
         first = [r for r in candidates if r['condition']['kind'] == 'session_range'
@@ -196,7 +209,7 @@ class Engine:
                     text = event.title[:60] + "\n" + text
                 self.last_display = now
                 self.persist(now)
-                return Notice(f"予定まで あと{minutes}分", text, True, reminder["expression"])
+                return Notice(f"予定まで あと{minutes}分", text, True, reminder["expression"], "calendar")
         elapsed = (now - self.last_display).total_seconds()
         if options["suppress_during_meetings"] and connected and any(event.start <= now < event.end for event in events):
             return None  # Keep casual remarks out of calendar meeting time.

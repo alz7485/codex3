@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "profiles": {
     "A": {
       "voice": "控えめな皮肉屋",
@@ -175,6 +175,86 @@
       ],
       "reminder_disabled": [
         "予定のお知らせは会話編集で無効になっています。"
+      ],
+      "idle_short": [
+        "少し操作が空きましたね。考えごとの余白でしょうか。",
+        "画面の外で、ひと呼吸つけていますか。"
+      ],
+      "idle_long": [
+        "私はここで、しおりの役をしています。お戻りはごゆっくり。",
+        "しばらく静かですね。余白の出番、と受け取っておきます。"
+      ],
+      "active_long": [
+        "操作が続いていますね。肩まで仕事に参加させなくても大丈夫です。",
+        "そろそろ、目に白紙の時間をどうぞ。"
+      ],
+      "daily_busy": [
+        "今日の操作あり時間は、計測した分だけでも長めです。区切りにも丸をどうぞ。",
+        "今日も長いお供になりました。続きを明日に挟む手もありますよ。"
+      ],
+      "daily_light": [
+        "計測した範囲では、今日は操作が少なめです。画面の外も忙しいものですよね。",
+        "今日はPCの外に出番が多い日でしょうか。私は留守番をしています。"
+      ],
+      "many_open_files": [
+        "Officeの文書が{open_office_files}個開いています。頭の中の付箋も、増えていませんか。",
+        "たくさん開いていますね。ひと区切りの文書は、保存して閉じる手も。"
+      ],
+      "few_open_files": [
+        "開いているOffice文書は少なめです。ひとつに向き合う余白がありそうですね。",
+        "文書の数はすっきりしていますね。次の一手も、小さくどうぞ。"
+      ],
+      "desktop_busy": [
+        "デスクトップにファイルが{desktop_files}個。机にも、少し余白を作りませんか。",
+        "デスクトップがにぎやかですね。片付ける順番にも、しおりをどうぞ。"
+      ],
+      "desktop_tidy": [
+        "デスクトップのファイルは少なめ。よい余白ですね、親近感があります。",
+        "机の上に余白があると、ちょっと気持ちがいいですね。"
+      ],
+      "before_start": [
+        "{work_start}の始業までは、もう少しです。準備にも余白をどうぞ。",
+        "始業前ですね。急ぎすぎず、今日の目次を考えておきましょう。"
+      ],
+      "before_end": [
+        "設定した定時までは、あと約{hours_to_end}時間です。今日の区切りを考えておきますか。",
+        "定時までの余白を、予定で全部埋めなくても大丈夫です。"
+      ],
+      "ending_soon": [
+        "設定した定時まで約{until_work_end_minutes}分。明日の自分に、一行残しておきましょうか。",
+        "そろそろ今日のページの区切りです。保存としおりをどうぞ。"
+      ],
+      "after_hours": [
+        "設定した定時を過ぎましたね。今日の続きを、明日に挟む手もあります。",
+        "定時の外までお供しています。無理のない区切りをどうぞ。"
+      ],
+      "repeat_file": [
+        "「{file_name}」を今日は{file_open_count}回開いた記録があります。よく使う一冊でしょうか。",
+        "同じファイルを何度か開いていますね。見つけやすい場所に目印をどうぞ。"
+      ],
+      "missed_yesterday": [
+        "昨日はお会いしませんでしたね。余白を取るのも大事ですし。",
+        "少しお久しぶりです。今日も、小さくお供します。"
+      ],
+      "week_busy": [
+        "今週の時間指定の予定は{weekly_events}件。余白にも席を取っておいてくださいね。",
+        "今週の予定表はにぎやかですね。切り替え時間も予定のうちです。"
+      ],
+      "week_light": [
+        "今週の時間指定の予定は少なめです。余白の使い道、考えてみますか。",
+        "予定表には少し余白がありますね。仕事の量とは別のお話ですが。"
+      ],
+      "today_busy": [
+        "今日は時間指定の予定が{daily_events}件。しおりを挟む時間も忘れずに。",
+        "今日の予定は多めですね。次へ向かう前に、ひと呼吸どうぞ。"
+      ],
+      "today_light": [
+        "今日の時間指定の予定は少なめ。手元の一行に向き合えそうですね。",
+        "予定表に余白がありますね。全部埋める義務はありませんよ。"
+      ],
+      "mail_received": [
+        "Outlookに{mail_count}件、新着です。読む時間にも余白をどうぞ。",
+        "新しいメールが{mail_count}件届きました。まずはお知らせまで。"
       ]
     },
     "冷静な案内役": {
@@ -329,6 +409,86 @@
       ],
       "reminder_disabled": [
         "予定のお知らせは会話編集で無効になっています。"
+      ],
+      "idle_short": [
+        "最終操作から{idle_minutes}分ほど経過しました。再開はご自身のペースでどうぞ。",
+        "操作のない時間が続いています。読んだり考えたりする時間かもしれませんね。"
+      ],
+      "idle_long": [
+        "操作のない時間が{idle_minutes}分ほどになりました。待機を続けます。",
+        "入力なしの状態です。読書や席外しなど、理由は判定していません。"
+      ],
+      "active_long": [
+        "操作ありの推定時間が{active_streak_minutes}分ほど続いています。短い休憩をおすすめします。",
+        "連続操作が長めです。保存と姿勢の確認をどうぞ。"
+      ],
+      "daily_busy": [
+        "本日の操作あり累計は約{daily_active_minutes}分です。計測中の推定値ですが、休憩の目安にどうぞ。",
+        "本日のPC操作が多めです。無理のないところで区切りましょう。"
+      ],
+      "daily_light": [
+        "計測範囲では操作あり時間が少なめです。作業量や仕事の成果を示す値ではありません。",
+        "今日の操作あり累計は約{daily_active_minutes}分です。会話や読書などの時間は含みません。"
+      ],
+      "many_open_files": [
+        "開いているOffice文書は{open_office_files}個です。必要なものを整理すると切り替えやすくなります。",
+        "Office文書が多めです。保存を確認してから整理しましょう。"
+      ],
+      "few_open_files": [
+        "取得できたOffice文書数は{open_office_files}個です。必要な作業から始めましょう。",
+        "Office文書が少ない状態です。ほかのアプリのファイル数は含みません。"
+      ],
+      "desktop_busy": [
+        "デスクトップのファイル数は{desktop_files}個です。整理の目安としてお知らせします。",
+        "デスクトップのファイルが多めです。必要なものを確認してから整理しましょう。"
+      ],
+      "desktop_tidy": [
+        "デスクトップのファイルは{desktop_files}個です。少なめの状態ですね。",
+        "デスクトップがすっきりしています。整理の目安としての件数です。"
+      ],
+      "before_start": [
+        "設定した始業まで約{until_work_start_minutes}分です。必要な準備をご確認ください。",
+        "始業前の時間です。予定を確認しておくと安心です。"
+      ],
+      "before_end": [
+        "設定した終業まで約{until_work_end_minutes}分です。残りの優先順位をご確認ください。",
+        "終業前に、保存と引き継ぎの時間も確保しておきましょう。"
+      ],
+      "ending_soon": [
+        "設定した定時まで約{until_work_end_minutes}分です。保存と次回の再開位置を確認しましょう。",
+        "終業時刻が近づいています。未完了の項目はメモにしておくと安心です。"
+      ],
+      "after_hours": [
+        "設定した終業時刻から約{after_work_end_minutes}分です。無理のないところで終了をご検討ください。",
+        "定時を過ぎています。保存と引き継ぎの確認をどうぞ。"
+      ],
+      "repeat_file": [
+        "「{file_name}」の本日の起動記録は{file_open_count}回です。検出できた範囲の回数です。",
+        "よく開くファイルは、必要に応じてショートカットを用意する方法もあります。"
+      ],
+      "missed_yesterday": [
+        "昨日のアプリ使用記録はありません。本日も待機を開始しています。",
+        "前の使用日から間が空きました。ご自身のペースでどうぞ。"
+      ],
+      "week_busy": [
+        "今週の時間指定の予定は{weekly_events}件です。準備と休息の時間もご確認ください。",
+        "週の予定が多めです。優先順位と移動時間の整理をおすすめします。"
+      ],
+      "week_light": [
+        "今週の時間指定の予定は{weekly_events}件です。予定表上は少なめです。",
+        "週の予定が少なめです。予定表に入っていない作業は含みません。"
+      ],
+      "today_busy": [
+        "本日の時間指定の予定は{daily_events}件です。切り替え時間をご確認ください。",
+        "今日の予定が多めです。資料と移動時間を整理しておきましょう。"
+      ],
+      "today_light": [
+        "本日の時間指定の予定は{daily_events}件です。手元の作業の優先順位を確認してみましょう。",
+        "今日の予定表は少なめです。実際の作業量を示すものではありません。"
+      ],
+      "mail_received": [
+        "Outlookで{mail_count}件の新着を検知しました。",
+        "新着のお知らせです。Outlookをご確認ください。"
       ]
     },
     "元気な応援係": {
@@ -483,6 +643,86 @@
       ],
       "reminder_disabled": [
         "予定のお知らせは会話編集で無効になっています。"
+      ],
+      "idle_short": [
+        "少し操作がお休みのようですね。ひと息つけていますか。",
+        "再開するときも、一歩ずつで大丈夫です！"
+      ],
+      "idle_long": [
+        "長めのお休みですね。私はここで待っています！",
+        "お戻りのときは、無理のないペースでいきましょう。"
+      ],
+      "active_long": [
+        "操作が続いていますね。少し背伸びしてみませんか！",
+        "ここでひと息。休憩も大切な一歩です。"
+      ],
+      "daily_busy": [
+        "今日は操作の時間が多めですね。休む時間も取ってくださいね！",
+        "ここまで長い時間、お疲れさまです。ひと呼吸いれましょう。"
+      ],
+      "daily_light": [
+        "今日は計測した操作時間が少なめですね。画面の外のお仕事も、お疲れさまです！",
+        "PCを使う時間は日によりますね。必要なときにお手伝いします。"
+      ],
+      "many_open_files": [
+        "Officeの文書がたくさんですね。必要なものから、一つずつ確認しましょう！",
+        "文書の整理も小さな一歩です。保存はお忘れなく。"
+      ],
+      "few_open_files": [
+        "Officeの文書は少なめですね。今の一つを丁寧に進めましょう！",
+        "必要なものを選んで、一歩ずついきましょう。"
+      ],
+      "desktop_busy": [
+        "デスクトップにファイルが多めですね。一つずつ整理するのもいいですね！",
+        "片付けも小さな達成です。必要なファイルは大切に。"
+      ],
+      "desktop_tidy": [
+        "デスクトップがすっきりですね！ 気持ちよく一歩ずついきましょう。",
+        "ファイルが少なめで、見つけやすそうですね。"
+      ],
+      "before_start": [
+        "始業まであと少し。今日も無理のないペースでいきましょう！",
+        "準備の時間ですね。まずはひと呼吸から。"
+      ],
+      "before_end": [
+        "定時まであと約{hours_to_end}時間ですね。ひと区切りずつ進めましょう！",
+        "最後に急がなくて済むように、今から少しずつ整理しましょう。"
+      ],
+      "ending_soon": [
+        "定時まであと少しです。今日できたことも数えてくださいね！",
+        "最後は保存を確認して、落ち着いて区切りましょう。"
+      ],
+      "after_hours": [
+        "設定した定時を過ぎていますね。頑張りすぎず、休む時間も取ってくださいね。",
+        "区切れるところでひと息。今日もお疲れさまです！"
+      ],
+      "repeat_file": [
+        "「{file_name}」を今日は何度か開いていますね。大事なファイルでしょうか！",
+        "よく使うファイルには、見つけやすい目印を付けてもいいですね。"
+      ],
+      "missed_yesterday": [
+        "昨日はお会いしませんでしたね。今日もよろしくお願いします！",
+        "またお供できてうれしいです。無理のない一歩からどうぞ。"
+      ],
+      "week_busy": [
+        "今週は予定が多めですね。ひとつずつ、休憩も取りながらいきましょう！",
+        "予定の間にも、ひと呼吸の時間を取ってくださいね。"
+      ],
+      "week_light": [
+        "今週の予定表は少なめですね。自分のペースで進める時間も大切に！",
+        "予定のない時間にも、やりたいことを一つずつどうぞ。"
+      ],
+      "today_busy": [
+        "今日は予定が多めです。一つずつ、落ち着いていきましょう！",
+        "予定の間に水分補給も。無理のないペースでどうぞ。"
+      ],
+      "today_light": [
+        "今日は予定表が少なめですね。大事な一つから進めましょう！",
+        "予定が少ない日も、休憩を忘れずにいきましょう。"
+      ],
+      "mail_received": [
+        "Outlookに新着が{mail_count}件です！ 必要なときに確認しましょう。",
+        "新しいメールが届きました。ひと呼吸してから確認をどうぞ。"
       ]
     },
     "のんびりした同僚": {
@@ -637,6 +877,86 @@
       ],
       "reminder_disabled": [
         "予定のお知らせは会話編集で無効になっています。"
+      ],
+      "idle_short": [
+        "しばらく静かですね。のんびり待ってるよ。",
+        "画面の外にも、大事な時間があるよね。"
+      ],
+      "idle_long": [
+        "お茶を眺めて待ってます。急がなくていいからね。",
+        "静かな時間も、あっていいよね。"
+      ],
+      "active_long": [
+        "しばらく操作が続いてるね。お茶をひと口、どう？",
+        "肩の力を抜こうか。続きは、そのあとでも。"
+      ],
+      "daily_busy": [
+        "今日はPCのお供が長めだね。そろそろゆっくりする時間も、どうかな。",
+        "今日の分にも、お疲れさまのお茶を一杯。"
+      ],
+      "daily_light": [
+        "今日は画面の外の時間が多いのかな。そういう日もあるよね。",
+        "PCが静かでも、いろんな一日があるよね。"
+      ],
+      "many_open_files": [
+        "Officeの文書がいっぱいだね。ひとつずつ、お茶を飲みながら整理しようか。",
+        "開いた文書も、少し休ませてあげる？ 保存してからね。"
+      ],
+      "few_open_files": [
+        "文書が少なめで、ちょっとすっきりだね。",
+        "今の一つと、のんびり付き合おうか。"
+      ],
+      "desktop_busy": [
+        "デスクトップ、ちょっとにぎやかだね。お茶の置き場も作ろうか。",
+        "ファイルがたくさん。急がず、ひとつずつ片付ける？"
+      ],
+      "desktop_tidy": [
+        "デスクトップ、すっきりだね。お茶を置く余白がありそう。",
+        "すっきりした景色も、いいよね。"
+      ],
+      "before_start": [
+        "始業前ですね。お茶をひと口、どうぞ。",
+        "始まる前の、ちょっとした余白だね。"
+      ],
+      "before_end": [
+        "定時まであと約{hours_to_end}時間かあ。ぼちぼち区切りを考えようか。",
+        "終わりの前にも、お茶の余白を残してね。"
+      ],
+      "ending_soon": [
+        "定時が近いね。続きはメモに置いておこうか。",
+        "もう少しで区切りの時間。今日もここまで、お疲れさま。"
+      ],
+      "after_hours": [
+        "定時、過ぎたね。そろそろゆっくりする時間も、どうかな。",
+        "続きは明日の自分に渡してもいいんじゃないかな。"
+      ],
+      "repeat_file": [
+        "「{file_name}」、今日は何度か会ってるね。よく使う相棒かな。",
+        "おなじみのファイルだね。取り出しやすい場所に置いておく？"
+      ],
+      "missed_yesterday": [
+        "昨日は会わなかったね。今日はお茶でも一緒に、どうかな。",
+        "ちょっとお久しぶり。のんびりお供します。"
+      ],
+      "week_busy": [
+        "今週の予定、多めだね。お茶の時間も取っておいてね。",
+        "予定がにぎやかですね。気持ちだけでも、ゆったりと。"
+      ],
+      "week_light": [
+        "今週は予定表に余白があるね。のんびり使えたらいいね。",
+        "予定が少なめの日も、お茶の時間はあっていいよね。"
+      ],
+      "today_busy": [
+        "今日の予定、にぎやかだね。お茶をひと口ずつ、いこうか。",
+        "予定の合間も少しゆっくりできるといいね。"
+      ],
+      "today_light": [
+        "今日は予定表が静かだね。ぼちぼち進めようか。",
+        "予定の余白に、お茶の時間を一つ。どうかな。"
+      ],
+      "mail_received": [
+        "Outlookに{mail_count}件、届いたみたい。お知らせしておくね。",
+        "新しいメールです。お茶を置いて、確認してみる？"
       ]
     }
   },
@@ -992,6 +1312,390 @@
       "expression": "relaxed",
       "weight": 1,
       "cooldown_minutes": 0
+    },
+    {
+      "id": "idle_short",
+      "label": "操作がしばらくない",
+      "enabled": true,
+      "trigger": "auto",
+      "condition": {
+        "kind": "metric_range",
+        "metric": "idle_minutes",
+        "minimum": 5,
+        "maximum": 15
+      },
+      "expression": "curious",
+      "weight": 3,
+      "cooldown_minutes": 30
+    },
+    {
+      "id": "idle_long",
+      "label": "長めに操作がない",
+      "enabled": true,
+      "trigger": "auto",
+      "condition": {
+        "kind": "metric_range",
+        "metric": "idle_minutes",
+        "minimum": 15,
+        "maximum": null
+      },
+      "expression": "sleepy",
+      "weight": 3,
+      "cooldown_minutes": 60
+    },
+    {
+      "id": "active_long",
+      "label": "操作が長く続いている",
+      "enabled": true,
+      "trigger": "auto",
+      "condition": {
+        "kind": "metric_range",
+        "metric": "active_streak_minutes",
+        "minimum": 45,
+        "maximum": null
+      },
+      "expression": "stretch",
+      "weight": 3,
+      "cooldown_minutes": 60
+    },
+    {
+      "id": "daily_busy",
+      "label": "今日は操作時間が多い",
+      "enabled": true,
+      "trigger": "auto",
+      "condition": {
+        "kind": "all",
+        "conditions": [
+          {
+            "kind": "metric_range",
+            "metric": "daily_active_minutes",
+            "minimum": 360,
+            "maximum": null
+          },
+          {
+            "kind": "metric_range",
+            "metric": "observed_minutes",
+            "minimum": 360,
+            "maximum": null
+          }
+        ]
+      },
+      "expression": "concern",
+      "weight": 3,
+      "cooldown_minutes": 120
+    },
+    {
+      "id": "daily_light",
+      "label": "今日は操作時間が少なめ",
+      "enabled": true,
+      "trigger": "auto",
+      "condition": {
+        "kind": "all",
+        "conditions": [
+          {
+            "kind": "time_range",
+            "start": "14:00",
+            "end": "17:30"
+          },
+          {
+            "kind": "metric_range",
+            "metric": "observed_minutes",
+            "minimum": 120,
+            "maximum": null
+          },
+          {
+            "kind": "metric_range",
+            "metric": "daily_active_minutes",
+            "minimum": 0,
+            "maximum": 60
+          }
+        ]
+      },
+      "expression": "relaxed",
+      "weight": 3,
+      "cooldown_minutes": 120
+    },
+    {
+      "id": "many_open_files",
+      "label": "Office文書を多く開いている",
+      "enabled": true,
+      "trigger": "auto",
+      "condition": {
+        "kind": "metric_range",
+        "metric": "open_office_files",
+        "minimum": 10,
+        "maximum": null
+      },
+      "expression": "think",
+      "weight": 3,
+      "cooldown_minutes": 60
+    },
+    {
+      "id": "few_open_files",
+      "label": "Office文書が少ない",
+      "enabled": true,
+      "trigger": "auto",
+      "condition": {
+        "kind": "metric_range",
+        "metric": "open_office_files",
+        "minimum": 0,
+        "maximum": 2
+      },
+      "expression": "relaxed",
+      "weight": 3,
+      "cooldown_minutes": 90
+    },
+    {
+      "id": "desktop_busy",
+      "label": "デスクトップのファイルが多い",
+      "enabled": true,
+      "trigger": "auto",
+      "condition": {
+        "kind": "metric_range",
+        "metric": "desktop_files",
+        "minimum": 50,
+        "maximum": null
+      },
+      "expression": "wink",
+      "weight": 3,
+      "cooldown_minutes": 180
+    },
+    {
+      "id": "desktop_tidy",
+      "label": "デスクトップがすっきり",
+      "enabled": true,
+      "trigger": "auto",
+      "condition": {
+        "kind": "metric_range",
+        "metric": "desktop_files",
+        "minimum": 0,
+        "maximum": 10
+      },
+      "expression": "proud",
+      "weight": 3,
+      "cooldown_minutes": 180
+    },
+    {
+      "id": "before_start",
+      "label": "始業まであと少し",
+      "enabled": true,
+      "trigger": "auto",
+      "condition": {
+        "kind": "all",
+        "conditions": [
+          {
+            "kind": "weekday",
+            "days": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ]
+          },
+          {
+            "kind": "metric_range",
+            "metric": "until_work_start_minutes",
+            "minimum": 0,
+            "maximum": 60
+          }
+        ]
+      },
+      "expression": "greet",
+      "weight": 3,
+      "cooldown_minutes": 60
+    },
+    {
+      "id": "before_end",
+      "label": "定時まであと数時間",
+      "enabled": true,
+      "trigger": "auto",
+      "condition": {
+        "kind": "all",
+        "conditions": [
+          {
+            "kind": "weekday",
+            "days": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ]
+          },
+          {
+            "kind": "metric_range",
+            "metric": "until_work_end_minutes",
+            "minimum": 60,
+            "maximum": 180
+          }
+        ]
+      },
+      "expression": "relaxed",
+      "weight": 3,
+      "cooldown_minutes": 90
+    },
+    {
+      "id": "ending_soon",
+      "label": "定時が近い",
+      "enabled": true,
+      "trigger": "auto",
+      "condition": {
+        "kind": "all",
+        "conditions": [
+          {
+            "kind": "weekday",
+            "days": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ]
+          },
+          {
+            "kind": "metric_range",
+            "metric": "until_work_end_minutes",
+            "minimum": 0,
+            "maximum": 59
+          }
+        ]
+      },
+      "expression": "nod",
+      "weight": 3,
+      "cooldown_minutes": 60
+    },
+    {
+      "id": "after_hours",
+      "label": "定時を過ぎている",
+      "enabled": true,
+      "trigger": "auto",
+      "condition": {
+        "kind": "all",
+        "conditions": [
+          {
+            "kind": "weekday",
+            "days": [
+              0,
+              1,
+              2,
+              3,
+              4
+            ]
+          },
+          {
+            "kind": "metric_range",
+            "metric": "after_work_end_minutes",
+            "minimum": 15,
+            "maximum": 240
+          }
+        ]
+      },
+      "expression": "concern",
+      "weight": 3,
+      "cooldown_minutes": 90
+    },
+    {
+      "id": "repeat_file",
+      "label": "同じファイルを何度も開いている",
+      "enabled": true,
+      "trigger": "auto",
+      "condition": {
+        "kind": "metric_range",
+        "metric": "file_open_count",
+        "minimum": 3,
+        "maximum": null
+      },
+      "expression": "curious",
+      "weight": 3,
+      "cooldown_minutes": 120
+    },
+    {
+      "id": "missed_yesterday",
+      "label": "昨日アプリを使っていない",
+      "enabled": true,
+      "trigger": "auto",
+      "condition": {
+        "kind": "metric_range",
+        "metric": "missed_yesterday",
+        "minimum": 1,
+        "maximum": 1
+      },
+      "expression": "curious",
+      "weight": 3,
+      "cooldown_minutes": 1440
+    },
+    {
+      "id": "week_busy",
+      "label": "今週の予定が多い",
+      "enabled": true,
+      "trigger": "auto",
+      "condition": {
+        "kind": "metric_range",
+        "metric": "weekly_events",
+        "minimum": 20,
+        "maximum": null
+      },
+      "expression": "think",
+      "weight": 3,
+      "cooldown_minutes": 180
+    },
+    {
+      "id": "week_light",
+      "label": "今週の予定が少なめ",
+      "enabled": true,
+      "trigger": "auto",
+      "condition": {
+        "kind": "metric_range",
+        "metric": "weekly_events",
+        "minimum": 0,
+        "maximum": 5
+      },
+      "expression": "relaxed",
+      "weight": 3,
+      "cooldown_minutes": 180
+    },
+    {
+      "id": "today_busy",
+      "label": "今日の予定が多い",
+      "enabled": true,
+      "trigger": "auto",
+      "condition": {
+        "kind": "metric_range",
+        "metric": "daily_events",
+        "minimum": 6,
+        "maximum": null
+      },
+      "expression": "think",
+      "weight": 3,
+      "cooldown_minutes": 120
+    },
+    {
+      "id": "today_light",
+      "label": "今日の予定が少ない",
+      "enabled": true,
+      "trigger": "auto",
+      "condition": {
+        "kind": "metric_range",
+        "metric": "daily_events",
+        "minimum": 0,
+        "maximum": 1
+      },
+      "expression": "relaxed",
+      "weight": 3,
+      "cooldown_minutes": 120
+    },
+    {
+      "id": "mail_received",
+      "label": "Outlookの新着通知",
+      "enabled": true,
+      "trigger": "notification",
+      "condition": {
+        "kind": "always"
+      },
+      "expression": "notice",
+      "weight": 1,
+      "cooldown_minutes": 0
     }
   ],
   "options": {
@@ -1001,6 +1705,9 @@
     "suppress_during_meetings": true,
     "repeat_window": 12,
     "avoid_consecutive_topic": true,
-    "selection_policy": "least_recent"
+    "selection_policy": "least_recent",
+    "work_start": "08:30",
+    "work_end": "17:30",
+    "active_threshold_seconds": 60
   }
 }

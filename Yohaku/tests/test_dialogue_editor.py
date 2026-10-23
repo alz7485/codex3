@@ -81,6 +81,23 @@ class DialogueEditorTests(unittest.TestCase):
         self.assertEqual(self.store.data, original)
         self.assertIn('反映していません', e.status.text())
 
+    def test_metric_and_compound_conditions_are_editable_and_validated(self):
+        e=self.editor
+        e.add_rule()
+        e.kind.setCurrentIndex(e.kind.findData('metric_range'))
+        e.metric_selector.setCurrentIndex(e.metric_selector.findData('desktop_files'))
+        e.metric_minimum.setValue(50)
+        e.no_maximum.setChecked(True)
+        self.assertTrue(e.save())
+        self.assertEqual(self.store.data['rules'][-1]['condition'],{'kind':'metric_range','metric':'desktop_files','minimum':50,'maximum':None})
+        e.kind.setCurrentIndex(e.kind.findData('all'))
+        e.details.setPlainText('[{"kind":"weekday","days":[0,1,2,3,4]},{"kind":"metric_range","metric":"until_work_end_minutes","minimum":0,"maximum":60}]')
+        self.assertTrue(e.save())
+        before=self.store.data
+        e.details.setPlainText('{broken')
+        self.assertFalse(e.save())
+        self.assertIs(self.store.data,before)
+
     def test_reset_is_staged_and_revert_recovers_saved_custom_content(self):
         e = self.editor
         e.line_edit.setPlainText('保存済みのカスタム')

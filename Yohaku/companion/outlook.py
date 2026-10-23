@@ -8,7 +8,13 @@ import sys
 from .core import Event
 
 
-def read_calendar(show_titles: bool = False) -> list[Event]:
+class CalendarEvents(list):
+    def __init__(self, values, complete=True):
+        super().__init__(values)
+        self.complete = complete
+
+
+def read_calendar(show_titles: bool = False, whole_week: bool = False) -> list[Event]:
     if sys.platform != "win32":
         raise RuntimeError("従来版Outlookとの接続はWindowsで利用できます。")
     import pythoncom
@@ -23,7 +29,9 @@ def read_calendar(show_titles: bool = False) -> list[Event]:
             raise RuntimeError("従来版Outlookを開いてから、再接続してください。") from None
         now = datetime.now().astimezone()
         lower = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        upper = lower + timedelta(days=1)
+        if whole_week:
+            lower -= timedelta(days=lower.weekday())
+        upper = lower + timedelta(days=7 if whole_week else 1)
 
         def outlook_date(value):
             # Outlook Jet filters use the Windows user's regional date/time format.
@@ -54,7 +62,7 @@ def read_calendar(show_titles: bool = False) -> list[Event]:
                     title = str(item.Subject) if show_titles else ""
                     events.append(Event(key, start, end, title))
             item = bounded.GetNext()
-        return sorted(events, key=lambda event: event.start)
+        return CalendarEvents(sorted(events, key=lambda event: event.start), complete=item is None)
     except RuntimeError:
         raise
     except Exception:

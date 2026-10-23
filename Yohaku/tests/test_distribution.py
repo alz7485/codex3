@@ -26,7 +26,7 @@ class DistributionTests(unittest.TestCase):
                 ".github/workflows/yohaku-windows.yml": "name: build", "companion/assets/app/yohaku.ico": "asset",
                 ".venv/secret.txt": "exclude", "settings.json": "exclude", "history.json": "exclude",
                 "files.sqlite3": "exclude", "files.sqlite3-wal": "exclude", ".env.local": "exclude",
-                "dialogue.json": "exclude", "dialogue.json.bak": "exclude", "dialogue.json.tmp": "exclude", "Yohaku-conversation.json": "exclude",
+                "usage.json": "exclude", "usage.tmp": "exclude", "dialogue.json": "exclude", "dialogue.json.bak": "exclude", "dialogue.json.tmp": "exclude", "Yohaku-conversation.json": "exclude",
                 ".aws/config": "exclude", "release/old.zip": "exclude", "debug.log": "exclude",
             }
             for relative, content in entries.items():

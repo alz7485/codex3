@@ -119,6 +119,16 @@ class FileHistory:
             self._prune(db, now)
             return db.execute("SELECT name, path, source, opened FROM files WHERE opened >= ? AND opened < ? ORDER BY opened DESC LIMIT ?", (start, end, limit)).fetchall()
 
+    def repeat_summary(self, now):
+        if not self.path.exists():
+            return None
+        day = now.astimezone().date()
+        start = datetime.combine(day, time.min).astimezone().astimezone(timezone.utc).isoformat()
+        end = datetime.combine(day + timedelta(days=1), time.min).astimezone().astimezone(timezone.utc).isoformat()
+        with self._connect() as db:
+            row = db.execute("SELECT name, COUNT(*) AS n FROM files WHERE opened >= ? AND opened < ? GROUP BY path COLLATE NOCASE ORDER BY n DESC, MAX(opened) DESC LIMIT 1", (start, end)).fetchone()
+        return {'file_name': row[0], 'file_open_count': row[1]} if row else {'file_name': '', 'file_open_count': 0}
+
     def clear(self):
         self.path.unlink(missing_ok=True)
 

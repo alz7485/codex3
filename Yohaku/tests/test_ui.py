@@ -31,6 +31,8 @@ class UserInterfaceTests(unittest.TestCase):
         c.poll_timer.stop()
         c.animation_timer.stop()
         c.activity_timer.stop()
+        c.context_timer.stop()
+        c.shutdown()
         c.tray.hide()
         c.panel.hide()
         c.resident.hide()
@@ -167,7 +169,7 @@ class UserInterfaceTests(unittest.TestCase):
     def test_app_has_brand_name_version_and_windows_icon(self):
         c = self.controller
         self.assertEqual(self.app.applicationDisplayName(), "余白 / YOHAKU")
-        self.assertEqual(self.app.applicationVersion(), "0.8.0")
+        self.assertEqual(self.app.applicationVersion(), "0.9.0")
         self.assertFalse(c.brand_icon.isNull())
         self.assertEqual(c.panel.windowIcon().cacheKey(), c.brand_icon.cacheKey())
         c.panel.character_buttons["B"].click()
@@ -183,12 +185,12 @@ class UserInterfaceTests(unittest.TestCase):
         c.connected_at = now
         c.settings.show_titles = False
         try:
-            c.resident.clicked.emit()
+            c.resident.context_requested.emit(c.resident.pos())
             self.assertTrue(c.interaction.isVisible())
             self.assertIs(c.interaction, c.bubble)
             self.assertIn(c.bubble.text.text(), PHRASES[voice_for(c.settings)]["call"])
             window_id = int(c.bubble.winId())
-            self.assertEqual(set(c.interaction.buttons), {"calendar", "activity", "settings", "message"})
+            self.assertEqual(set(c.interaction.buttons), {"calendar", "activity", "settings", "hide"})
             self.assertTrue(c.interaction.timer.isActive())
             self.assertEqual(c.interaction.timer.interval(), 60000)
             c.interaction.buttons["calendar"].click()
@@ -196,18 +198,20 @@ class UserInterfaceTests(unittest.TestCase):
             self.assertNotIn("SECRET", c.interaction.text.text())
             self.assertEqual(int(c.bubble.winId()), window_id)
             self.assertFalse(c.history_window.isVisible())
-            c.interaction.buttons["message"].click()
+            c.resident.clicked.emit()
             self.assertEqual(int(c.bubble.winId()), window_id)
             self.assertFalse(c.history_window.isVisible())
+            c.open_choices()
             c.interaction.buttons["activity"].click()
             self.assertTrue(c.history_window.isVisible())
             self.assertIn("記録オフ", c.history_window.status.text())
             self.assertNotIn("記録オフ", c.bubble.text.text())
-            c.interaction.buttons["message"].click()
+            c.resident.clicked.emit()
             first = c.interaction.text.text()
-            c.interaction.buttons["message"].click()
+            c.resident.clicked.emit()
             self.assertNotEqual(first, c.interaction.text.text())
             c.panel.hide()
+            c.open_choices()
             c.interaction.buttons["settings"].click()
             self.assertTrue(c.panel.isVisible())
             self.assertEqual(int(c.bubble.winId()), window_id)
@@ -301,11 +305,11 @@ class UserInterfaceTests(unittest.TestCase):
         window_id = int(c.bubble.winId())
         width = c.bubble.width()
         self.assertFalse(c.bubble.choice_row.isVisible())
-        c.resident.clicked.emit()
+        c.resident.context_requested.emit(c.resident.pos())
         self.assertEqual(int(c.bubble.winId()), window_id)
         self.assertEqual(c.bubble.width(), width)
         self.assertTrue(c.bubble.choice_row.isVisible())
-        self.assertEqual([b.text() for b in c.bubble.buttons.values()], ["予定を聞く", "ファイル起動履歴を見る", "設定を開く", "一言を聞く"])
+        self.assertEqual([b.text() for b in c.bubble.buttons.values()], ["予定を聞く", "ファイル起動履歴を見る", "設定を開く", "非表示にする"])
         self.assertTrue(all(not b.isCheckable() for b in c.bubble.buttons.values()))
         self.app.processEvents()
         rows = [b.geometry() for b in c.bubble.buttons.values()]
@@ -344,6 +348,8 @@ class UserInterfaceTests(unittest.TestCase):
         try:
             with patch.object(QSystemTrayIcon, "isSystemTrayAvailable", return_value=True):
                 QTest.mouseClick(c.resident, Qt.MouseButton.RightButton)
+                self.assertTrue(c.bubble.choice_row.isVisible())
+                c.bubble.buttons["hide"].click()
                 self.assertTrue(c.user_hidden)
                 self.assertFalse(c.resident.isVisible())
                 self.assertFalse(c.bubble.isVisible())
@@ -365,6 +371,8 @@ class UserInterfaceTests(unittest.TestCase):
                 self.assertTrue(c.resident.isVisible())
                 c.open_choices()
                 QTest.mouseClick(c.bubble.text, Qt.MouseButton.RightButton)
+                self.assertTrue(c.bubble.choice_row.isVisible())
+                c.bubble.buttons["hide"].click()
                 self.assertFalse(c.bubble.isVisible())
                 self.assertFalse(c.resident.isVisible())
                 c.tray_activated(QSystemTrayIcon.ActivationReason.Trigger)
@@ -440,6 +448,65 @@ class UserInterfaceTests(unittest.TestCase):
         finally:
             c.editor.revert()
             c.editor.hide()
+
+    def test_left_click_is_message_right_click_is_menu_with_hide_action(self):
+        from PySide6.QtCore import Qt
+        from PySide6.QtTest import QTest
+        c=self.controller
+        c.panel.hide()
+        QTest.mouseClick(c.resident,Qt.MouseButton.LeftButton)
+        self.assertTrue(c.bubble.isVisible())
+        self.assertFalse(c.bubble.choice_row.isVisible())
+        self.assertEqual(c.bubble.kind,'message')
+        QTest.mouseClick(c.resident,Qt.MouseButton.RightButton)
+        self.assertTrue(c.bubble.choice_row.isVisible())
+        self.assertNotIn('message',c.bubble.buttons)
+        self.assertIn('hide',c.bubble.buttons)
+        c.bubble.hide()
+
+    def test_mail_notification_is_immediate_colored_and_privacy_modes_suppress_it(self):
+        c=self.controller
+        old=(c.settings.outlook_enabled,c.settings.mail_enabled,c.settings.mail_show_subjects,c.settings.quiet_start,c.settings.quiet_end,c.engine.paused_until)
+        try:
+            c.settings.outlook_enabled=True;c.settings.mail_enabled=True;c.settings.mail_show_subjects=False
+            c.settings.quiet_start=c.settings.quiet_end='00:00';c.engine.paused_until=None
+            c.open_choices()
+            c.mail_result(c.mail_generation,{'count':1,'subjects':['SECRET']},'')
+            self.assertEqual(c.bubble.kind,'notification')
+            self.assertFalse(c.bubble.choice_row.isVisible())
+            self.assertNotIn('SECRET',c.bubble.text.text())
+            notification_color=c.bubble.grab().toImage().pixelColor(8,45)
+            c.select_content('calendar')
+            self.assertEqual(c.bubble.kind,'calendar')
+            self.assertNotEqual(c.bubble.grab().toImage().pixelColor(8,45),notification_color)
+            c.bubble.hide()
+            c.mail_result(c.mail_generation-1,{'count':1,'subjects':['STALE']},'')
+            self.assertFalse(c.bubble.isVisible())
+            c.user_hidden=True
+            c.mail_result(c.mail_generation,{'count':1},'')
+            self.assertFalse(c.bubble.isVisible())
+            c.user_hidden=False
+            c.engine.paused_until=datetime.now().astimezone()+timedelta(hours=1)
+            c.mail_result(c.mail_generation,{'count':1},'')
+            self.assertFalse(c.bubble.isVisible())
+        finally:
+            c.settings.outlook_enabled,c.settings.mail_enabled,c.settings.mail_show_subjects,c.settings.quiet_start,c.settings.quiet_end,c.engine.paused_until=old
+            c.user_hidden=False;c.bubble.hide()
+
+    def test_context_disable_and_stale_result_do_not_restore_aggregate_data(self):
+        c=self.controller
+        old=c.settings.context_enabled
+        try:
+            generation=c.context_generation
+            c.context_received(generation,{'desktop_files':80,'open_office_files':12},'')
+            self.assertEqual(c.engine.context.get('desktop_files'),80)
+            c.panel.update_setting('context_enabled',False)
+            self.assertNotIn('desktop_files',c.engine.context)
+            self.assertNotIn('daily_active_minutes',c.engine.context)
+            c.context_received(generation,{'desktop_files':80},'')
+            self.assertNotIn('desktop_files',c.engine.context)
+        finally:
+            c.panel.update_setting('context_enabled',old)
 
     def test_no_tray_fallback_keeps_a_visible_recovery_path(self):
         from PySide6.QtWidgets import QSystemTrayIcon

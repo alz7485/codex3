@@ -18,7 +18,7 @@ def main():
         for index, name in enumerate(('dialogue-editor', 'dialogue-rules', 'dialogue-options')):
             editor.tabs.setCurrentIndex(index)
             if index == 1:
-                editor.rule_list.setCurrentRow(next(i for i, rule in enumerate(editor.draft['rules']) if rule['id'] == 'before_meeting'))
+                editor.rule_list.setCurrentRow(next(i for i, rule in enumerate(editor.draft['rules']) if rule['id'] == 'active_long'))
             app.processEvents()
             editor.grab().save(str(destination / (name + '.png')))
         editor.hide()
