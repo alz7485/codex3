@@ -12,7 +12,7 @@ import threading
 import time
 
 from PySide6.QtCore import QDate, QEvent, QLocale, QLockFile, QObject, QPoint, QRect, QRectF, QSize, Qt, QTime, QTimer, QUrl, Signal
-from PySide6.QtGui import QAction, QColor, QDesktopServices, QFont, QIcon, QPainter, QPainterPath, QPen, QPixmap
+from PySide6.QtGui import QAction, QColor, QDesktopServices, QFont, QIcon, QPainter, QPainterPath, QPen, QPixmap, QTransform
 from PySide6.QtWidgets import (
     QApplication, QButtonGroup, QCalendarWidget, QCheckBox, QComboBox, QFrame, QHeaderView, QHBoxLayout, QLabel, QMainWindow,
     QMenu, QMessageBox, QPushButton, QScrollArea, QSizePolicy, QStackedWidget, QSystemTrayIcon, QTimeEdit,
@@ -146,19 +146,34 @@ def character_frames(character):
         painter.end()
         cleaned.append(clipped)
         bounds = bounds.united(rect)
+    # The generated walking cells have different origins. Register them to
+    # the shared canvas center and neutral ground line, retaining one scale for all
+    # eight poses. Otherwise every frame visibly hops and slides sideways.
+    for index in range(16, 24):
+        rect = content[index]
+        aligned = QPixmap(cleaned[index].size())
+        aligned.fill(Qt.GlobalColor.transparent)
+        painter = QPainter(aligned)
+        painter.drawPixmap(bounds.center().x() - rect.center().x(),
+                           content[0].bottom() - rect.bottom(), cleaned[index])
+        painter.end()
+        cleaned[index] = aligned
     frames = tuple(frame.copy(bounds) for frame in cleaned)
-    # Dedicated front-view artwork: rows A/B/E/F, columns normal/blink/
+    # Dedicated front-view artwork: rows A/B/E plus a separate cat strip,
+    # columns normal/blink/
     # troubled/angry. Keep a shared canvas and the existing neutral baseline
     # so switching between a walk and a front pose does not change size.
-    front = QPixmap(str(path.parent / 'front_reactions.png'))
+    front_name = 'f_front.png' if character == 'F' else 'front_reactions.png'
+    front = QPixmap(str(path.parent / front_name))
     if front.isNull():
-        raise RuntimeError('正面向き画像を読み込めません: front_reactions.png')
+        raise RuntimeError(f'正面向き画像を読み込めません: {front_name}')
     left, top, w, h = {'A': (35, 25, 270, 282), 'B': (40, 315, 270, 294),
-                       'E': (45, 620, 264, 300), 'F': (30, 925, 280, 313)}[character]
+                       'E': (45, 620, 264, 300), 'F': (15, 94, 513, 560)}[character]
+    stride = 543 if character == 'F' else 300
     target = QSize(bounds.width(), content[0].height())
     front_frames = []
     for column in range(4):
-        source = front.copy(left + column * 300, top, w, h)
+        source = front.copy(left + column * stride, top, w, h)
         source = source.scaled(target, Qt.AspectRatioMode.KeepAspectRatio,
                                Qt.TransformationMode.SmoothTransformation)
         frame = QPixmap(bounds.size())
@@ -210,7 +225,9 @@ class Mascot(QWidget):
         self.sway = 0.0
         self.scale_x = self.scale_y = 1.0
         self.subpixel = 0.0
+        self.bottom_padding = 3
         self.previous_frame = None
+        self.previous_flipped = False
         self.frame_changed_at = 0.0
         self.set_character(character)
 
@@ -230,17 +247,19 @@ class Mascot(QWidget):
         p.rotate(self.sway)
         p.scale(self.scale_x, self.scale_y)
         p.translate(-self.width() / 2, -self.height() + 4)
-        if self.flipped:
-            p.translate(self.width(), 0)
-            p.scale(-1, 1)
         frames = character_frames(self.character)
         pixmap = self.pixmap if self.frame_index is None else frames[self.frame_index]
+        if self.flipped and (self.frame_index is None or self.frame_index < 24):
+            pixmap = pixmap.transformed(QTransform().scale(-1, 1))
         blend = min(1.0, max(0.0, (time.monotonic() - self.frame_changed_at) / 0.085))
         if self.previous_frame is not None and self.frame_index is not None and blend < 1:
-            pixmap = blend_frames(frames[self.previous_frame], pixmap, blend)
+            previous = frames[self.previous_frame]
+            if self.previous_flipped and self.previous_frame < 24:
+                previous = previous.transformed(QTransform().scale(-1, 1))
+            pixmap = blend_frames(previous, pixmap, blend)
         size = pixmap.size().scaled(QSize(self.width() - 6, self.height() - 6), Qt.AspectRatioMode.KeepAspectRatio)
         target = QRectF((self.width() - size.width()) / 2,
-                       self.height() - size.height() - 3, size.width(), size.height())
+                       self.height() - size.height() - self.bottom_padding, size.width(), size.height())
         p.drawPixmap(target, pixmap, QRectF(pixmap.rect()))
         p.end()
 
@@ -608,6 +627,7 @@ class Resident(Mascot):
 
     def __init__(self, character="A"):
         super().__init__(82, character=character)
+        self.bottom_padding = 0
         self.setWindowFlags(Qt.WindowType.Tool | Qt.WindowType.FramelessWindowHint | Qt.WindowType.WindowStaysOnTopHint | Qt.WindowType.WindowDoesNotAcceptFocus)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
@@ -650,6 +670,8 @@ class Resident(Mascot):
 
 class Bubble(QFrame):
     call_requested = Signal()
+    dismissed = Signal()
+    hidden = Signal()
 
     def __init__(self):
         super().__init__()
@@ -660,6 +682,7 @@ class Bubble(QFrame):
         self.setFixedWidth(322)
         self.duration_ms = BUBBLE_MS
         self.kind = "message"
+        self.notice = None
         self.tail_x = 270
         self.tail_above = False
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
@@ -684,10 +707,18 @@ class Bubble(QFrame):
         if (event.type() == QEvent.Type.MouseButtonRelease
                 and event.button() == Qt.MouseButton.LeftButton
                 and not getattr(self, 'interactive', False)):
-            self.timer.stop()
-            self.hide()
+            self.dismiss()
             return True
         return super().eventFilter(watched, event)
+
+    def dismiss(self):
+        self.timer.stop()
+        self.hide()
+        self.dismissed.emit()
+
+    def hideEvent(self, event):
+        super().hideEvent(event)
+        self.hidden.emit()
 
     def set_tail_above(self, above):
         self.tail_above = above
@@ -724,6 +755,7 @@ class Bubble(QFrame):
         self.update()
 
     def display(self, notice):
+        self.notice = notice
         self.set_kind('calendar' if notice.important and notice.kind == 'message' else notice.kind)
         self.heading.setText(notice.heading)
         self.text.setText(notice.text)
@@ -738,7 +770,7 @@ class Bridge(QObject):
 
 
 class InteractionBubble(Bubble):
-    """The usual speech bubble, with four actions on separate rows; remarks are a separate left-click action."""
+    """The usual speech bubble with five actions and passive left-click remarks."""
     selected = Signal(str)
     attendance_requested = Signal()
 
@@ -763,7 +795,7 @@ class InteractionBubble(Bubble):
         choices.setContentsMargins(0, 0, 0, 0)
         choices.setSpacing(6)
         self.buttons = {}
-        for key, title in (("calendar", "予定を聞く"), ("activity", "ファイル起動履歴を見る"), ("settings", "設定を開く"), ("hide", "非表示にする")):
+        for key, title in (("calendar", "予定を聞く"), ("activity", "ファイル起動履歴を見る"), ("settings", "設定を開く"), ("hide", "非表示にする"), ("dismiss", "用事はない")):
             choice = button(title, lambda checked=False, k=key: self.selected.emit(k), "speechChoice")
             self.buttons[key] = choice
             choices.addWidget(choice)
@@ -782,6 +814,8 @@ class InteractionBubble(Bubble):
             widget.installEventFilter(self)
 
     def eventFilter(self, watched, event):
+        if event.type() == QEvent.Type.ContextMenu:
+            return True  # Right-button press already toggled the call window.
         if event.type() == QEvent.Type.MouseButtonPress and event.button() == Qt.MouseButton.RightButton:
             self.call_requested.emit()
             return True
@@ -797,6 +831,7 @@ class InteractionBubble(Bubble):
         self.resize(self.width(), self.layout().sizeHint().height())
 
     def open_choices(self, text="お呼びですか？", name="余白"):
+        self.notice = None
         self.departure_row.hide()
         self.set_kind("menu")
         self.timer.start(self.duration_ms)
@@ -812,6 +847,7 @@ class InteractionBubble(Bubble):
         self.buttons["calendar"].setFocus()
 
     def content(self, key, heading, text):
+        self.notice = None
         self.departure_row.hide()
         self.set_kind("calendar" if key == "calendar" else "message")
         self.timer.start(self.duration_ms)
@@ -823,6 +859,7 @@ class InteractionBubble(Bubble):
         self.resize_text()
 
     def display(self, notice):
+        self.notice = notice
         self.departure_row.hide()
         self.set_kind("calendar" if notice.important and notice.kind == "message" else notice.kind)
         self.current = None
@@ -843,7 +880,7 @@ class InteractionBubble(Bubble):
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Escape:
-            self.hide()
+            self.dismiss()
         else:
             super().keyPressEvent(event)
 
@@ -981,6 +1018,9 @@ class Controller(QObject):
         self.bubble = InteractionBubble()
         self.bubble.duration_ms = self.dialogue.data["options"]["bubble_seconds"] * 1000
         self.interaction = self.bubble  # One actual speech window for all modes.
+        self.pending_reaction = None
+        self.bubble.dismissed.connect(self.bubble_dismissed)
+        self.bubble.hidden.connect(self.bubble_hidden)
         self.history_window = HistoryWindow()
         self.motion = Motion()
         self.static_pose_timer = QTimer(self)
@@ -1132,6 +1172,8 @@ class Controller(QObject):
         self.tray.setToolTip("余白 — " + ("画面共有モード中" if self.hidden else "非表示 · 左クリックで表示" if self.user_hidden else "左クリックで非表示 / 右クリックでメニュー"))
         self.update_mode()
         self.update_animation_policy()
+        if visible:
+            self.resume_reaction()
 
     def show_panel(self):
         self.panel.show()
@@ -1184,7 +1226,9 @@ class Controller(QObject):
         self.settings.interval = self.dialogue.data['options']['interval_minutes']
         self.panel.refresh_dialogue()
         self.bubble.duration_ms = self.dialogue.data['options']['bubble_seconds'] * 1000
-        if self.bubble.isVisible():
+        if self.pending_reaction is not None and self.bubble.notice is self.pending_reaction:
+            self.bubble.timer.stop()
+        elif self.bubble.isVisible():
             self.bubble.timer.start(self.bubble.duration_ms)
         self.engine.category_last.clear()
         self.engine.last_category = None
@@ -1229,9 +1273,9 @@ class Controller(QObject):
         if self.motion_x is None:
             self.motion_x = float(upper)
         if self.motion_y is None:
-            self.motion_y = area.bottom() - self.resident.height() - 12
+            self.motion_y = area.bottom() + 1 - self.resident.height()
         self.motion_x = min(upper, max(lower, self.motion_x))
-        self.motion_y = min(max(area.top() + 8, area.bottom() - self.resident.height() - 12),
+        self.motion_y = min(max(area.top() + 8, area.bottom() + 1 - self.resident.height()),
                             max(area.top() + 8, self.motion_y))
         self.resident.subpixel = self.motion_x - math.floor(self.motion_x)
         point = QPoint(math.floor(self.motion_x), self.motion_y)
@@ -1265,9 +1309,11 @@ class Controller(QObject):
                 self.animation_timer.start()
         else:
             self.animation_timer.stop()
-            # A periodic policy check must not shorten a user-requested static
-            # reaction. Its wall-clock timer restores the neutral front pose.
-            if not self.static_pose_timer.isActive() or self.motion.walking:
+            # Keep unread reactions pinned. Ordinary static poses use their
+            # wall-clock timer to restore the neutral front pose.
+            if self.pending_reaction is not None and self.bubble.notice is self.pending_reaction:
+                self.resident.frame_index = self.motion.frame()
+            elif not self.static_pose_timer.isActive() or self.motion.walking:
                 self.motion.react('front', seconds=0)
                 self.motion.front_until = 0
                 self.resident.frame_index = 24
@@ -1288,12 +1334,13 @@ class Controller(QObject):
         area = self.resident_area()
         lower = area.left() + 12
         upper = max(lower, area.right() - self.resident.width() - 20)
-        blocked = self.bubble.isVisible() or self.panel.isVisible() or self.history_window.isVisible() or (self.editor is not None and self.editor.isVisible()) or self.resident.underMouse()
+        blocked = self.pending_reaction is not None or self.bubble.isVisible() or self.panel.isVisible() or self.history_window.isVisible() or (self.editor is not None and self.editor.isVisible()) or self.resident.underMouse()
         self.motion_x = self.motion.advance(dt, self.motion_x if self.motion_x is not None else upper,
                                           lower, upper, self.settings.walking and not blocked)
         frame = self.motion.frame()
         if frame != self.resident.frame_index:
             self.resident.previous_frame = self.resident.frame_index
+            self.resident.previous_flipped = self.resident.flipped
             self.resident.frame_changed_at = now
             self.resident.frame_index = frame
         self.resident.flipped = frame < 24 and self.motion.facing < 0
@@ -1468,6 +1515,8 @@ class Controller(QObject):
         self.position()
 
     def shutdown(self):
+        self.pending_reaction = None
+        self.static_pose_timer.stop()
         if self.mail_watcher:
             self.mail_watcher.stop()
         if self.usage is not None:
@@ -1477,7 +1526,7 @@ class Controller(QObject):
                 pass
 
     def show_message(self):
-        if self.hidden or self.user_hidden:
+        if self.hidden or self.user_hidden or self.pending_reaction is not None:
             return
         now = datetime.now().astimezone()
         self.refresh_context_metrics(now)
@@ -1490,22 +1539,69 @@ class Controller(QObject):
         if notice is None:
             notice = Notice(CHARACTERS[self.settings.character], self.engine.phrase('no_conversation'), expression='think')
         seconds = self.dialogue.data['options']['click_recovery_seconds'] if reacting else 8
-        self.motion.react(notice.expression, seconds=seconds, speaking=True)
+        if reacting:
+            self.pending_reaction = notice
+        self.motion.react(notice.expression, seconds=float('inf') if reacting else seconds, speaking=True)
         self.motion.face_front(seconds if not reacting else 0)
         # Show the requested pose immediately, including with animation off.
         frame = self.motion.frame()
         previous = self.resident.frame_index
+        self.resident.previous_flipped = self.resident.flipped
         self.resident.frame_index = frame
         self.resident.flipped = False
         self.resident.previous_frame = previous if self.animation_timer.isActive() and previous != frame else None
         self.resident.frame_changed_at = time.monotonic()
         self.resident.update()
-        self.static_pose_timer.start(seconds * 1000)
+        if reacting:
+            self.static_pose_timer.stop()
+        else:
+            self.static_pose_timer.start(seconds * 1000)
         self.bubble.display(notice)
+        if reacting:
+            self.bubble.timer.stop()  # Read the reaction before another left click.
+        self.position()
+
+    def clear_reaction(self):
+        self.pending_reaction = None
+        self.static_pose_timer.stop()
+        self.motion.react('front', seconds=0)
+        self.motion.front_until = 0
+        self.resident.frame_index = 24
+        self.resident.previous_frame = None
+        self.resident.flipped = False
+        self.resident.update()
+
+    def bubble_dismissed(self):
+        if self.pending_reaction is None:
+            return
+        if self.bubble.notice is self.pending_reaction or self.bubble.kind == 'menu':
+            self.clear_reaction()
+        else:
+            self.resume_reaction()
+
+    def bubble_hidden(self):
+        # Immediate mail/calendar notices can temporarily replace a reaction.
+        # Return to the unread reaction after that notice closes. Right-click
+        # menus can be hidden deliberately without reopening the bubble.
+        if self.pending_reaction is not None and self.bubble.kind != 'menu':
+            QTimer.singleShot(0, self.resume_reaction)
+
+    def resume_reaction(self):
+        if (self.pending_reaction is None or self.hidden or self.user_hidden
+                or self.bubble.isVisible()):
+            return
+        self.motion.react(self.pending_reaction.expression, seconds=float('inf'))
+        self.motion.face_front(0)
+        self.resident.frame_index = self.motion.frame()
+        self.resident.previous_frame = None
+        self.resident.flipped = False
+        self.resident.update()
+        self.bubble.display(self.pending_reaction)
+        self.bubble.timer.stop()
         self.position()
 
     def reset_static_pose(self):
-        if not self.animation_timer.isActive():
+        if not self.animation_timer.isActive() and self.pending_reaction is None:
             self.motion.react('front', seconds=0)
             self.motion.front_until = 0
             self.resident.frame_index = 24
@@ -1516,13 +1612,20 @@ class Controller(QObject):
     def open_choices(self):
         if self.hidden or self.user_hidden:
             return
+        if self.bubble.isVisible() and self.bubble.kind == 'menu':
+            self.bubble.timer.stop()
+            self.bubble.hide()
+            return
         self.motion.react(self.dialogue.rule("call")["expression"])
         self.motion.face_front()
         self.resident.frame_index = 24
         self.resident.flipped = False
         self.resident.update()
         self.engine.last_display = datetime.now().astimezone()
-        self.interaction.open_choices(self.engine.phrase("call"), CHARACTERS[self.settings.character])
+        text = self.engine.phrase("call")
+        if self.pending_reaction is not None:
+            text = self.pending_reaction.text + '\n\n' + text
+        self.interaction.open_choices(text, CHARACTERS[self.settings.character])
         self.position()
 
     def select_content(self, key):
@@ -1555,6 +1658,10 @@ class Controller(QObject):
             self.show_message()
         elif key == "hide":
             self.hide_character()
+        elif key == "dismiss":
+            self.clear_reaction()
+            self.bubble.timer.stop()
+            self.bubble.hide()
         elif key == "settings":
             self.motion.react(self.dialogue.rule("settings_open")["expression"])
             self.interaction.content(key, CHARACTERS[self.settings.character], self.engine.phrase("settings_open"))
@@ -1810,7 +1917,7 @@ class Controller(QObject):
         fresh = self.connected_at is not None and (now - self.connected_at).total_seconds() < 300
         try:
             notice = self.engine.next_notice(now, self.events, self.hidden or self.user_hidden, self.connected and fresh,
-                                             allow_chatter=not (self.interaction.isVisible() or self.panel.isVisible() or self.history_window.isVisible() or (self.editor is not None and self.editor.isVisible())))
+                                             allow_chatter=not (self.pending_reaction is not None or self.interaction.isVisible() or self.panel.isVisible() or self.history_window.isVisible() or (self.editor is not None and self.editor.isVisible())))
         except OSError:
             self.panel.calendar_detail.setText("通知履歴を保存できません。保存先の権限をご確認ください。")
             return

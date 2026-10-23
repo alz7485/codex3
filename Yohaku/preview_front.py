@@ -26,7 +26,7 @@ def main():
 
     text(36, 38, f'Y O H A K U  /  v{VERSION}', 14, True)
     text(36, 81, 'こちらを向いて、気持ちをひとつ。', 30, True)
-    text(36, 112, '正面の待機・まばたきと、連打への反応。ペンギンの翼は左右1本ずつ。', 17)
+    text(36, 112, '正面と連打への反応 / ペンギンは翼2本 / お茶ねこの目を少し猫らしく。', 17)
     for x, caption in zip((265, 505, 745, 985), ('正面', 'まばたき', '4回で困る', '7回で少し怒る')):
         text(x, 150, caption, 16, True)
     with tempfile.TemporaryDirectory() as temporary:
@@ -47,7 +47,7 @@ def main():
             text(280, y + 152, concern, 15)
             text(280, y + 177, notice.text, 15)
             mascot.hide()
-    text(36, 986, '初期値：5秒以内の左クリックを数える / 10秒触らなければ通常へ / セリフ・回数・秒数は会話編集から変更', 14)
+    text(36, 986, '反応の本文をクリックして閉じるまで左クリックを停止 / 右クリックは使用可能 / 会話編集でセリフ・判定条件を変更', 14)
     p.end()
     board.save(str(Path(__file__).parent / 'docs/front-reactions.png'))
     print('Rendered docs/front-reactions.png')

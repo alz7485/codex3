@@ -36,7 +36,7 @@ def main():
     board = QPixmap(2000, 960)
     board.fill(QColor('#e7ede6'))
     painter = QPainter(board)
-    text(painter, 40, 45, 'Y O H A K U  /  v0.12.0', 14, True)
+    text(painter, 40, 45, 'Y O H A K U  /  v0.13.0', 14, True)
     text(painter, 40, 95, '4つの性格。20の表情としぐさ。', 32, True)
     for row, (key, name) in enumerate(CHARACTERS.items()):
         y = 150 + row * 190
@@ -60,21 +60,23 @@ def main():
             motion.distance = 10000
         for mascot in mascots:
             mascot.setFixedSize(138, 160)
+            mascot.bottom_padding = 0
         with tempfile.TemporaryDirectory(prefix='yohaku-motion-') as temporary:
             xs = [0.0] * 4
             for frame in range(240):
                 canvas = QPixmap(1200, 640)
                 canvas.fill(QColor('#e7ede6'))
                 p = QPainter(canvas)
-                text(p, 32, 38, 'Y O H A K U  /  v0.12.0', 13, True)
-                text(p, 32, 81, 'ひと息ついて、表情もひとつ。', 29, True)
-                text(p, 32, 112, '8コマの歩行 + 加減速・呼吸・体の揺れ / 下段は20種の表情としぐさ', 14)
+                text(p, 32, 38, 'Y O H A K U  /  v0.13.0', 13, True)
+                text(p, 32, 81, '足元をそろえて、すっと歩く。', 29, True)
+                text(p, 32, 112, '8コマの中心と接地線を補正 / タスクバー直上まで配置 / 下段は20種の表情', 14)
                 for column, ((key, name), mascot, motion) in enumerate(zip(CHARACTERS.items(), mascots, motions)):
                     left = 24 + column * 294
                     text(p, left + 8, 160, f'{key}  {name}', 16, True)
                     text(p, left + 8, 187, PROFILES[key][0], 12)
                     p.setPen(QColor('#c9d5c7'))
-                    p.drawLine(left + 8, 375, left + 264, 375)
+                    p.fillRect(left + 8, 367, 256, 18, QColor('#d3ddd2'))
+                    p.drawLine(left + 8, 367, left + 264, 367)
                     xs[column] = motion.advance(1 / 30, xs[column], 0, 150, True)
                     mascot.frame_index = motion.frame()
                     mascot.bob, mascot.sway, mascot.scale_x, mascot.scale_y = motion.pose()
@@ -88,6 +90,8 @@ def main():
                     text(p, left + 88, 590, LABELS[expression], 13)
                 text(p, 32, 625, '実装ウィジェットのプレビュー / GIFは30fps / Windows実機は未検証', 12)
                 p.end()
+                if frame == 30:
+                    canvas.save(str(destination / 'walk-ground.png'))
                 canvas.save(str(Path(temporary) / f'{frame:04d}.png'))
             subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-framerate', '30',
                             '-i', str(Path(temporary) / '%04d.png'), '-filter_complex',

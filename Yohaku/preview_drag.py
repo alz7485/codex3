@@ -39,7 +39,7 @@ def main():
             for index, (caption, point) in enumerate((
                 ('01  通常メッセージは本文だけ', QPoint(215, 420)),
                 ('02  上端では吹き出しを下へ', QPoint(145, 22)),
-                ('03  右クリックの4択はそのまま', QPoint(215, 420)),
+                ('03  右クリックの5択はそのまま', QPoint(215, 420)),
             )):
                 left = 35 + index * 400
                 text(left + 5, 175, caption, 16, True)

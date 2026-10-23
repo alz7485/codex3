@@ -53,6 +53,9 @@ class UserInterfaceTests(unittest.TestCase):
 
     def setUp(self):
         self.controller.history_window.hide()
+        self.controller.clear_reaction()
+        self.controller.bubble.hide()
+        self.controller.engine.click_reactions.reset()
 
     def test_all_bubbles_show_body_without_a_header(self):
         bubble = self.controller.bubble
@@ -68,44 +71,113 @@ class UserInterfaceTests(unittest.TestCase):
         finally:
             bubble.hide()
 
-    def test_left_click_burst_front_faces_and_static_recovery(self):
+    def test_reaction_blocks_left_clicks_until_body_dismissal_and_can_escalate(self):
         c = self.controller
         old = (c.settings.animation, c.settings.quiet_start, c.settings.quiet_end)
         try:
             c.settings.animation = False
             c.settings.quiet_start = c.settings.quiet_end = '00:00'
             c.update_animation_policy()
-            c.engine.click_reactions.reset()
-            for index in range(7):
+            for index in range(4):
                 QTest.mouseClick(c.resident, Qt.MouseButton.LeftButton, pos=QPoint(40, 40))
-                self.assertEqual(c.resident.frame_index, 24 if index < 3 else 26 if index < 6 else 27)
-                self.assertFalse(c.resident.flipped)
-            self.assertEqual(c.bubble.kind, 'message')
-            self.assertTrue(c.static_pose_timer.isActive())
-            c.update_animation_policy()  # Periodic checks must preserve the reaction.
+                self.assertEqual(c.resident.frame_index, 24 if index < 3 else 26)
+            notice = c.pending_reaction
+            self.assertIsNotNone(notice)
+            self.assertFalse(c.bubble.timer.isActive())
+            self.assertFalse(c.static_pose_timer.isActive())
+            count, last = len(c.engine.click_reactions.clicks), c.engine.click_reactions.last
+            for _ in range(30):
+                QTest.mouseClick(c.resident, Qt.MouseButton.LeftButton, pos=QPoint(40, 40))
+            self.assertIs(c.pending_reaction, notice)
+            self.assertEqual(c.bubble.text.text(), notice.text)
+            self.assertEqual(len(c.engine.click_reactions.clicks), count)
+            self.assertEqual(c.engine.click_reactions.last, last)
+            c.update_animation_policy()
+            self.assertEqual(c.resident.frame_index, 26)
+            # Even after the former ten-second timeout, an unread reaction stays.
+            c.motion.elapsed += 20
+            self.assertEqual(c.motion.frame(), 26)
+            c.reset_static_pose()
+            self.assertEqual(c.resident.frame_index, 26)
+            QTest.mouseClick(c.bubble.text, Qt.MouseButton.LeftButton, pos=QPoint(8, 8))
+            self.assertIsNone(c.pending_reaction)
+            self.assertFalse(c.bubble.isVisible())
+            # Acknowledged clicks can continue the burst; ignored clicks did not.
+            with patch('companion.ui.time.monotonic', return_value=last + .1):
+                for index in range(3):
+                    c.show_message()
+                    self.assertEqual(c.resident.frame_index, 26 if index < 2 else 27)
+                    if index < 2:
+                        QTest.mouseClick(c.bubble.text, Qt.MouseButton.LeftButton, pos=QPoint(8, 8))
+            angry = c.pending_reaction
+            c.show_message()
+            self.assertIs(c.pending_reaction, angry)
             self.assertEqual(c.resident.frame_index, 27)
-            self.assertEqual(c.bubble.duration_ms, c.dialogue.data['options']['bubble_seconds'] * 1000)
-            with patch('companion.ui.time.monotonic', return_value=c.engine.click_reactions.last + 10):
-                c.show_message()
+            QTest.mouseClick(c.bubble, Qt.MouseButton.LeftButton, pos=QPoint(8, 8))
+            self.assertIsNone(c.pending_reaction)
             self.assertEqual(c.resident.frame_index, 24)
-            # Test timer delivery without adding a ten-second wall-clock delay.
-            c.resident.frame_index = 27
-            c.static_pose_timer.start(1)
-            QTest.qWait(20)
-            self.assertEqual(c.resident.frame_index, 24)
-            self.assertEqual(c.motion.frame(), 24)  # Re-enabling must not revive anger.
         finally:
             c.settings.animation, c.settings.quiet_start, c.settings.quiet_end = old
-            c.engine.click_reactions.reset()
-            c.static_pose_timer.stop()
+            c.clear_reaction()
             c.bubble.hide()
             c.update_animation_policy()
+
+    def test_right_click_toggles_menu_and_no_business_dismisses_without_hiding_character(self):
+        c = self.controller
+        for _ in range(4): c.show_message()
+        reaction = c.pending_reaction
+        self.assertIsNotNone(reaction)
+        QTest.mouseClick(c.resident, Qt.MouseButton.RightButton, pos=QPoint(40, 40))
+        self.assertEqual(c.bubble.kind, 'menu')
+        self.assertIn(reaction.text, c.bubble.text.text())
+        before = c.bubble.text.text()
+        c.show_message()
+        self.assertEqual(c.bubble.text.text(), before)
+        QTest.mouseClick(c.bubble.text, Qt.MouseButton.RightButton, pos=QPoint(8, 8))
+        self.assertFalse(c.bubble.isVisible())
+        self.assertIs(c.pending_reaction, reaction)
+        c.show_message()
+        self.assertFalse(c.bubble.isVisible())
+        QTest.mouseClick(c.resident, Qt.MouseButton.RightButton, pos=QPoint(40, 40))
+        self.assertEqual(list(c.bubble.buttons)[-1], 'dismiss')
+        self.assertEqual(c.bubble.buttons['dismiss'].text(), '用事はない')
+        c.bubble.buttons['dismiss'].click()
+        self.assertFalse(c.bubble.isVisible())
+        self.assertTrue(c.resident.isVisible())
+        self.assertIsNone(c.pending_reaction)
+        self.assertFalse(c.user_hidden)
+        c.show_message()
+        self.assertTrue(c.bubble.isVisible())
+        QTest.keyClick(c.bubble, Qt.Key.Key_Escape)
+        self.assertFalse(c.bubble.isVisible())
+
+    def test_immediate_notice_returns_to_unread_reaction_after_dismissal_or_timeout(self):
+        c = self.controller
+        for _ in range(4): c.show_message()
+        reaction = c.pending_reaction
+        c.bubble.display(Notice('', '山田さんからメールが来ました。', True, 'notice', 'notification'))
+        c.show_message()
+        self.assertIn('山田さん', c.bubble.text.text())
+        QTest.mouseClick(c.bubble.text, Qt.MouseButton.LeftButton, pos=QPoint(8, 8))
+        self.assertTrue(c.bubble.isVisible())
+        self.assertIs(c.bubble.notice, reaction)
+        self.assertFalse(c.bubble.timer.isActive())
+        c.bubble.display(Notice('', '会議が近づいています。', True, 'notice', 'calendar'))
+        c.bubble.timer.start(1)
+        QTest.qWait(30)
+        self.assertIs(c.bubble.notice, reaction)
+        self.assertTrue(c.bubble.isVisible())
+        self.assertFalse(c.bubble.timer.isActive())
+        c.bubble.dismiss()
+        self.app.processEvents()
+        self.assertIsNone(c.pending_reaction)
+        self.assertFalse(c.bubble.isVisible())
 
     def test_right_click_and_drag_do_not_count_as_repeated_clicks(self):
         c = self.controller
         c.engine.click_reactions.reset()
         try:
-            for _ in range(8):
+            for _ in range(7):
                 QTest.mouseClick(c.resident, Qt.MouseButton.RightButton, pos=QPoint(40, 40))
             self.assertIsNone(c.engine.click_reactions.last)
             self.assertEqual(c.bubble.kind, 'menu')
@@ -131,6 +203,45 @@ class UserInterfaceTests(unittest.TestCase):
         a.fill(Qt.GlobalColor.transparent)
         b.fill(Qt.GlobalColor.transparent)
         self.assertEqual(blend_frames(a, b, 0.5).toImage().pixelColor(0, 0).alpha(), 0)
+
+    def test_walk_sprites_share_ground_and_center_near_taskbar(self):
+        for character in CHARACTERS:
+            mascot = Resident(character)
+            try:
+                mascot.show()
+                for index in range(16, 24):
+                    mascot.frame_index = index
+                    mascot.previous_frame = None
+                    image = mascot.grab().toImage()
+                    pixels = [(x, y) for y in range(image.height()) for x in range(image.width())
+                              if image.pixelColor(x, y).alpha() > 128]
+                    bottom = max(y for x, y in pixels)
+                    center = (min(x for x, y in pixels) + max(x for x, y in pixels)) / 2
+                    self.assertLessEqual(mascot.height() - 1 - bottom, 2)
+                    self.assertLessEqual(abs(center - (mascot.width() - 1) / 2), 2)
+            finally:
+                mascot.hide()
+
+    def test_walk_to_front_transition_preserves_previous_direction(self):
+        mascot = Resident('A')
+        try:
+            mascot.show()
+            mascot.frame_index = 16
+            mascot.flipped = True
+            expected = mascot.grab().toImage()
+            mascot.frame_index = 24
+            mascot.previous_frame = 16
+            mascot.previous_flipped = True
+            mascot.flipped = False
+            mascot.frame_changed_at = 100
+            with patch('companion.ui.time.monotonic', return_value=100):
+                self.assertEqual(mascot.grab().toImage(), expected)
+            mascot.previous_frame = None
+            expected = mascot.grab().toImage()
+            mascot.flipped = True
+            self.assertEqual(mascot.grab().toImage(), expected)
+        finally:
+            mascot.hide()
 
     def test_compact_message_height_follows_lines_and_removes_close_button(self):
         bubble = self.controller.bubble
@@ -289,6 +400,7 @@ class UserInterfaceTests(unittest.TestCase):
             self.assertGreater(c.bubble.y(), c.resident.y())
             c.drag_character(QPoint(area.right() + 10000, area.bottom() + 10000))
             self.assertTrue(area.contains(c.resident.geometry()))
+            self.assertEqual(c.resident.geometry().bottom(), area.bottom())
             c.motion_x, c.motion_y = float(restored.position_x), restored.position_y
             c.position()
             self.assertEqual((c.resident.x(), c.resident.y()), (restored.position_x, restored.position_y))
@@ -531,7 +643,7 @@ class UserInterfaceTests(unittest.TestCase):
     def test_app_has_brand_name_version_and_windows_icon(self):
         c = self.controller
         self.assertEqual(self.app.applicationDisplayName(), "余白 / YOHAKU")
-        self.assertEqual(self.app.applicationVersion(), "0.12.0")
+        self.assertEqual(self.app.applicationVersion(), "0.13.0")
         self.assertFalse(c.brand_icon.isNull())
         self.assertEqual(c.panel.windowIcon().cacheKey(), c.brand_icon.cacheKey())
         c.panel.character_buttons["B"].click()
@@ -539,7 +651,7 @@ class UserInterfaceTests(unittest.TestCase):
         self.assertEqual(c.tray.icon().cacheKey(), c.icon.cacheKey())
         c.panel.character_buttons["A"].click()
 
-    def test_click_menu_selects_all_four_actions_without_leaking_title(self):
+    def test_click_menu_selects_all_five_actions_without_leaking_title(self):
         c = self.controller
         now = datetime.now().astimezone()
         c.events = [Event("private", now + timedelta(minutes=30), now + timedelta(hours=1), "SECRET")]
@@ -552,7 +664,7 @@ class UserInterfaceTests(unittest.TestCase):
             self.assertIs(c.interaction, c.bubble)
             self.assertIn(c.bubble.text.text(), PHRASES[voice_for(c.settings)]["call"])
             window_id = int(c.bubble.winId())
-            self.assertEqual(set(c.interaction.buttons), {"calendar", "activity", "settings", "hide"})
+            self.assertEqual(set(c.interaction.buttons), {"calendar", "activity", "settings", "hide", "dismiss"})
             self.assertTrue(c.interaction.timer.isActive())
             self.assertEqual(c.interaction.timer.interval(), 60000)
             c.interaction.buttons["calendar"].click()
@@ -661,7 +773,7 @@ class UserInterfaceTests(unittest.TestCase):
         finally:
             c.share()
 
-    def test_auto_notice_and_click_use_same_speech_window_with_four_separate_rows(self):
+    def test_auto_notice_and_click_use_same_speech_window_with_five_separate_rows(self):
         c = self.controller
         c.sample()
         window_id = int(c.bubble.winId())
@@ -671,7 +783,7 @@ class UserInterfaceTests(unittest.TestCase):
         self.assertEqual(int(c.bubble.winId()), window_id)
         self.assertEqual(c.bubble.width(), width)
         self.assertTrue(c.bubble.choice_row.isVisible())
-        self.assertEqual([b.text() for b in c.bubble.buttons.values()], ["予定を聞く", "ファイル起動履歴を見る", "設定を開く", "非表示にする"])
+        self.assertEqual([b.text() for b in c.bubble.buttons.values()], ["予定を聞く", "ファイル起動履歴を見る", "設定を開く", "非表示にする", "用事はない"])
         self.assertTrue(all(not b.isCheckable() for b in c.bubble.buttons.values()))
         self.app.processEvents()
         rows = [b.geometry() for b in c.bubble.buttons.values()]
@@ -710,6 +822,8 @@ class UserInterfaceTests(unittest.TestCase):
         try:
             with patch.object(QSystemTrayIcon, "isSystemTrayAvailable", return_value=True):
                 QTest.mouseClick(c.resident, Qt.MouseButton.RightButton)
+                self.assertFalse(c.bubble.isVisible())
+                QTest.mouseClick(c.resident, Qt.MouseButton.RightButton)
                 self.assertTrue(c.bubble.choice_row.isVisible())
                 c.bubble.buttons["hide"].click()
                 self.assertTrue(c.user_hidden)
@@ -733,6 +847,8 @@ class UserInterfaceTests(unittest.TestCase):
                 self.assertTrue(c.resident.isVisible())
                 c.open_choices()
                 QTest.mouseClick(c.bubble.text, Qt.MouseButton.RightButton)
+                self.assertFalse(c.bubble.isVisible())
+                QTest.mouseClick(c.resident, Qt.MouseButton.RightButton)
                 self.assertTrue(c.bubble.choice_row.isVisible())
                 c.bubble.buttons["hide"].click()
                 self.assertFalse(c.bubble.isVisible())
