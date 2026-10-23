@@ -34,7 +34,7 @@ jobs:
       - name: Build Windows onedir ZIP
         working-directory: ${{ env.YOHAKU_PROJECT }}
         run: python scripts/build_onedir.py --skip-install
-      - name: Package complete source ZIP
+      - name: Package two source ZIPs
         working-directory: ${{ env.YOHAKU_PROJECT }}
         run: python scripts/package_source.py
       - name: Upload ZIPs and checksums

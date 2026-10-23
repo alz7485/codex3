@@ -13,9 +13,10 @@ from companion.core import CHARACTERS, PHRASES, Event, Notice, Settings
 from companion.activity import FileObservation
 from companion.dialogue import voice_for
 from companion.ui import Controller, Panel, Resident, blend_frames, character_frames, character_pixmap, create_application
-from PySide6.QtCore import QEvent, QPoint, QPointF, QRect, Qt
+from PySide6.QtCore import QEvent, QPoint, QPointF, QRect, QDate, Qt
 from PySide6.QtGui import QColor, QMouseEvent, QPixmap
 from PySide6.QtTest import QTest
+from PySide6.QtWidgets import QPushButton
 
 
 class UserInterfaceTests(unittest.TestCase):
@@ -53,16 +54,17 @@ class UserInterfaceTests(unittest.TestCase):
     def setUp(self):
         self.controller.history_window.hide()
 
-    def test_message_shows_body_and_calendar_and_mail_keep_their_headings(self):
+    def test_all_bubbles_show_body_without_a_header(self):
         bubble = self.controller.bubble
         try:
-            for kind in ("calendar", "notification", "message"):
+            for kind in ("calendar", "notification", "departure", "menu", "message"):
                 bubble.display(Notice("表示見出し", "本文だけのメッセージ。", kind=kind))
                 self.app.processEvents()
-                self.assertEqual(bubble.heading.isVisible(), kind != "message")
+                self.assertFalse(bubble.heading.isVisible())
+                self.assertFalse(any(button.text() == '×' for button in bubble.findChildren(QPushButton)))
                 self.assertEqual(bubble.text.text(), "本文だけのメッセージ。")
             bubble.open_choices()
-            self.assertTrue(bubble.heading.isVisible())
+            self.assertFalse(bubble.heading.isVisible())
         finally:
             bubble.hide()
 
@@ -78,6 +80,95 @@ class UserInterfaceTests(unittest.TestCase):
         a.fill(Qt.GlobalColor.transparent)
         b.fill(Qt.GlobalColor.transparent)
         self.assertEqual(blend_frames(a, b, 0.5).toImage().pixelColor(0, 0).alpha(), 0)
+
+    def test_compact_message_height_follows_lines_and_removes_close_button(self):
+        bubble = self.controller.bubble
+        try:
+            bubble.open_choices()
+            heights = []
+            for lines in (1, 2, 3, 1):
+                bubble.display(Notice('', '\n'.join(['短いメッセージです。'] * lines)))
+                self.app.processEvents()
+                self.assertFalse(any(button.text() == '×' for button in bubble.findChildren(QPushButton)))
+                self.assertFalse(bubble.heading.isVisible())
+                self.assertEqual(bubble.content_scroll.height(), bubble.text.heightForWidth(bubble.width() - 36))
+                self.assertEqual(bubble.height(), bubble.content_scroll.height() + 34)
+                heights.append(bubble.height())
+            self.assertEqual(heights[0], heights[3])
+            self.assertGreater(heights[1], heights[0])
+            self.assertEqual(heights[2] - heights[1], heights[1] - heights[0])
+        finally:
+            bubble.hide()
+
+    def test_clicking_message_text_and_background_closes_only_the_bubble(self):
+        c = self.controller
+        try:
+            for widget, point in ((c.bubble.text, QPoint(8, 8)), (c.bubble.content_scroll.viewport(), QPoint(8, 8)),
+                                  (c.bubble, QPoint(8, 8))):
+                c.bubble.display(Notice('', 'クリックで閉じます。'))
+                QTest.mouseClick(widget, Qt.MouseButton.LeftButton, pos=point)
+                self.assertFalse(c.bubble.isVisible())
+                self.assertFalse(c.bubble.timer.isActive())
+                self.assertTrue(c.resident.isVisible())
+            c.bubble.open_choices()
+            QTest.mouseClick(c.bubble.text, Qt.MouseButton.LeftButton, pos=QPoint(8, 8))
+            self.assertTrue(c.bubble.isVisible())
+            self.assertFalse(any(button.text() == '×' for button in c.bubble.findChildren(QPushButton)))
+        finally:
+            c.bubble.hide()
+
+    def test_new_mail_has_senders_without_counts_and_unread_is_only_conversation_context(self):
+        c = self.controller
+        old = (c.settings.outlook_enabled, c.settings.mail_enabled, c.settings.mail_show_senders,
+               c.settings.quiet_start, c.settings.quiet_end, c.engine.paused_until, c.unread_count, c.unread_at)
+        try:
+            c.settings.outlook_enabled = c.settings.mail_enabled = c.settings.mail_show_senders = True
+            c.settings.quiet_start = c.settings.quiet_end = '00:00'
+            c.engine.paused_until = None
+            c.bubble.hide()
+
+            c.mail_result(c.mail_generation, {'unread_count': 12}, '')
+            self.assertFalse(c.bubble.isVisible())
+            self.assertEqual(c.engine.context['unread_mail_count'], 12)
+            c.mail_result(c.mail_generation, {'messages': [{'kind': 'mail', 'sender': '山田さん'},
+                                                          {'kind': 'mail', 'sender': '佐藤さん'}]}, '')
+            self.assertEqual(c.bubble.kind, 'notification')
+            self.assertIn('山田さん', c.bubble.text.text())
+            self.assertIn('佐藤さん', c.bubble.text.text())
+            self.assertNotRegex(c.bubble.text.text() + c.bubble.heading.text(), r'\d+件')
+            c.mail_result(c.mail_generation, {'messages': [{'kind': 'mail', 'sender': '鈴木さん'}]}, '')
+            self.assertNotIn('山田さん', c.bubble.text.text())
+            self.assertIn('鈴木さん', c.bubble.text.text())
+            c.bubble.hide()
+            c.unread_at = datetime.now().astimezone() - timedelta(seconds=100)
+            c.refresh_context_metrics(datetime.now().astimezone())
+            self.assertNotIn('unread_mail_count', c.engine.context)
+            c.mail_result(c.mail_generation, {'unread_count': None}, '')
+            self.assertIsNone(c.unread_count)
+        finally:
+            (c.settings.outlook_enabled, c.settings.mail_enabled, c.settings.mail_show_senders,
+             c.settings.quiet_start, c.settings.quiet_end, c.engine.paused_until, c.unread_count, c.unread_at) = old
+            c.bubble.hide()
+
+    def test_pending_calendar_status_and_partial_read_warning_are_visible(self):
+        from companion.outlook import CalendarEvents
+        c = self.controller
+        old = (c.events, c.connected, c.connected_at, c.settings.show_titles)
+        now = datetime.now().astimezone()
+        try:
+            c.settings.show_titles = False
+            c.received(c.generation, CalendarEvents([Event('pending-ui', now + timedelta(minutes=30),
+                       now + timedelta(hours=1), response='未承諾')], complete=False, warnings=['会議案内を一部取得できません。']), '')
+            self.assertIn('未承諾', c.panel.event_summary.text())
+            self.assertIn('一部取得', c.panel.status_label.text())
+            self.assertIn('一部取得できません', c.panel.calendar_detail.text())
+            c.select_content('calendar')
+            self.assertIn('[未承諾]', c.bubble.text.text())
+            self.assertIn('一部の予定', c.bubble.text.text())
+            self.assertIsNone(c.daily_events)
+        finally:
+            c.events, c.connected, c.connected_at, c.settings.show_titles = old
+            c.bubble.hide()
 
     def test_drag_does_not_click_and_small_pointer_jitter_still_clicks(self):
         resident = Resident()
@@ -165,6 +256,103 @@ class UserInterfaceTests(unittest.TestCase):
         finally:
             c.motion_x, c.motion_y = old_x, old_y
             c.position()
+
+    def test_history_columns_calendar_range_and_double_click_open_file(self):
+        from companion.ui import HistoryWindow
+        window = HistoryWindow()
+        now = datetime.now().astimezone()
+        path = str(Path(self.temp.name) / '長いファイル名の予算資料.xlsx')
+        try:
+            window.set_records([('長いファイル名の予算資料.xlsx', path, 'Excel', now.isoformat())], 'テスト')
+            window.show()
+            self.app.processEvents()
+            self.assertEqual(window.table.columnCount(), 3)
+            self.assertGreaterEqual(window.table.columnWidth(1), 300)
+            self.assertEqual(window.calendar.minimumDate(), QDate.currentDate().addMonths(-3))
+            item = window.table.topLevelItem(0)
+            with patch('companion.ui.QDesktopServices.openUrl', return_value=True) as opener:
+                point = window.table.visualItemRect(item).center()
+                QTest.mouseClick(window.table.viewport(), Qt.MouseButton.LeftButton, pos=point)
+                QTest.mouseDClick(window.table.viewport(), Qt.MouseButton.LeftButton, pos=point)
+                opener.assert_called_once()
+                self.assertEqual(opener.call_args.args[0].toLocalFile(), path)
+        finally:
+            window.hide()
+            window.deleteLater()
+
+    def test_calendar_today_and_selection_use_distinct_clear_colors(self):
+        from companion.ui import HistoryCalendar
+        calendar = HistoryCalendar()
+        today = QDate.currentDate()
+        calendar.setSelectedDate(today.addDays(-1))
+        from PySide6.QtGui import QPainter
+        colors = []
+        try:
+            for day in (today.addDays(-1), today):
+                pixmap = QPixmap(72, 52)
+                pixmap.fill(QColor('white'))
+                painter = QPainter(pixmap)
+                calendar.paintCell(painter, QRect(0, 0, 72, 52), day)
+                painter.end()
+                colors.append(pixmap.toImage().pixelColor(14, 10).name())
+            self.assertEqual(colors, ['#1d4ed8', '#fde68a'])
+        finally:
+            calendar.deleteLater()
+
+    def test_departure_asks_before_opening_site_and_no_url_opens_settings(self):
+        c = self.controller
+        old = c.settings.attendance_url
+        try:
+            c.settings.attendance_url = 'https://attendance.example.test/input'
+            with patch('companion.ui.QDesktopServices.openUrl', return_value=True) as opener:
+                c.bubble.show_departure(Notice('退勤前', 'PC起動 08:00', kind='departure'), True)
+                self.assertTrue(c.bubble.departure_row.isVisible())
+                opener.assert_not_called()
+                c.bubble.attendance_button.click()
+                opener.assert_called_once()
+                self.assertEqual(opener.call_args.args[0].toString(), c.settings.attendance_url)
+                self.assertFalse(c.bubble.isVisible())
+            c.settings.attendance_url = ''
+            with patch('companion.ui.QDesktopServices.openUrl') as opener:
+                c.bubble.show_departure(Notice('退勤前', '時刻です', kind='departure'), False)
+                c.bubble.attendance_button.click()
+                opener.assert_not_called()
+                self.assertTrue(c.panel.isVisible())
+                self.assertEqual(c.panel.pages.currentIndex(), 1)
+            c.bubble.display(Notice('', '通常の一言'))
+            self.assertFalse(c.bubble.departure_row.isVisible())
+        finally:
+            c.settings.attendance_url = old
+            c.panel.hide()
+            c.bubble.hide()
+
+    def test_departure_settings_validate_and_save_from_settings_ui(self):
+        from dataclasses import asdict
+        from PySide6.QtCore import QTime
+        c = self.controller
+        old = asdict(c.settings)
+        p = c.panel
+        try:
+            p.attendance_url.setText('javascript:alert(1)')
+            p.save_departure_fields()
+            self.assertEqual(asdict(c.settings), old)
+            self.assertIn('URL', p.departure_status.text())
+            p.departure_check.setChecked(True)
+            p.departure_time.setTime(QTime(17, 0))
+            p.attendance_url.setText('https://attendance.example.test/input')
+            p.departure_message.setPlainText('本日の勤怠を確認しましょう。')
+            p.save_departure_fields()
+            restored = Settings.load(c.path / 'settings.json')
+            self.assertTrue(restored.departure_enabled)
+            self.assertEqual(restored.departure_time, '17:00')
+            self.assertEqual(restored.departure_message, '本日の勤怠を確認しましょう。')
+            self.assertEqual(restored.attendance_url, 'https://attendance.example.test/input')
+        finally:
+            for key, value in old.items(): setattr(c.settings, key, value)
+            p.departure_check.setChecked(c.settings.departure_enabled)
+            p.departure_time.setTime(QTime.fromString(c.settings.departure_time, 'HH:mm'))
+            p.attendance_url.setText(c.settings.attendance_url)
+            p.departure_message.setPlainText(c.settings.departure_message)
 
     def test_pause_and_restore(self):
         c = self.controller
@@ -285,7 +473,7 @@ class UserInterfaceTests(unittest.TestCase):
     def test_app_has_brand_name_version_and_windows_icon(self):
         c = self.controller
         self.assertEqual(self.app.applicationDisplayName(), "余白 / YOHAKU")
-        self.assertEqual(self.app.applicationVersion(), "0.10.0")
+        self.assertEqual(self.app.applicationVersion(), "0.11.0")
         self.assertFalse(c.brand_icon.isNull())
         self.assertEqual(c.panel.windowIcon().cacheKey(), c.brand_icon.cacheKey())
         c.panel.character_buttons["B"].click()
@@ -582,12 +770,12 @@ class UserInterfaceTests(unittest.TestCase):
 
     def test_mail_notification_is_immediate_colored_and_privacy_modes_suppress_it(self):
         c=self.controller
-        old=(c.settings.outlook_enabled,c.settings.mail_enabled,c.settings.mail_show_subjects,c.settings.quiet_start,c.settings.quiet_end,c.engine.paused_until)
+        old=(c.settings.outlook_enabled,c.settings.mail_enabled,c.settings.mail_show_senders,c.settings.quiet_start,c.settings.quiet_end,c.engine.paused_until)
         try:
-            c.settings.outlook_enabled=True;c.settings.mail_enabled=True;c.settings.mail_show_subjects=False
+            c.settings.outlook_enabled=True;c.settings.mail_enabled=True;c.settings.mail_show_senders=False
             c.settings.quiet_start=c.settings.quiet_end='00:00';c.engine.paused_until=None
             c.open_choices()
-            c.mail_result(c.mail_generation,{'count':1,'subjects':['SECRET']},'')
+            c.mail_result(c.mail_generation,{'messages':[{'kind':'mail','sender':'SECRET'}]},'')
             self.assertEqual(c.bubble.kind,'notification')
             self.assertFalse(c.bubble.choice_row.isVisible())
             self.assertNotIn('SECRET',c.bubble.text.text())
@@ -596,17 +784,17 @@ class UserInterfaceTests(unittest.TestCase):
             self.assertEqual(c.bubble.kind,'calendar')
             self.assertNotEqual(c.bubble.grab().toImage().pixelColor(8,45),notification_color)
             c.bubble.hide()
-            c.mail_result(c.mail_generation-1,{'count':1,'subjects':['STALE']},'')
+            c.mail_result(c.mail_generation-1,{'messages':[{'kind':'mail','sender':'STALE'}]},'')
             self.assertFalse(c.bubble.isVisible())
             c.user_hidden=True
-            c.mail_result(c.mail_generation,{'count':1},'')
+            c.mail_result(c.mail_generation,{'messages':[{'kind':'mail','sender':'TEST'}]},'')
             self.assertFalse(c.bubble.isVisible())
             c.user_hidden=False
             c.engine.paused_until=datetime.now().astimezone()+timedelta(hours=1)
-            c.mail_result(c.mail_generation,{'count':1},'')
+            c.mail_result(c.mail_generation,{'messages':[{'kind':'mail','sender':'TEST'}]},'')
             self.assertFalse(c.bubble.isVisible())
         finally:
-            c.settings.outlook_enabled,c.settings.mail_enabled,c.settings.mail_show_subjects,c.settings.quiet_start,c.settings.quiet_end,c.engine.paused_until=old
+            c.settings.outlook_enabled,c.settings.mail_enabled,c.settings.mail_show_senders,c.settings.quiet_start,c.settings.quiet_end,c.engine.paused_until=old
             c.user_hidden=False;c.bubble.hide()
 
     def test_context_disable_and_stale_result_do_not_restore_aggregate_data(self):

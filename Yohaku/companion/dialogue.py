@@ -77,6 +77,7 @@ def validate(document):
         _require(rule.get('trigger') == trigger, f'{key}: 発生方法は{trigger}にしてください。')
         _require(isinstance(rule.get('expression'), str) and rule['expression'] in EXPRESSION_FRAMES, f'{key}: 表情が不正です。')
         _require(_integer(rule.get('weight'), 1, 100) and _integer(rule.get('cooldown_minutes'), 0, 1440), f'{key}: 出現しやすさまたは再発言の間隔が不正です。')
+        _require(_integer(rule.get('priority', 0), 0, 5), f'{key}: 優先度は0〜5にしてください。')
         condition = rule.get('condition')
         _require(isinstance(condition, dict) and isinstance(condition.get('kind'), str) and condition['kind'] in KINDS, f'{key}: 発生条件が不正です。')
         kind = condition['kind']
@@ -120,8 +121,10 @@ def validate_condition(condition, key='', depth=0):
 
 
 def upgrade(document):
-    if not isinstance(document, dict) or type(document.get('schema_version')) is not int or document.get('schema_version') != 1:
+    if not isinstance(document, dict) or type(document.get('schema_version')) is not int or document.get('schema_version') not in (1, 2):
         return document
+    if document['schema_version'] == 2:
+        return upgrade_mail(document)
     result = deepcopy(document)
     base = json.loads(DEFAULT_PATH.read_text(encoding='utf-8'))
     result['schema_version'] = 2
@@ -138,6 +141,29 @@ def upgrade(document):
                 for voice, bank in result['phrases'].items():
                     if isinstance(bank, dict) and voice in base['phrases']:
                         bank[rule['id']] = deepcopy(base['phrases'][voice][rule['id']])
+    return upgrade_mail(result)
+
+
+def upgrade_mail(document):
+    """Add the new topic once; later user deletions stay deleted."""
+    if document.get('content_revision', 0) == 3:
+        return document
+    result = deepcopy(document)
+    base = json.loads(DEFAULT_PATH.read_text(encoding='utf-8'))
+    if isinstance(result.get('rules'), list) and isinstance(result.get('phrases'), dict):
+        existing = {r.get('id') for r in result['rules'] if isinstance(r, dict) and isinstance(r.get('id'), str)}
+        if 'mail_unread' not in existing:
+            result['rules'].append(deepcopy(next(r for r in base['rules'] if r['id'] == 'mail_unread')))
+            for voice, bank in result['phrases'].items():
+                if isinstance(bank, dict) and voice in base['phrases']:
+                    bank['mail_unread'] = deepcopy(base['phrases'][voice]['mail_unread'])
+        for voice, bank in result['phrases'].items():
+            if isinstance(bank, dict) and voice in base['phrases'] and isinstance(bank.get('mail_received'), list):
+                # Old templates count new mail; retain unrelated custom wording.
+                bank['mail_received'] = [base['phrases'][voice]['mail_received'][i % 2]
+                                         if isinstance(line, str) and '{mail_count}' in line else line
+                                         for i, line in enumerate(bank['mail_received'])]
+    result['content_revision'] = 3
     return result
 
 

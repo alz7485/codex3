@@ -1,9 +1,9 @@
 """Classic Outlook receive events with a one-second Inbox polling fallback.
 
-Never starts Outlook, reads bodies, changes read flags, or persists message IDs.
+Never starts Outlook, reads subjects/bodies, changes read flags, or persists IDs.
 """
 from __future__ import annotations
-from datetime import datetime
+from datetime import datetime, timedelta
 import hashlib
 import sys
 import threading
@@ -11,7 +11,8 @@ import time
 
 
 class MailDeduplicator:
-    def __init__(self):
+    def __init__(self, capacity=2048):
+        self.capacity = capacity
         self.seen = set()
         self.order = []
 
@@ -21,19 +22,51 @@ class MailDeduplicator:
             return False
         self.seen.add(key)
         self.order.append(key)
-        if len(self.order) > 2048:
+        if self.capacity is not None and len(self.order) > self.capacity:
             self.seen.discard(self.order.pop(0))
         return True
 
 
+def mail_identity(item):
+    """Use a stable transport ID when rules move mail and change its EntryID."""
+    try:
+        store = str(item.Parent.StoreID)
+    except Exception:
+        store = ''
+    for tag in ('0x1035001F', '0x1035001E'):
+        try:
+            identity = str(item.PropertyAccessor.GetProperty(
+                'http://schemas.microsoft.com/mapi/proptag/' + tag)).strip()
+            if identity:
+                return (store, int(item.Class), 'internet', identity)
+        except Exception:
+            pass
+    return (store, int(item.Class), 'entry', str(item.EntryID))
+
+
+def sender_name(item):
+    for attribute in ('SenderName', 'SenderEmailAddress'):
+        try:
+            value = str(getattr(item, attribute) or '').replace('\r', ' ').replace('\n', ' ').strip()
+            if value:
+                return value[:160]
+        except Exception:
+            pass
+    return '送信者を取得できませんでした'
+
+
 class OutlookMailWatcher:
-    def __init__(self, received, status, show_details=False):
+    def __init__(self, received, status, show_senders=True):
         self.received = received
         self.status = status
-        self.show_details = show_details
+        self.show_senders = show_senders
         self.stop_event = threading.Event()
         self.thread = None
-        self.dedup = MailDeduplicator()
+        # Keep all hashes during this watcher session: an Inbox burst larger
+        # than the LRU must not be counted again at the next poll.
+        self.dedup = MailDeduplicator(capacity=None)
+        self.started = datetime.now().astimezone()
+        self.poll_since = self.started
 
     def start(self):
         if self.thread is None:
@@ -42,6 +75,24 @@ class OutlookMailWatcher:
 
     def stop(self):
         self.stop_event.set()
+
+    def collect(self, items):
+        messages = []
+        for item in items:
+            if self.stop_event.is_set():
+                break
+            try:
+                kind = int(item.Class)
+                if kind not in (43, 53) or item.ReceivedTime.astimezone() < self.started:
+                    continue
+                if not self.dedup.accept(mail_identity(item)):
+                    continue
+            except Exception:
+                continue
+            messages.append({'kind': 'mail' if kind == 43 else 'meeting',
+                             'sender': sender_name(item) if self.show_senders else ''})
+        if messages and not self.stop_event.is_set():
+            self.received({'messages': messages})
 
     def run(self):
         if sys.platform != 'win32':
@@ -55,27 +106,18 @@ class OutlookMailWatcher:
                 try:
                     application = win32com.client.GetActiveObject('Outlook.Application')
                     namespace = application.GetNamespace('MAPI')
-                    started = datetime.now().astimezone()
                     watcher = self
 
                     def handle_ids(ids):
-                        count, subjects = 0, []
-                        for identity in str(ids).split(',')[:100]:
-                            if not identity or watcher.stop_event.is_set():
-                                continue
-                            try:
-                                item = namespace.GetItemFromID(identity)
-                                if int(item.Class) not in (43, 53):
+                        def incoming():
+                            for identity in str(ids).split(','):
+                                if not identity or watcher.stop_event.is_set():
                                     continue
-                                if not watcher.dedup.accept(identity):
+                                try:
+                                    yield namespace.GetItemFromID(identity)
+                                except Exception:
                                     continue
-                                count += 1
-                                if watcher.show_details:
-                                    subjects.append(str(item.Subject)[:120])
-                            except Exception:
-                                continue
-                        if count and not watcher.stop_event.is_set():
-                            watcher.received({'count': count, 'subjects': subjects})
+                        watcher.collect(incoming())
 
                     class Events:
                         def OnNewMailEx(self, entry_ids):
@@ -87,17 +129,7 @@ class OutlookMailWatcher:
                     except Exception:
                         sink = None
                         self.status('Outlook受信トレイを1秒間隔で確認中（イベント接続は利用不可）')
-                    # Seed existing mail without reading subjects or producing alerts.
                     inbox = namespace.GetDefaultFolder(6)
-                    items = inbox.Items
-                    items.Sort('[ReceivedTime]', True)
-                    for index in range(1, min(int(items.Count), 100) + 1):
-                        try:
-                            old = items.Item(index)
-                            if old.ReceivedTime.astimezone() < started:
-                                self.dedup.accept(old.EntryID)
-                        except Exception:
-                            pass
                     next_poll = time.monotonic()
                     while not self.stop_event.is_set():
                         pythoncom.PumpWaitingMessages()
@@ -105,18 +137,33 @@ class OutlookMailWatcher:
                             next_poll = time.monotonic() + 1
                             items = inbox.Items
                             items.Sort('[ReceivedTime]', True)
-                            ids = []
-                            for index in range(1, min(int(items.Count), 100) + 1):
-                                item = items.Item(index)
-                                try:
-                                    received = item.ReceivedTime.astimezone()
-                                    if received < started:
-                                        break
-                                    ids.append(str(item.EntryID))
-                                except Exception:
-                                    continue
-                            if ids:
-                                handle_ids(','.join(ids))
+                            try:
+                                unread = int(inbox.UnReadItemCount)
+                                if unread < 0:
+                                    unread = None
+                            except Exception:
+                                unread = None
+                            self.received({'unread_count': unread})
+                            latest = [self.poll_since]
+
+                            def recent_items():
+                                # Do not truncate a burst to the first 100 messages.
+                                for index in range(1, int(items.Count) + 1):
+                                    if self.stop_event.is_set():
+                                        return
+                                    try:
+                                        item = items.Item(index)
+                                        received = item.ReceivedTime.astimezone()
+                                        if received < self.poll_since:
+                                            break
+                                        latest[0] = max(latest[0], received)
+                                        yield item
+                                    except Exception:
+                                        continue
+                            self.collect(recent_items())
+                            # Rescan a small overlap for timestamp ties and sync
+                            # delays, rather than the whole monitoring session.
+                            self.poll_since = max(self.started, latest[0] - timedelta(minutes=2))
                         self.stop_event.wait(0.1)
                     sink = None
                 except Exception:

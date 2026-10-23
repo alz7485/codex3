@@ -10,6 +10,7 @@ import re
 from typing import Callable
 
 from .dialogue import AUTO_PERSONALITY, PHRASES, DialogueStore, matches, voice_for
+from .departure import DEFAULT_MESSAGE, attendance_url, departure_body
 
 
 CHARACTERS = {
@@ -54,12 +55,17 @@ class Settings:
     file_logging: bool = False
     context_enabled: bool = True
     mail_enabled: bool = True
-    mail_show_subjects: bool = False
+    mail_show_senders: bool = True
     personality: str = AUTO_PERSONALITY
     interval: int = 10
     conversation_version: int = 2
     quiet_start: str = "18:00"
     quiet_end: str = "09:00"
+    departure_enabled: bool = False
+    departure_weekdays: bool = True
+    departure_time: str = '17:00'
+    departure_message: str = DEFAULT_MESSAGE
+    attendance_url: str = ''
 
     @classmethod
     def load(cls, path: Path) -> "Settings":
@@ -79,11 +85,17 @@ class Settings:
         if raw and (type(raw.get("conversation_version")) is not int or raw["conversation_version"] < 2):
             settings.interval = 10
         settings.conversation_version = 2
-        for name in ("quiet_start", "quiet_end"):
+        for name in ("quiet_start", "quiet_end", 'departure_time'):
             try:
                 datetime.strptime(getattr(settings, name), "%H:%M")
             except ValueError:
                 setattr(settings, name, getattr(cls(), name))
+        try:
+            settings.attendance_url = attendance_url(settings.attendance_url)
+        except ValueError:
+            settings.attendance_url = ''
+        if not settings.departure_message.strip() or len(settings.departure_message) > 1000:
+            settings.departure_message = DEFAULT_MESSAGE
         return settings
 
 
@@ -93,6 +105,8 @@ class Event:
     start: datetime
     end: datetime
     title: str = ""
+    response: str = ""
+    legacy_key: str = ""
 
 
 @dataclass(frozen=True)
@@ -136,6 +150,7 @@ class Engine:
         self.context = {}
         raw = self.state.get("notified", {})
         self.notified = raw if isinstance(raw, dict) else {}
+        self.departure_date = self.state.get('departure_date', '')
 
     def phrase(self, category: str) -> str:
         voice = voice_for(self.settings, self.dialogue.data)
@@ -155,10 +170,12 @@ class Engine:
                   for key, value in self.context.items() if value is not None}
         end = self.context.get('until_work_end_minutes')
         if type(end) in (int, float):
-            values['hours_to_end'] = f'{max(0, end) / 60:.1f}'.rstrip('0').rstrip('.')
+            hours, minutes = divmod(int(round(max(0, end))), 60)
+            values['hours_to_end'] = (f'{hours}時間' if hours else '') + (f'{minutes}分' if minutes or not hours else '')
         values['work_start'] = self.dialogue.data['options']['work_start']
         values['work_end'] = self.dialogue.data['options']['work_end']
-        return re.sub(r'\{([a-z_]+)\}', lambda match: values.get(match.group(1), match.group(0)), phrases[index])
+        template = re.sub(r'\{hours_to_end\}\s*時間', '{hours_to_end}', phrases[index])
+        return re.sub(r'\{([a-z_]+)\}', lambda match: values.get(match.group(1), match.group(0)), template)
 
     def conversation(self, now: datetime, events: list[Event] = (), connected=False, manual=True) -> Notice | None:
         """Evaluate validated declarative JSON rules; no expressions or code execution."""
@@ -182,6 +199,9 @@ class Engine:
             if eligible and options['selection_policy'] == 'least_recent':
                 oldest = min(self.category_last[r['id']].timestamp() if r['id'] in self.category_last else float('-inf') for r in eligible)
                 pool = [r for r in eligible if (self.category_last[r['id']].timestamp() if r['id'] in self.category_last else float('-inf')) == oldest]
+                # A small number of extra tickets can bring a priority topic
+                # back before every other eligible topic has had a turn.
+                pool += [r for r in eligible for _ in range(r.get('priority', 0))]
         category = self.choose([r['id'] for r in pool for _ in range(r['weight'])])
         self.session_spoken = True
         self.last_category = category
@@ -194,7 +214,23 @@ class Engine:
         self.notified = {k: v for k, v in self.notified.items()
                          if isinstance(v, (int, float)) and v > now.timestamp()} 
         self.notified = dict(list(self.notified.items())[-512:])
-        save_json(self.history_path, {"recent": self.recent, "notified": self.notified})
+        save_json(self.history_path, {"recent": self.recent, "notified": self.notified,
+                                     'departure_date': self.departure_date})
+
+    def departure_notice(self, now, hidden=False, uptime_provider=lambda: None):
+        if (not self.settings.departure_enabled or hidden or is_quiet(now, self.settings)
+                or (self.paused_until and now < self.paused_until)
+                or (self.settings.departure_weekdays and now.weekday() >= 5)
+                or self.departure_date == now.date().isoformat()):
+            return None
+        hour, minute = map(int, self.settings.departure_time.split(':'))
+        due = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+        if not 0 <= (now - due).total_seconds() < 600:
+            return None
+        self.departure_date = now.date().isoformat()
+        self.last_display = now
+        return Notice('退勤前のお知らせ', departure_body(self.settings.departure_message, now, uptime_provider()),
+                      True, 'notice', 'departure')
 
     def next_notice(self, now: datetime, events: list[Event], hidden: bool = False,
                     connected: bool = False, allow_chatter: bool = True) -> Notice | None:
@@ -204,15 +240,19 @@ class Engine:
         reminder = self.dialogue.rule("meeting")
         for event in sorted(events, key=lambda e: e.start):
             delta = (event.start - now).total_seconds()
-            if connected and reminder["enabled"] and 0 < delta <= options["meeting_lead_minutes"] * 60 and event.key not in self.notified:
+            if (connected and reminder["enabled"] and 0 < delta <= options["meeting_lead_minutes"] * 60
+                    and event.key not in self.notified and event.legacy_key not in self.notified):
                 self.notified[event.key] = (event.end + timedelta(days=1)).timestamp()
                 minutes = max(1, int((delta + 59) // 60))
                 text = self.phrase("meeting")
+                state = f'（{event.response}）' if event.response else ''
+                text = f'予定まであと{minutes}分です。{state}\n' + text
                 if self.settings.show_titles and event.title:
                     text = event.title[:60] + "\n" + text
                 self.last_display = now
                 self.persist(now)
-                return Notice(f"予定まで あと{minutes}分", text, True, reminder["expression"], "calendar")
+                status = f" · {event.response}" if event.response else ""
+                return Notice(f"予定まで あと{minutes}分{status}", text, True, reminder["expression"], "calendar")
         elapsed = (now - self.last_display).total_seconds()
         if options["suppress_during_meetings"] and connected and any(event.start <= now < event.end for event in events):
             return None  # Keep casual remarks out of calendar meeting time.

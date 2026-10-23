@@ -12,6 +12,15 @@ from companion.activity import FileHistory, FileObservation
 
 
 class ContextTests(unittest.TestCase):
+    def test_time_to_end_uses_hours_and_minutes_and_accepts_old_templates(self):
+        store = DialogueStore(self.path / 'dialogue.json')
+        voice = '控えめな皮肉屋'
+        store.data['phrases'][voice]['before_end'] = ['定時まであと{hours_to_end}時間です。']
+        engine = Engine(Settings(), self.path / 'history.json', choose=lambda values: values[0], dialogue=store)
+        for minutes, expected in ((100, '1時間40分'), (40, '40分'), (120, '2時間'), (0, '0分')):
+            engine.context = {'until_work_end_minutes': minutes}
+            self.assertEqual(engine.phrase('before_end'), f'定時まであと{expected}です。')
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)

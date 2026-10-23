@@ -8,6 +8,17 @@ from companion.core import CHARACTERS, Engine, Event, Settings, is_quiet, load_j
 
 
 class NotificationTests(unittest.TestCase):
+    def test_pending_meeting_keeps_one_notification_after_acceptance_and_old_history_is_respected(self):
+        self.settings.chatter = False
+        pending = Event('shared-key', self.event.start, self.event.end, response='未承諾')
+        notice = self.engine.next_notice(self.now, [pending], connected=True)
+        self.assertIn('未承諾', notice.heading)
+        accepted = Event('shared-key', self.event.start, self.event.end)
+        self.assertIsNone(self.engine.next_notice(self.now, [accepted], connected=True))
+        self.engine.notified = {'old-entry-key': (self.event.end + timedelta(days=1)).timestamp()}
+        upgraded = Event('new-global-key', self.event.start, self.event.end, legacy_key='old-entry-key')
+        self.assertIsNone(self.engine.next_notice(self.now, [upgraded], connected=True))
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)

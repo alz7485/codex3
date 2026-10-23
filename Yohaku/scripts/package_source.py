@@ -1,11 +1,13 @@
-"""Create the complete YOHAKU source ZIP and checksum, excluding local user data."""
+"""Package source into two independently readable ZIPs, excluding local user data."""
 from __future__ import annotations
 
 import argparse
+from copy import copy
 import hashlib
 import json
 from pathlib import Path
 import sys
+import tempfile
 import zipfile
 
 PROJECT = Path(__file__).resolve().parents[1]
@@ -54,12 +56,58 @@ def create_archive(project, output):
     return digest
 
 
+def create_split_archives(project, output_directory):
+    """Balance compressed sizes without cutting any file or ZIP byte stream."""
+    output_directory = Path(output_directory)
+    output_directory.mkdir(parents=True, exist_ok=True)
+    common = {'Yohaku/MANIFEST_SHA256.json', 'Yohaku/README.md',
+              'Yohaku/ONEDIR_COMMAND.txt', 'Yohaku/SPLIT_README.txt'}
+    with tempfile.TemporaryDirectory(prefix='yohaku-source-') as temporary:
+        full = Path(temporary) / 'source.zip'
+        create_archive(project, full)
+        with zipfile.ZipFile(full) as source:
+            groups, sizes = [[], []], [0, 0]
+            for entry in sorted(source.infolist(), key=lambda entry: (-entry.compress_size, entry.filename)):
+                if entry.filename in common:
+                    for group in groups:
+                        group.append(entry)
+                else:
+                    index = 0 if sizes[0] <= sizes[1] else 1
+                    groups[index].append(entry)
+                    sizes[index] += entry.compress_size
+            paths = []
+            for index, entries in enumerate(groups, 1):
+                path = output_directory / f'Yohaku-v{VERSION}-source-part{index}-of-2.zip'
+                with zipfile.ZipFile(path, 'w', zipfile.ZIP_DEFLATED) as destination:
+                    for entry in sorted(entries, key=lambda entry: entry.filename):
+                        destination.writestr(copy(entry), source.read(entry.filename))
+                with zipfile.ZipFile(path) as check:
+                    assert check.testzip() is None
+                    manifest = json.loads(check.read('Yohaku/MANIFEST_SHA256.json'))
+                    for name in check.namelist():
+                        relative = name.removeprefix('Yohaku/')
+                        if relative in manifest:
+                            assert hashlib.sha256(check.read(name)).hexdigest() == manifest[relative]
+                digest = hashlib.sha256(path.read_bytes()).hexdigest()
+                path.with_suffix('.zip.sha256').write_text(digest + '  ' + path.name + '\n', encoding='ascii')
+                paths.append(path)
+            # Each required source file must be present in at least one part.
+            with zipfile.ZipFile(paths[0]) as a, zipfile.ZipFile(paths[1]) as b:
+                assert set(a.namelist()) | set(b.namelist()) == set(source.namelist())
+            return paths
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--output", type=Path, default=PROJECT / "release" / f"Yohaku-v{VERSION}-source.zip")
+    parser.add_argument('--output-dir', type=Path, default=PROJECT / 'release')
+    parser.add_argument('--output', type=Path, help='Optional single ZIP output; default is two ZIPs.')
     args = parser.parse_args()
-    digest = create_archive(PROJECT, args.output)
-    print(f"Ready: {args.output}\nSHA-256: {digest}")
+    if args.output:
+        digest = create_archive(PROJECT, args.output)
+        print(f'Ready: {args.output}\nSHA-256: {digest}')
+    else:
+        for path in create_split_archives(PROJECT, args.output_dir):
+            print(f'Ready: {path} ({path.stat().st_size:,} bytes)')
 
 
 if __name__ == "__main__":

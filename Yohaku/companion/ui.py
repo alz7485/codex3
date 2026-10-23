@@ -11,12 +11,12 @@ import sys
 import threading
 import time
 
-from PySide6.QtCore import QDate, QEvent, QLocale, QLockFile, QObject, QPoint, QRect, QRectF, QSize, Qt, QTime, QTimer, Signal
-from PySide6.QtGui import QAction, QColor, QFont, QIcon, QPainter, QPainterPath, QPen, QPixmap
+from PySide6.QtCore import QDate, QEvent, QLocale, QLockFile, QObject, QPoint, QRect, QRectF, QSize, Qt, QTime, QTimer, QUrl, Signal
+from PySide6.QtGui import QAction, QColor, QDesktopServices, QFont, QIcon, QPainter, QPainterPath, QPen, QPixmap
 from PySide6.QtWidgets import (
     QApplication, QButtonGroup, QCalendarWidget, QCheckBox, QComboBox, QFrame, QHeaderView, QHBoxLayout, QLabel, QMainWindow,
     QMenu, QMessageBox, QPushButton, QScrollArea, QSizePolicy, QStackedWidget, QSystemTrayIcon, QTimeEdit,
-    QToolButton, QSpinBox, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget,
+    QToolButton, QSpinBox, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget, QLineEdit, QPlainTextEdit,
 )
 
 from .core import CHARACTERS, Engine, Notice, PHRASES, Settings, data_directory, is_quiet, save_json
@@ -27,6 +27,7 @@ from .outlook import read_calendar
 from .metadata import APP_DISPLAY_NAME, VERSION
 from .context import UsageLedger, input_idle_seconds, desktop_file_count, office_file_count, work_metrics
 from .mail import OutlookMailWatcher
+from .departure import attendance_url, system_uptime_seconds
 
 STYLE = """
 QWidget { color: #263b43; font-size: 13px; }
@@ -464,18 +465,47 @@ class Panel(QMainWindow):
         self.mail_check.setChecked(self.settings.mail_enabled)
         self.mail_check.toggled.connect(lambda value: self.update_setting('mail_enabled', value))
         monitor_box.addWidget(self.mail_check)
-        self.mail_subject_check = QCheckBox('新着通知にメールの件名を表示する')
-        self.mail_subject_check.setChecked(self.settings.mail_show_subjects)
-        self.mail_subject_check.toggled.connect(lambda value: self.update_setting('mail_show_subjects', value))
-        monitor_box.addWidget(self.mail_subject_check)
-        monitor_box.addWidget(label('本文・送信者は読みません。件名は初期非表示。予定は淡い黄、新着は淡い青の吹き出しです。非表示・共有・おやすみ・静かな時間中は出しません。', 'muted', True))
+        self.mail_sender_check = QCheckBox('新着通知に送信者名を表示する')
+        self.mail_sender_check.setChecked(self.settings.mail_show_senders)
+        self.mail_sender_check.toggled.connect(lambda value: self.update_setting('mail_show_senders', value))
+        monitor_box.addWidget(self.mail_sender_check)
+        monitor_box.addWidget(label('新着は送信者を表示し、件数は出しません。件名・本文は読みません。未読がたまると通常会話で件数をお知らせします。予定は淡い黄、新着は淡い青。非表示・共有・おやすみ・静かな時間中は出しません。', 'muted', True))
         self.mail_status = label('受信通知はOutlook接続後に開始します。', 'muted', True)
         monitor_box.addWidget(self.mail_status)
         layout.addWidget(monitor)
+        departure = QFrame(objectName='card')
+        departure_box = box(departure, 18, 10)
+        departure_box.addWidget(label('退勤前のお知らせ', 'section'))
+        self.departure_check = QCheckBox('指定した時刻に知らせる')
+        self.departure_check.setChecked(self.settings.departure_enabled)
+        departure_box.addWidget(self.departure_check)
+        self.departure_weekdays = QCheckBox('平日（月〜金）だけ')
+        self.departure_weekdays.setChecked(self.settings.departure_weekdays)
+        departure_box.addWidget(self.departure_weekdays)
+        self.departure_time = QTimeEdit(QTime.fromString(self.settings.departure_time, 'HH:mm'))
+        self.departure_time.setDisplayFormat('HH:mm')
+        self.departure_time.setAccessibleName('退勤前に知らせる時刻')
+        departure_box.addWidget(self.departure_time)
+        departure_box.addWidget(label('メッセージ'))
+        self.departure_message = QPlainTextEdit(self.settings.departure_message)
+        self.departure_message.setMaximumHeight(85)
+        self.departure_message.setAccessibleName('退勤前のメッセージ')
+        departure_box.addWidget(self.departure_message)
+        departure_box.addWidget(label('勤怠入力サイトのURL'))
+        self.attendance_url = QLineEdit(self.settings.attendance_url)
+        self.attendance_url.setMaxLength(2048)
+        self.attendance_url.setPlaceholderText('https:// （利用者が入力）')
+        self.attendance_url.setAccessibleName('勤怠入力サイトのURL')
+        departure_box.addWidget(self.attendance_url)
+        departure_box.addWidget(label('1日1回、指定時刻から10分以内に表示します。Windowsの起動時刻と経過時間を添え、サイトを開くか選べます。サイトの入力・送信は行いません。', 'muted', True))
+        departure_box.addWidget(button('退勤前通知の設定を保存', self.save_departure_fields))
+        self.departure_status = label('', 'muted', True)
+        departure_box.addWidget(self.departure_status)
+        layout.addWidget(departure)
         activity = QFrame(objectName="card")
         activity_box = box(activity, 18, 10)
         activity_box.addWidget(label("開いたファイルの履歴", "section"))
-        self.logging_check = QCheckBox("開いたファイルの履歴を記録する（7日間）")
+        self.logging_check = QCheckBox("開いたファイルの履歴を記録する（3か月・最大15,000件）")
         self.logging_check.setChecked(self.settings.file_logging)
         self.logging_check.toggled.connect(lambda v: self.update_setting("file_logging", v))
         activity_box.addWidget(self.logging_check)
@@ -525,6 +555,23 @@ class Panel(QMainWindow):
         if key == "animation":
             self.walking_check.setEnabled(value)
         self.changed.emit(key)
+
+    def save_departure_fields(self):
+        try:
+            url = attendance_url(self.attendance_url.text())
+            message = self.departure_message.toPlainText().strip()
+            if not message or len(message) > 1000:
+                raise ValueError('メッセージは1〜1,000文字で入力してください。')
+        except ValueError as error:
+            self.departure_status.setText(str(error))
+            return
+        self.settings.departure_enabled = self.departure_check.isChecked()
+        self.settings.departure_weekdays = self.departure_weekdays.isChecked()
+        self.settings.departure_time = self.departure_time.time().toString('HH:mm')
+        self.settings.departure_message = message
+        self.settings.attendance_url = url
+        self.departure_status.setText('退勤前通知の設定を反映しました。')
+        self.changed.emit('departure')
 
     def closeEvent(self, event):
         event.ignore()
@@ -597,27 +644,42 @@ class Bubble(QFrame):
         self.customContextMenuRequested.connect(lambda _: self.call_requested.emit())
         layout = box(self, 18, 10)
         layout.setContentsMargins(18, 14, 18, 30)
-        row = QHBoxLayout()
-        self.heading = label("", "muted")
-        row.addWidget(self.heading, 1)
-        row.addStretch()
-        close = button("×", self.hide, "link")
-        close.setAccessibleName("吹き出しを閉じる")
-        close.setFixedSize(24, 24)
-        row.addWidget(close)
-        layout.addLayout(row)
+        # Retain notice metadata for previews; no header or close button is laid out.
+        self.heading = label('', 'muted')
+        self.heading.setParent(self)
+        self.heading.hide()
         self.text = label("", wrap=True)
+        self.text.setTextFormat(Qt.TextFormat.PlainText)
         self.text.setStyleSheet("font-size: 14px;")
         layout.addWidget(self.text)
         self.timer = QTimer(self)
         self.timer.setSingleShot(True)
         self.timer.timeout.connect(self.hide)
+        for widget in (self, self.text):
+            widget.installEventFilter(self)
+
+    def eventFilter(self, watched, event):
+        if (event.type() == QEvent.Type.MouseButtonRelease
+                and event.button() == Qt.MouseButton.LeftButton
+                and not getattr(self, 'interactive', False)):
+            self.timer.stop()
+            self.hide()
+            return True
+        return super().eventFilter(watched, event)
+
+    def set_tail_above(self, above):
+        self.tail_above = above
+        vertical = 10
+        self.layout().setContentsMargins(18, vertical + (12 if above else 0),
+                                        18, vertical + (0 if above else 12))
+        self.update()
 
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         fill, stroke = {'message': ('#ffffff', '#dce5dc'), 'menu': ('#f2f6ef', '#b6c9b2'),
-                        'calendar': ('#fff3d4', '#cfb16c'), 'notification': ('#e7f1ff', '#8caed1')}[self.kind]
+                        'calendar': ('#fff3d4', '#cfb16c'), 'notification': ('#e7f1ff', '#8caed1'),
+                        'departure': ('#fff0dd', '#cf9a61')}[self.kind]
         painter.setBrush(QColor(fill))
         painter.setPen(QPen(QColor(stroke), 1))
         shape = QPainterPath()
@@ -632,15 +694,19 @@ class Bubble(QFrame):
         painter.drawPath(shape.united(tail))
 
     def set_kind(self, kind):
-        self.kind = kind if kind in ('message', 'menu', 'calendar', 'notification') else 'message'
-        self.heading.setVisible(self.kind != 'message')
+        self.kind = kind if kind in ('message', 'menu', 'calendar', 'notification', 'departure') else 'message'
+        self.heading.hide()
+        self.text.setTextInteractionFlags(Qt.TextInteractionFlag.NoTextInteraction if self.kind == 'message'
+                                         else Qt.TextInteractionFlag.TextSelectableByMouse)
+        self.set_tail_above(self.tail_above)
         self.update()
 
     def display(self, notice):
         self.set_kind('calendar' if notice.important and notice.kind == 'message' else notice.kind)
         self.heading.setText(notice.heading)
         self.text.setText(notice.text)
-        self.adjustSize()
+        self.layout().activate()
+        self.resize(self.width(), self.layout().sizeHint().height())
         self.show()
         self.timer.start(self.duration_ms)
 
@@ -652,6 +718,7 @@ class Bridge(QObject):
 class InteractionBubble(Bubble):
     """The usual speech bubble, with four actions on separate rows; remarks are a separate left-click action."""
     selected = Signal(str)
+    attendance_requested = Signal()
 
     def __init__(self):
         super().__init__()
@@ -680,6 +747,14 @@ class InteractionBubble(Bubble):
             choices.addWidget(choice)
         layout.addWidget(self.choice_row)
         self.choice_row.hide()
+        self.departure_row = QWidget()
+        actions = QHBoxLayout(self.departure_row)
+        actions.setContentsMargins(0, 0, 0, 0)
+        self.attendance_button = button('勤怠サイトを開く', self.attendance_requested.emit)
+        actions.addWidget(self.attendance_button)
+        actions.addWidget(button('あとで', self.hide))
+        layout.addWidget(self.departure_row)
+        self.departure_row.hide()
         self.resize_text()
         for widget in [self, *self.findChildren(QWidget)]:
             widget.installEventFilter(self)
@@ -691,11 +766,16 @@ class InteractionBubble(Bubble):
         return super().eventFilter(watched, event)
 
     def resize_text(self):
-        height = self.text.heightForWidth(self.width() - 44)
-        self.content_scroll.setFixedHeight(max(32, min(200, height + 5)))
-        self.adjustSize()
+        height = self.text.heightForWidth(self.width() - 36)
+        self.content_scroll.setFixedHeight(max(1, height) if self.kind == 'message'
+                                          else max(1, min(200, height)))
+        self.layout().invalidate()
+        self.layout().activate()
+        # QWidget.adjustSize() can impose a 100px minimum on a top-level window.
+        self.resize(self.width(), self.layout().sizeHint().height())
 
     def open_choices(self, text="お呼びですか？", name="余白"):
+        self.departure_row.hide()
         self.set_kind("menu")
         self.timer.start(self.duration_ms)
         self.current = None
@@ -710,6 +790,7 @@ class InteractionBubble(Bubble):
         self.buttons["calendar"].setFocus()
 
     def content(self, key, heading, text):
+        self.departure_row.hide()
         self.set_kind("calendar" if key == "calendar" else "message")
         self.timer.start(self.duration_ms)
         self.current = key
@@ -720,6 +801,7 @@ class InteractionBubble(Bubble):
         self.resize_text()
 
     def display(self, notice):
+        self.departure_row.hide()
         self.set_kind("calendar" if notice.important and notice.kind == "message" else notice.kind)
         self.current = None
         self.interactive = False
@@ -730,11 +812,38 @@ class InteractionBubble(Bubble):
         self.show()  # WA_ShowWithoutActivating keeps automatic notices passive.
         self.timer.start(self.duration_ms)
 
+    def show_departure(self, notice, has_url):
+        self.display(notice)
+        self.interactive = True
+        self.attendance_button.setText('勤怠サイトを開く' if has_url else 'URLを設定する')
+        self.departure_row.show()
+        self.resize_text()
+
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Escape:
             self.hide()
         else:
             super().keyPressEvent(event)
+
+
+class HistoryCalendar(QCalendarWidget):
+    """Blue selection, amber today; retain both cues when today is selected."""
+    def paintCell(self, painter, rect, date):
+        super().paintCell(painter, rect, date)
+        selected, today = date == self.selectedDate(), date == QDate.currentDate()
+        if not (selected or today):
+            return
+        painter.save()
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setBrush(QColor('#1d4ed8' if selected else '#fde68a'))
+        painter.setPen(QPen(QColor('#d97706'), 2) if today else Qt.PenStyle.NoPen)
+        painter.drawRoundedRect(QRectF(rect).adjusted(2, 2, -2, -2), 5, 5)
+        font = painter.font()
+        font.setBold(True)
+        painter.setFont(font)
+        painter.setPen(QColor('#ffffff' if selected else '#713f12'))
+        painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, str(date.day()))
+        painter.restore()
 
 
 class HistoryWindow(QMainWindow):
@@ -745,8 +854,8 @@ class HistoryWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("ファイル履歴 — 余白")
-        self.resize(960, 580)
-        self.setMinimumSize(800, 500)
+        self.resize(1180, 620)
+        self.setMinimumSize(1000, 500)
         root = QWidget(objectName="panel")
         self.setCentralWidget(root)
         layout = box(root, 24, 16)
@@ -761,43 +870,50 @@ class HistoryWindow(QMainWindow):
         body = QHBoxLayout()
         body.setSpacing(20)
         dates = box(spacing=10)
-        self.calendar = QCalendarWidget()
+        self.calendar = HistoryCalendar()
+        self.calendar.setMaximumWidth(310)
         self.calendar.setLocale(QLocale(QLocale.Language.Japanese, QLocale.Country.Japan))
         self.calendar.setVerticalHeaderFormat(QCalendarWidget.VerticalHeaderFormat.NoVerticalHeader)
-        self.calendar.setDateRange(QDate.currentDate().addDays(-7), QDate.currentDate())
+        self.calendar.setDateRange(QDate.currentDate().addMonths(-3), QDate.currentDate())
         self.calendar.setAccessibleName("ファイル履歴を表示する日付")
         self.calendar.selectionChanged.connect(self.refresh_requested.emit)
         dates.addWidget(self.calendar)
         dates.addWidget(button("今日に戻る", self.today, "link"))
-        dates.addWidget(label("過去7日間 · このPC内に保存\nファイルの内容は読みません。", "muted", True))
+        dates.addWidget(label("青：選択した日　黄：今日\n過去3か月 · このPC内に保存\nファイルの内容は読みません。", "muted", True))
         dates.addStretch()
         body.addLayout(dates)
         files = box(spacing=10)
         self.day_label = label("", "section")
         files.addWidget(self.day_label)
         self.table = QTreeWidget()
-        self.table.setHeaderLabels(["時刻", "ファイル名", "保存先", "取得元"])
+        self.table.setHeaderLabels(["時刻", "ファイル名", "保存先"])
         self.table.setRootIsDecorated(False)
         self.table.setUniformRowHeights(True)
         self.table.setColumnWidth(0, 70)
-        self.table.setColumnWidth(1, 145)
-        self.table.setColumnWidth(3, 80)
+        self.table.setColumnWidth(1, 340)
         self.table.header().setStretchLastSection(False)
         self.table.header().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
         self.table.setAccessibleName("選択した日に開いたファイル")
+        self.table.itemDoubleClicked.connect(self.open_file)
         files.addWidget(self.table, 1)
         self.empty = label("この日の記録はありません。", "muted", True)
         self.empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
         files.addWidget(self.empty, 1)
         body.addLayout(files, 1)
         layout.addLayout(body, 1)
-        layout.addWidget(label("時刻は検出・最近使ったファイルの更新時刻の目安です。保存先は行にポインターを置くと全文を確認できます。", "muted", True))
+        self.open_status = label("ダブルクリックでファイルを開きます。保存先はポインターを置くと全文を確認できます。時刻は検出時の目安です。", "muted", True)
+        layout.addWidget(self.open_status)
         self.last_rows = None
         self.set_records([], "記録オフ")
 
     def today(self):
-        self.calendar.setDateRange(QDate.currentDate().addDays(-7), QDate.currentDate())
+        self.calendar.setDateRange(QDate.currentDate().addMonths(-3), QDate.currentDate())
         self.calendar.setSelectedDate(QDate.currentDate())
+
+    def open_file(self, item, column=0):
+        path = item.data(0, Qt.ItemDataRole.UserRole)
+        if path and not QDesktopServices.openUrl(QUrl.fromLocalFile(path)):
+            self.open_status.setText('ファイルを開けませんでした。移動・削除されていないか、保存先や関連付けを確認してください。')
 
     def set_records(self, rows, status, error=""):
         self.status.setText(status)
@@ -809,10 +925,10 @@ class HistoryWindow(QMainWindow):
         if rows != self.last_rows:
             self.table.clear()
             for name, path, source, opened in rows:
-                item = QTreeWidgetItem([datetime.fromisoformat(opened).astimezone().strftime("%H:%M:%S"), name, path, source])
+                item = QTreeWidgetItem([datetime.fromisoformat(opened).astimezone().strftime("%H:%M:%S"), name, path])
+                item.setData(0, Qt.ItemDataRole.UserRole, path)
                 item.setToolTip(1, name)
                 item.setToolTip(2, path)
-                item.setToolTip(3, source)
                 self.table.addTopLevelItem(item)
             self.last_rows = list(rows)
 
@@ -875,8 +991,8 @@ class Controller(QObject):
         self.mail_generation = 0
         self.mail_watcher = None
         self.mail_configuration = None
-        self.mail_count = 0
-        self.mail_last = 0
+        self.unread_count = None
+        self.unread_at = None
         self.hidden = False
         self.user_hidden = False
         self.busy = False
@@ -910,6 +1026,7 @@ class Controller(QObject):
         self.menu.addAction("余白を終了", self.request_quit)
         self.resident.context_requested.connect(lambda _: self.open_choices())
         self.bubble.call_requested.connect(self.open_choices)
+        self.bubble.attendance_requested.connect(self.open_attendance)
         self.tray = QSystemTrayIcon(self)
         self.apply_character()
         self.tray.setToolTip("余白 — 左クリックで表示切り替え / 右クリックでメニュー")
@@ -996,6 +1113,28 @@ class Controller(QObject):
         self.panel.raise_()
         self.panel.activateWindow()
 
+    def open_attendance(self):
+        if not self.settings.attendance_url:
+            self.bubble.hide()
+            self.panel.set_page(1)
+            self.show_panel()
+            self.panel.attendance_url.setFocus()
+            for scroll in self.panel.findChildren(QScrollArea):
+                if scroll.isAncestorOf(self.panel.attendance_url):
+                    scroll.ensureWidgetVisible(self.panel.attendance_url, 20, 40)
+            return
+        try:
+            url = attendance_url(self.settings.attendance_url)
+        except ValueError:
+            self.bubble.text.setText('勤怠サイトのURLを設定で確認してください。')
+            self.bubble.resize_text()
+            return
+        if QDesktopServices.openUrl(QUrl(url)):
+            self.bubble.hide()
+        else:
+            self.bubble.text.setText(self.bubble.text.text() + '\n\nサイトを開けませんでした。設定のURLをご確認ください。')
+            self.bubble.resize_text()
+
     def request_quit(self):
         if self.editor is not None and self.editor.dirty:
             self.editor.show()
@@ -1080,10 +1219,7 @@ class Controller(QObject):
             y = self.resident.y() + self.resident.height() + 8 if tail_above else above
             y = max(area.top() + 8, min(area.bottom() - bubble.height() - 8, y))
             if bubble.tail_above != tail_above:
-                bubble.tail_above = tail_above
-                bubble.layout().setContentsMargins(18, 30 if tail_above else 14,
-                                                  18, 14 if tail_above else 30)
-                bubble.update()
+                bubble.set_tail_above(tail_above)
             point = QPoint(round(x), round(y))
             if point != bubble.pos():
                 bubble.move(point)
@@ -1225,6 +1361,9 @@ class Controller(QObject):
                 values.update(self.activity_history.repeat_summary(now) or {})
             except (OSError, sqlite3.Error):
                 pass
+        if (self.settings.outlook_enabled and self.settings.mail_enabled and self.unread_at
+                and 0 <= (now - self.unread_at).total_seconds() < 90):
+            values['unread_mail_count'] = self.unread_count
         self.engine.context = values
 
     def clear_usage(self):
@@ -1236,10 +1375,11 @@ class Controller(QObject):
             self.panel.context_status.setText('集計を削除できません。保存先の権限をご確認ください。')
 
     def configure_mail(self):
-        configuration = (self.settings.outlook_enabled, self.settings.mail_enabled, self.settings.mail_show_subjects)
+        configuration = (self.settings.outlook_enabled, self.settings.mail_enabled, self.settings.mail_show_senders)
         if configuration == self.mail_configuration:
             return
         self.mail_configuration = configuration
+        self.unread_count = self.unread_at = None
         self.mail_generation += 1
         if self.mail_watcher:
             self.mail_watcher.stop()
@@ -1250,7 +1390,7 @@ class Controller(QObject):
         generation = self.mail_generation
         self.mail_watcher = OutlookMailWatcher(
             lambda payload: self.mail_bridge.result.emit(generation, payload, ''),
-            lambda status: self.mail_bridge.result.emit(generation, None, status), self.settings.mail_show_subjects)
+            lambda status: self.mail_bridge.result.emit(generation, None, status), self.settings.mail_show_senders)
         self.mail_watcher.start()
 
     def mail_result(self, generation, payload, status):
@@ -1260,25 +1400,36 @@ class Controller(QObject):
             self.panel.mail_status.setText(status)
             return
         now = datetime.now().astimezone()
+        if 'unread_count' in payload:
+            count = payload['unread_count']
+            self.unread_count = count if type(count) is int and count >= 0 else None
+            self.unread_at = now if self.unread_count is not None else None
+            self.refresh_context_metrics(now)
+            return  # Counts are conversation context, never an immediate notice.
         if not (self.settings.mail_enabled and self.settings.outlook_enabled) or self.hidden or self.user_hidden or is_quiet(now, self.settings) or (self.engine.paused_until and now < self.engine.paused_until):
             return
         rule = self.dialogue.rule('mail_received')
         if rule is None or not rule['enabled']:
             return
-        count = payload.get('count', 0)
-        if type(count) is not int or count <= 0:
+        messages = payload.get('messages', [])
+        if not isinstance(messages, list):
             return
-        clock = time.monotonic()
-        self.mail_count = self.mail_count + count if self.bubble.isVisible() and self.bubble.kind == 'notification' and clock - self.mail_last < 5 else count
-        self.mail_last = clock
-        self.engine.context['mail_count'] = self.mail_count
-        text = self.engine.phrase('mail_received')
-        if self.settings.mail_show_subjects:
-            subjects = payload.get('subjects', [])
-            text += '\n\n' + '\n'.join(str(subject)[:120] for subject in subjects[:3])
+        messages = [message for message in messages if isinstance(message, dict)
+                    and message.get('kind') in ('mail', 'meeting')]
+        if not messages:
+            return
+        has_mail = any(message['kind'] == 'mail' for message in messages)
+        meetings = any(message['kind'] == 'meeting' for message in messages)
+        text = self.engine.phrase('mail_received') if has_mail else ''
+        if meetings:
+            text += ('\n' if text else '') + '会議依頼が届きました。'
+        if self.settings.mail_show_senders:
+            senders = dict.fromkeys(str(message.get('sender') or '送信者不明')[:160] for message in messages)
+            text += '\n\n送信者：' + '、'.join(senders)
         self.engine.last_display = now
         self.motion.react(rule['expression'], speaking=True)
-        self.bubble.display(Notice('新着通知 · Outlook', text, True, rule['expression'], 'notification'))
+        heading = '新着メール · Outlook' if has_mail else '会議依頼 · Outlook'
+        self.bubble.display(Notice(heading, text, True, rule['expression'], 'notification'))
         self.position()
 
     def shutdown(self):
@@ -1324,14 +1475,16 @@ class Controller(QObject):
                 text = self.engine.phrase("calendar_unavailable")
             else:
                 upcoming = [event for event in self.events if event.end > now]
-                text = "\n\n".join(f"{e.start:%H:%M}–{e.end:%H:%M}  " +
+                text = "\n\n".join(f"{e.start:%H:%M}–{e.end:%H:%M}  " + (f"[{e.response}] " if e.response else "") +
                                    (e.title[:80] if self.settings.show_titles and e.title else "予定あり（件名は非表示）")
                                    for e in upcoming[:10]) or self.engine.phrase("calendar_empty")
+                if not getattr(self.events, 'complete', True):
+                    text += '\n\n一部の予定を確認できていません。設定の接続状態をご確認ください。'
             self.interaction.content(key, CHARACTERS[self.settings.character], self.engine.phrase("calendar_intro") + "\n\n" + text)
         elif key == "activity":
             self.motion.react(self.dialogue.rule("activity_open")["expression"])
             self.interaction.content(key, CHARACTERS[self.settings.character], self.engine.phrase("activity_open"))
-            self.history_window.calendar.setDateRange(QDate.currentDate().addDays(-7), QDate.currentDate())
+            self.history_window.calendar.setDateRange(QDate.currentDate().addMonths(-3), QDate.currentDate())
             self.refresh_history()
             self.history_window.show()
             self.history_window.raise_()
@@ -1348,7 +1501,7 @@ class Controller(QObject):
 
     def refresh_history(self):
         now = datetime.now().astimezone()
-        status = ("記録オン" if self.settings.file_logging else "記録オフ") + " · 過去7日間 / 最大1,000件 · 1日200件まで表示"
+        status = ("記録オン" if self.settings.file_logging else "記録オフ") + " · 過去3か月 / 最大15,000件 · 1日2,000件まで表示"
         if self.activity_error:
             status += "\n" + self.activity_error
         try:
@@ -1397,7 +1550,7 @@ class Controller(QObject):
                 self.activity_tracker.ingest(snapshot, datetime.now().astimezone())
             except Exception:
                 self.activity_error = "履歴を保存できません。保存先の権限をご確認ください。"
-        self.panel.activity_status.setText(self.activity_error or "記録中 · 5秒ごとに確認 · 保存は7日間 / 最大1,000件")
+        self.panel.activity_status.setText(self.activity_error or "記録中 · 5秒ごとに確認 · 保存は3か月 / 最大15,000件")
         if self.history_window.isVisible():
             self.refresh_history()
 
@@ -1424,7 +1577,7 @@ class Controller(QObject):
     def save_settings(self, key="show_titles"):
         if key == 'context_enabled':
             self.configure_context()
-        if key in ('mail_enabled', 'mail_show_subjects'):
+        if key in ('mail_enabled', 'mail_show_senders'):
             self.configure_mail()
             if self.bubble.kind == 'notification':
                 self.bubble.hide()
@@ -1452,8 +1605,12 @@ class Controller(QObject):
         try:
             save_json(self.path / "settings.json", asdict(self.settings))
             self.panel.saved_label.setText("設定を保存しました。")
+            if key == 'departure':
+                self.panel.departure_status.setText('退勤前通知の設定を保存しました。')
         except OSError:
             self.panel.saved_label.setText("設定を保存できません。保存先の書き込み権限をご確認ください。")
+            if key == 'departure':
+                self.panel.departure_status.setText('保存できませんでした。設定は今回の起動中だけ反映しています。')
         # Appearance/personality/frequency changes must not interrupt Outlook or
         # dismiss an already-visible reminder. Only privacy/source changes do.
         if key == "outlook_enabled":
@@ -1526,13 +1683,18 @@ class Controller(QObject):
                 self.select_content("calendar")
             return
         self.panel.status_label.setText("●  Outlookと接続済み")
-        self.panel.calendar_detail.setText("今日の予定を読み取りました · " + datetime.now().strftime("%H:%M更新"))
+        warnings = getattr(events, 'warnings', ())
+        if warnings:
+            self.panel.status_label.setText('●  Outlookと接続済み · 一部取得')
+        self.panel.calendar_detail.setText(("今日の予定・未承諾の会議案内を読み取りました · " + datetime.now().strftime("%H:%M更新"))
+                                          + ('\n' + '\n'.join(warnings) if warnings else ''))
         now = datetime.now().astimezone()
         future = [event for event in events if event.start > now]
         if future:
             event = future[0]
             title = event.title if self.settings.show_titles else "予定あり（件名は非表示）"
-            self.panel.event_summary.setText(f"次の予定  {event.start:%H:%M}  {title[:80]}")
+            status = f"[{event.response}] " if event.response else ""
+            self.panel.event_summary.setText(f"次の予定  {event.start:%H:%M}  {status}{title[:80]}")
         else:
             self.panel.event_summary.setText("このあとの時間指定の予定はありません。")
         self.tick()
@@ -1571,6 +1733,18 @@ class Controller(QObject):
             self.update_mode()
         self.update_animation_policy()
         self.refresh_context_metrics(now)
+        departure = self.engine.departure_notice(now, self.hidden or self.user_hidden, system_uptime_seconds)
+        if departure:
+            try:
+                self.engine.persist(now)
+            except OSError:
+                self.panel.departure_status.setText('通知履歴を保存できません。再起動すると再通知する場合があります。')
+            self.motion.react('notice', speaking=True)
+            self.bubble.show_departure(departure, bool(self.settings.attendance_url))
+            self.position()
+            return
+        if self.bubble.isVisible() and self.bubble.kind == 'departure':
+            return
         fresh = self.connected_at is not None and (now - self.connected_at).total_seconds() < 300
         try:
             notice = self.engine.next_notice(now, self.events, self.hidden or self.user_hidden, self.connected and fresh,

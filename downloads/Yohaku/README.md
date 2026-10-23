@@ -1,53 +1,54 @@
-# 余白 / YOHAKU v0.10.0
+# 余白 / YOHAKU v0.11.0
 
 <img src="../../Yohaku/companion/assets/app/yohaku.png" width="112" alt="余白のアイコン">
 
 仕事に、ひと呼吸。予定とファイル履歴をそっと知らせる、デスクトップの小さな同僚です。
 
-[完全ソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.10.0-source.zip)
+| ダウンロード | サイズ | 検証 |
+|---|---|---|
+| [ZIP 1/2](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.11.0-source-part1-of-2.zip) | 10.53 MB | [SHA-256](Yohaku-v0.11.0-source-part1-of-2.zip.sha256) |
+| [ZIP 2/2](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.11.0-source-part2-of-2.zip) | 10.53 MB | [SHA-256](Yohaku-v0.11.0-source-part2-of-2.zip.sha256) |
 
-- ドラッグで自由に配置し、位置を自動保存。別モニターに対応し、画面上部では吹き出しをキャラの下へ表示。
-- 通常メッセージは本文だけ。コマ補間の透明度低下と停止時の急な向き反転を修正。
-- 会話文と発生ロジックはJSONに保存。アプリ内の編集画面で変更し、保存後すぐ反映。
-- セリフや話題の追加・削除、時間帯・曜日・予定前後・表情・重み・再発言間隔、キャラの性格、全体の頻度・表示秒数を編集可能。JSON入出力・取り消し・初期値へのリセット・バックアップも用意。
-- 操作なし時間・操作あり推定時間・日別累計、Office文書数・デスクトップ件数、繰り返し開いたファイル、前日のアプリ使用、週と当日の予定数で会話を変更。勤務時間は初期08:30〜17:30。
-- Outlookの新着メール・会議依頼は検知後すぐ通知。予定は淡い黄、新着は淡い青。イベント接続に加え受信トレイを1秒間隔で確認。
-- 各キャラ16種の表情・しぐさ＋8コマの歩行。約60fpsを目安に加減速・呼吸・体の揺れを描画。
-- A：気の利くノート、B：几帳面なロボ、E：まじめな応援ペンギン、F：お茶好きののんびりねこ。固有の性格を設定から切り替え。
-- 計552のセリフを約10分ごと。時間帯・曜日・予定の前後で話題を変え、繰り返しを抑制。
-- 左クリックで一言、右クリックで呼び出し。「予定を聞く」「ファイル起動履歴を見る」「設定を開く」「非表示にする」の4行。吹き出しは初期約1分表示。
-- 呼び出しの「非表示にする」でキャラ・吹き出しを非表示。タスクバーの通知領域に常駐し、アイコンを左クリックすると表示／非表示を切り替え。
-- 左クリックの一言と「予定を聞く」は吹き出し内。「ファイル起動履歴を見る」「設定を開く」は専用画面。
-- ファイル履歴は設定でオンにした場合だけ。このPC内に保存し、カレンダーで日付を選択。
+**両方のZIPを同じ場所へ展開し、Yohakuフォルダーを統合してください。** 共通のREADME・マニフェスト等は同一内容なので、上書き確認は許可します。片方だけでは必要な素材・コードが揃いません。
 
-[移動と本文だけの表示](../../Yohaku/docs/draggable-preview.png) · [会話の編集画面](../../Yohaku/docs/dialogue-editor.png) · [発生ルールの編集](../../Yohaku/docs/dialogue-rules.png) · [JSONの仕様](../../Yohaku/docs/DIALOGUE_JSON.md) · [新しい条件と取得範囲](../../Yohaku/docs/CONTEXT_NOTIFICATIONS.md) · [吹き出しの色](../../Yohaku/docs/notification-colors.png)
+それぞれ普通のZIPで、片方ずつテキスト化・復元できます。連結専用のバイナリ分割ではなく、画像やコードの途中では切っていません。実行・onedirビルドに必要な素材、4キャラ、アイコン、設定初期値、直接コマンドを含みます。ビルド済みEXEは含みません。
 
-[動作プレビュー](../../Yohaku/docs/motion-preview.gif) · [表情一覧](../../Yohaku/docs/expression-preview.png) · [性格・会話のルール](../../Yohaku/docs/CONVERSATION.md)
+- 会話・予定・新着・退勤前・呼び出しの吹き出しは見出しと×なし。本文と必要な選択肢だけを表示。本文の行数に合う高さで、通常メッセージ・通知はクリックで閉じます。
+- 新着メールは届いたことと送信者をすぐ通知し、件数を付けません。件名・本文・添付ファイルを読みません。
+- 未読が初期5件以上なら、件数を含む白い通常メッセージの候補に追加。重み2・優先度1で少し選ばれやすくし、約10分の会話機会と1時間の再発言間隔を守ります。未読数の変化だけでは通知しません。
+- 未読数は既定の受信トレイから取得。90秒以上古い値や取得不能な値では発言しません。しきい値・優先度・セリフはJSONと編集UIで変更できます。
+- ドラッグで自由に配置し位置を保存。別モニターに対応し、画面上部では吹き出しをキャラの下へ表示。
+- 左クリックで一言、右クリックで呼び出し。「予定を聞く」「ファイル起動履歴を見る」「設定を開く」「非表示にする」の4行。
+- 未承諾・仮承諾の会議も読み込み。既定予定表と受信トレイの会議案内を統合して重複を除外し、一部取得は画面に表示。承諾・辞退・既読化・予定追加は行いません。
+- 予定は淡い黄、新着は淡い青。通知領域のアイコンの左クリックでキャラを表示／非表示。
+- A：余白ノート、B：事務ロボ、E：まじめなペンギン、F：お茶ねこ。16種の表情・しぐさ＋8コマの歩行。
+- 定時までの残り時間は「1時間40分」形式。
+- 48話題・564のセリフ。PC操作時間・Office文書数・デスクトップ件数・定時・使用日・予定数・ファイル開き直し等の状況で選択。勤務時間は初期08:30〜17:30。
+- 会話文・発生ルール・キャラの性格はJSON保存。アプリ内の編集UIで保存後すぐ反映。バックアップと入出力にも対応。
+- ファイル履歴は3か月・最大15,000件。ファイル名欄を拡張し取得元列を削除。ダブルクリックで開き、カレンダーの選択日は青・今日は黄。記録は初期オフ。
+- 退勤前通知は初期17:00。時刻・メッセージ・利用者が入力する勤怠URLを設定できます。PC起動時刻と経過時間を添え、サイトを開くか選択します。URL未登録なら設定へ案内。自動入力・送信は行いません。
+
+[退勤前通知](../../Yohaku/docs/departure-preview.png) · [履歴画面](../../Yohaku/docs/history-calendar.png) · [コンパクトなメッセージ](../../Yohaku/docs/draggable-preview.png) · [未読の一言・予定・新着通知](../../Yohaku/docs/notification-colors.png) · [編集画面](../../Yohaku/docs/dialogue-editor.png) · [発生ルール](../../Yohaku/docs/dialogue-rules.png) · [JSONの仕様](../../Yohaku/docs/DIALOGUE_JSON.md)
 
 ## Windowsでonedirを作る
 
-ZIPをすべて展開し、64bit Python 3.11を導入したWindows 11で、`Yohaku`フォルダーをターミナルで開きます。
-**同梱の `ONEDIR_COMMAND.txt` の5行を順に貼り付けて実行してください。バッチや仮想環境の有効化は不要です。**
+2つのZIPの展開・統合後、64bit Python 3.11を導入したWindows 11で、Yohakuフォルダーをターミナルで開きます。
+**両方に同梱した `ONEDIR_COMMAND.txt` の5行を順に貼り付けます。バッチや仮想環境の有効化は不要です。**
 
 ```powershell
 py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements-build.txt
 .\.venv\Scripts\python.exe -m PyInstaller --noconfirm --clean Yohaku.spec
 .\.venv\Scripts\python.exe scripts\collect_licenses.py dist\Yohaku
-.\.venv\Scripts\python.exe -c "import shutil; shutil.make_archive('Yohaku-v0.10.0-windows-x64-onedir', 'zip', 'dist', 'Yohaku')"
+.\.venv\Scripts\python.exe -c "import shutil; shutil.make_archive('Yohaku-v0.11.0-windows-x64-onedir', 'zip', 'dist', 'Yohaku')"
 ```
 
 Python 3.12の場合は、1行目を `py -3.12 -m venv .venv` に置き換えます。
 
-3行目がonedirを作るコマンドです。`Yohaku.spec`でフォルダー形式・アイコン・全キャラの素材を指定しています。
-出力：`dist\Yohaku\Yohaku.exe` と、作業フォルダー直下の `Yohaku-v0.10.0-windows-x64-onedir.zip`。
-**EXEだけを取り出さず、onedir ZIP全体を展開して配布してください。**
-
-このダウンロードはソースZIPです。ビルド済みEXEは含みません。
+出力は `dist\Yohaku\Yohaku.exe` と `Yohaku-v0.11.0-windows-x64-onedir.zip`。
+EXEだけを取り出さず、onedir ZIP全体を展開して配布してください。
 GitHubの「Actions」→「Build YOHAKU Windows onedir」→「Run workflow」でも作成できます。
 
-[ソース・詳しい手順](../../Yohaku/README.md) · [アイコンとアプリ名](../../Yohaku/docs/BRAND.md) · [クリック時の画面](../../Yohaku/docs/click-menu.png)
+[詳しい手順とソース](../../Yohaku/README.md) · [取得範囲](../../Yohaku/docs/CONTEXT_NOTIFICATIONS.md) · [アプリ名とアイコン](../../Yohaku/docs/BRAND.md)
 
-91テスト通過（Linux / Qt offscreen）。Windows実機、実Outlook・Office、Windows用EXEのビルド・実行は未検証です。
-
-SHA-256: `0720b0f151ff7bf670c045e0efc1d310da6d912349e1bc11aaaccd43832e225a`
+121テスト通過（Linux / Qt offscreen・合成データ・COMモック）。Windows実機、実Outlook・Office、Windows EXEのビルド・実行は未検証です。

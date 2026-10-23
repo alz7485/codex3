@@ -134,3 +134,50 @@ class DialogueJsonTests(unittest.TestCase):
         self.engine.conversation(self.now)
         self.assertEqual(pools[0].count('focus'), 7)
         self.assertEqual(pools[0].count('chat'), 1)
+
+    def test_unread_topic_is_a_slightly_prioritized_normal_conversation(self):
+        draft = deepcopy(self.store.data)
+        for rule in draft['rules']:
+            rule['enabled'] = rule['id'] in ('chat', 'mail_unread')
+        self.store.save(draft)
+        self.engine.session_spoken = True
+        self.engine.context['unread_mail_count'] = 4
+        self.engine.conversation(self.now)
+        self.assertEqual(self.engine.last_category, 'chat')
+        self.engine.context['unread_mail_count'] = 12
+        self.engine.last_category = 'other'
+        self.engine.category_last['mail_unread'] = self.now - timedelta(hours=2)
+        self.engine.category_last.pop('chat', None)
+        pools = []
+        def choose(values):
+            if isinstance(values[0], str):
+                pools.append(values)
+                return 'mail_unread' if 'mail_unread' in values else values[0]
+            return values[0]
+        self.engine.choose = choose
+        notice = self.engine.conversation(self.now)
+        self.assertEqual(pools[0].count('chat'), 1)
+        self.assertEqual(pools[0].count('mail_unread'), 2)
+        self.assertIn('12', notice.text)
+        self.assertEqual(notice.kind, 'message')
+        self.assertFalse(notice.important)
+        self.engine.conversation(self.now + timedelta(minutes=10), manual=False)
+        self.assertNotEqual(self.engine.last_category, 'mail_unread')
+
+    def test_version_two_mail_upgrade_preserves_other_edits_and_user_deletion(self):
+        from companion.dialogue import upgrade
+        old = deepcopy(self.store.data)
+        old.pop('content_revision', None)
+        old['rules'] = [r for r in old['rules'] if r['id'] != 'mail_unread']
+        for bank in old['phrases'].values():
+            bank.pop('mail_unread', None)
+            bank['mail_received'] = ['新着メールが{mail_count}件あります。']
+            bank['chat'] = ['編集したセリフです。']
+        upgraded = upgrade(old)
+        self.assertEqual(upgraded['content_revision'], 3)
+        self.assertIn('mail_unread', [r['id'] for r in upgraded['rules']])
+        for bank in upgraded['phrases'].values():
+            self.assertEqual(bank['chat'], ['編集したセリフです。'])
+            self.assertNotIn('{mail_count}', bank['mail_received'][0])
+        upgraded['rules'] = [r for r in upgraded['rules'] if r['id'] != 'mail_unread']
+        self.assertNotIn('mail_unread', [r['id'] for r in upgrade(upgraded)['rules']])

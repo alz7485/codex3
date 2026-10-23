@@ -137,6 +137,8 @@ class DialogueEditor(QMainWindow):
         for key, text in EXPRESSION_LABELS.items():
             self.expression.addItem(text, key)
         self.weight = spin(1, 100)
+        self.priority = spin(0, 5)
+        self.priority.setToolTip('0は通常。未発言を優先する選択方式でも、追加の抽選枠を持ちます。')
         self.cooldown = spin(0, 1440, ' 分')
         self.kind = QComboBox()
         for key, text in KINDS.items():
@@ -162,7 +164,7 @@ class DialogueEditor(QMainWindow):
         self.details.setMaximumHeight(170)
         self.details.setAccessibleName('AND ORの詳細条件JSON配列')
         for title, widget in [('話題名', self.rule_label), ('有効・無効', self.rule_enabled), ('発生方法', self.rule_trigger),
-                              ('表情', self.expression), ('出現しやすさ', self.weight), ('同じ話題の間隔', self.cooldown),
+                              ('表情', self.expression), ('出現しやすさ', self.weight), ('少し優先する（0〜5）', self.priority), ('同じ話題の間隔', self.cooldown),
                               ('発生条件', self.kind), ('集計値', self.metric_selector), ('集計値の下限', self.metric_minimum), ('集計値の上限', self.metric_maximum), ('詳細条件JSON配列', self.details), ('開始時刻', self.start_time), ('終了時刻', self.end_time),
                               ('曜日', day_row), ('経過／開始までの下限', self.minimum), ('上限', self.maximum),
                               ('', self.no_maximum), ('', self.first_only)]:
@@ -176,7 +178,7 @@ class DialogueEditor(QMainWindow):
         self.rule_label.textChanged.connect(self.update_rule)
         for widget in [self.rule_enabled, *self.days, self.no_maximum, self.first_only]:
             widget.toggled.connect(self.update_rule)
-        for widget in (self.weight, self.cooldown, self.minimum, self.maximum):
+        for widget in (self.weight, self.priority, self.cooldown, self.minimum, self.maximum):
             widget.valueChanged.connect(self.update_rule)
         for widget in (self.expression, self.kind):
             widget.currentIndexChanged.connect(self.update_rule)
@@ -319,6 +321,7 @@ class DialogueEditor(QMainWindow):
         self.rule_trigger.setText({'auto': '自動会話', 'click': 'キャラをクリック', 'reminder': '予定開始前のお知らせ', 'action': '操作に対する返答', 'notification': '受信を検知したら通知'}[r['trigger']])
         self.expression.setCurrentIndex(self.expression.findData(r['expression']))
         self.weight.setValue(r['weight'])
+        self.priority.setValue(r.get('priority', 0))
         self.cooldown.setValue(r['cooldown_minutes'])
         c = r['condition']
         self.kind.setCurrentIndex(self.kind.findData(c['kind']))
@@ -345,6 +348,7 @@ class DialogueEditor(QMainWindow):
         kind = self.kind.currentData()
         self.kind.setEnabled(automatic)
         self.weight.setEnabled(automatic)
+        self.priority.setEnabled(automatic)
         self.cooldown.setEnabled(automatic)
         self.start_time.setEnabled(automatic and kind == 'time_range')
         self.end_time.setEnabled(automatic and kind == 'time_range')
@@ -355,7 +359,7 @@ class DialogueEditor(QMainWindow):
         self.no_maximum.setEnabled(automatic and kind in ('session_range', 'metric_range'))
         self.metric_maximum.setEnabled(not self.no_maximum.isChecked())
         self.first_only.setEnabled(automatic and kind == 'session_range')
-        for widget, visible in [(self.weight, automatic), (self.cooldown, automatic), (self.kind, automatic),
+        for widget, visible in [(self.weight, automatic), (self.priority, automatic), (self.cooldown, automatic), (self.kind, automatic),
                 (self.start_time, automatic and kind == 'time_range'), (self.end_time, automatic and kind == 'time_range'),
                 (self.day_row, automatic and kind == 'weekday'), (self.minimum, ranged), (self.maximum, ranged),
                 (self.no_maximum, automatic and kind in ('session_range', 'metric_range')),
@@ -386,7 +390,7 @@ class DialogueEditor(QMainWindow):
             c.update(minimum_minutes=self.minimum.value(), maximum_minutes=None if c['kind'] == 'session_range' and self.no_maximum.isChecked() else self.maximum.value())
             if c['kind'] == 'session_range': c['first_only'] = self.first_only.isChecked()
         r.update(label=self.rule_label.text(), enabled=self.rule_enabled.isChecked(), expression=self.expression.currentData(),
-                 weight=self.weight.value(), cooldown_minutes=self.cooldown.value(), condition=c)
+                 weight=self.weight.value(), priority=self.priority.value(), cooldown_minutes=self.cooldown.value(), condition=c)
         self.rule_list.item(row).setText(r['label'] or '（話題名なし）')
         self.phrase_topics.item(row).setText(r['label'] or '（話題名なし）')
         self.enable_condition_fields()

@@ -6,10 +6,39 @@ import unittest
 import zipfile
 
 from scripts.build_onedir import required_files
-from scripts.package_source import create_archive
+from scripts.package_source import create_archive, create_split_archives
 
 
 class DistributionTests(unittest.TestCase):
+    def test_two_standalone_zips_restore_all_files_and_exclude_runtime_data(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / 'source'
+            root.mkdir()
+            entries = {'main.py': b'print(1)', 'README.md': b'readme', 'ONEDIR_COMMAND.txt': b'build',
+                       'SPLIT_README.txt': b'extract both', 'companion/assets/a.png': bytes(range(256)) * 700,
+                       'companion/assets/b.png': bytes(range(255, -1, -1)) * 600,
+                       'settings.json': b'PRIVATE', 'files.sqlite3': b'PRIVATE'}
+            for name, data in entries.items():
+                path = root / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(data)
+            parts = create_split_archives(root, Path(tmp) / 'output')
+            self.assertEqual(len(parts), 2)
+            combined = {}
+            names = []
+            for part in parts:
+                self.assertEqual(part.with_suffix('.zip.sha256').read_text().split()[0], hashlib.sha256(part.read_bytes()).hexdigest())
+                with zipfile.ZipFile(part) as z:
+                    self.assertIsNone(z.testzip())
+                    self.assertIn('Yohaku/ONEDIR_COMMAND.txt', z.namelist())
+                    self.assertNotIn('Yohaku/settings.json', z.namelist())
+                    names.append(set(z.namelist()))
+                    combined.update({name: z.read(name) for name in z.namelist()})
+            self.assertNotEqual(names[0], names[1])
+            manifest = json.loads(combined['Yohaku/MANIFEST_SHA256.json'])
+            self.assertEqual(set(manifest), set(entries) - {'settings.json', 'files.sqlite3'})
+            for name, digest in manifest.items():
+                self.assertEqual(hashlib.sha256(combined['Yohaku/' + name]).hexdigest(), digest)
     def test_onedir_inputs_include_all_characters_and_windows_resources(self):
         paths = required_files()
         self.assertTrue(all(path.is_file() for path in paths))

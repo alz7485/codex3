@@ -5,12 +5,23 @@ Never reads document contents or starts Office. Not an exhaustive Windows audit.
 from __future__ import annotations
 
 from contextlib import contextmanager
+from calendar import monthrange
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta, timezone
 import ntpath
 from pathlib import Path
 import sqlite3
 import sys
+
+MAX_HISTORY_RECORDS = 15000
+DAY_RECORD_LIMIT = 2000
+
+
+def retention_start(now):
+    day = now.astimezone().date()
+    month = day.year * 12 + day.month - 1 - 3
+    year, month = divmod(month, 12)
+    return day.replace(year=year, month=month + 1, day=min(day.day, monthrange(year, month + 1)[1]))
 
 
 @dataclass(frozen=True)
@@ -91,15 +102,16 @@ class FileHistory:
             with db:
                 db.execute("PRAGMA secure_delete=ON")
                 db.execute("CREATE TABLE IF NOT EXISTS files (id INTEGER PRIMARY KEY, name TEXT NOT NULL, path TEXT NOT NULL, source TEXT NOT NULL, opened TEXT NOT NULL, observed TEXT NOT NULL, UNIQUE(path, opened))")
+                db.execute('CREATE INDEX IF NOT EXISTS files_opened_idx ON files(opened)')
                 yield db
         finally:
             db.close()
 
     @staticmethod
     def _prune(db, now):
-        cutoff = (now.astimezone(timezone.utc) - timedelta(days=7)).isoformat()
-        db.execute("DELETE FROM files WHERE observed < ?", (cutoff,))
-        db.execute("DELETE FROM files WHERE id NOT IN (SELECT id FROM files ORDER BY id DESC LIMIT 1000)")
+        cutoff = datetime.combine(retention_start(now), time.min).astimezone().astimezone(timezone.utc).isoformat()
+        db.execute("DELETE FROM files WHERE opened < ?", (cutoff,))
+        db.execute("DELETE FROM files WHERE id NOT IN (SELECT id FROM files ORDER BY opened DESC, id DESC LIMIT ?)", (MAX_HISTORY_RECORDS,))
 
     def append(self, observations: list[FileObservation], now: datetime):
         if not observations and not self.path.exists():
@@ -110,7 +122,7 @@ class FileHistory:
                            (item.name, item.path, item.source, (item.opened or now).astimezone(timezone.utc).isoformat(), now.astimezone(timezone.utc).isoformat()))
             self._prune(db, now)
 
-    def for_day(self, day: date, now: datetime, limit=200):
+    def for_day(self, day: date, now: datetime, limit=DAY_RECORD_LIMIT):
         if not self.path.exists():
             return []
         start = datetime.combine(day, time.min).astimezone().astimezone(timezone.utc).isoformat()

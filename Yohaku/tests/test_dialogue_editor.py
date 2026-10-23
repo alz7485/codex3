@@ -68,6 +68,19 @@ class DialogueEditorTests(unittest.TestCase):
         self.assertTrue(e.save())
         self.assertIsNone(self.store.rule(key))
 
+    def test_unread_threshold_and_priority_can_be_saved_in_the_editor(self):
+        e = self.editor
+        row = next(i for i, rule in enumerate(e.draft['rules']) if rule['id'] == 'mail_unread')
+        e.rule_list.setCurrentRow(row)
+        self.assertEqual(e.metric_selector.currentData(), 'unread_mail_count')
+        self.assertEqual(e.priority.value(), 1)
+        e.metric_minimum.setValue(8)
+        e.priority.setValue(2)
+        self.assertTrue(e.save())
+        rule = self.store.rule('mail_unread')
+        self.assertEqual(rule['condition']['minimum'], 8)
+        self.assertEqual(rule['priority'], 2)
+
     def test_blank_text_and_failed_write_preserve_active_data(self):
         e = self.editor
         original = deepcopy(self.store.data)

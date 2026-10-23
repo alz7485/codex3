@@ -6,7 +6,7 @@ import unittest
 from types import ModuleType, SimpleNamespace
 from unittest.mock import Mock, patch
 
-from companion.activity import FileHistory, FileTracker, FileObservation
+from companion.activity import FileHistory, FileTracker, FileObservation, MAX_HISTORY_RECORDS, retention_start
 
 
 class FileHistoryTests(unittest.TestCase):
@@ -86,13 +86,24 @@ class FileHistoryTests(unittest.TestCase):
         self.assertEqual(self.history.for_day(day - timedelta(days=2), self.now), [])
 
     def test_retention_limit_clear_and_reload(self):
-        files = [self.file(f"{i}.xlsx", opened=self.now + timedelta(seconds=i)) for i in range(1003)]
+        files = [self.file(f"{i}.xlsx", opened=self.now + timedelta(seconds=i)) for i in range(MAX_HISTORY_RECORDS + 3)]
         self.history.append(files, self.now)
         loaded = FileHistory(self.path)
-        self.assertEqual(len(loaded.for_day(self.now.astimezone().date(), self.now, 2000)), 1000)
-        self.assertEqual(loaded.for_day(self.now.astimezone().date(), self.now + timedelta(days=8)), [])
+        self.assertEqual(len(loaded.for_day(self.now.astimezone().date(), self.now, MAX_HISTORY_RECORDS + 10)), MAX_HISTORY_RECORDS)
+        self.assertEqual(loaded.for_day(self.now.astimezone().date(), self.now + timedelta(days=100)), [])
         loaded.clear()
         self.assertFalse(self.path.exists())
+
+    def test_three_calendar_month_retention_includes_boundary_and_handles_month_ends(self):
+        now = self.now.replace(month=10, day=31)
+        self.assertEqual(retention_start(now).isoformat(), '2026-07-31')
+        feb = now.replace(month=5)
+        self.assertEqual(retention_start(feb).isoformat(), '2026-02-28')
+        self.history.append([self.file('境界.xlsx', opened=now.replace(month=7, day=31)),
+                             self.file('期限切れ.xlsx', opened=now.replace(month=7, day=30))], now)
+        rows = self.history.for_day(now.replace(month=7, day=31).date(), now)
+        self.assertEqual(rows[0][0], '境界.xlsx')
+        self.assertEqual(self.history.for_day(now.replace(month=7, day=30).date(), now), [])
 
     def test_office_adapter_reads_existing_workbook_metadata_without_opening_file(self):
         from companion.activity import opened_file_snapshot
