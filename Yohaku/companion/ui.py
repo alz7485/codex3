@@ -15,8 +15,8 @@ from PySide6.QtCore import QDate, QEvent, QLocale, QLockFile, QObject, QPoint, Q
 from PySide6.QtGui import QAction, QColor, QCursor, QDesktopServices, QFont, QIcon, QPainter, QPainterPath, QPen, QPixmap, QTransform
 from PySide6.QtWidgets import (
     QApplication, QButtonGroup, QCalendarWidget, QCheckBox, QComboBox, QFrame, QHeaderView, QHBoxLayout, QLabel, QMainWindow,
-    QMenu, QMessageBox, QPushButton, QScrollArea, QSizePolicy, QStackedWidget, QSystemTrayIcon, QTimeEdit,
-    QToolButton, QSpinBox, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget, QLineEdit, QPlainTextEdit, QListWidget, QListWidgetItem,
+    QMenu, QMessageBox, QPushButton, QScrollArea, QSizePolicy, QStackedWidget, QSystemTrayIcon, QTimeEdit, QDateEdit,
+    QToolButton, QSpinBox, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget, QWidgetAction, QLineEdit, QPlainTextEdit, QListWidget, QListWidgetItem,
 )
 
 from .core import CHARACTERS, Engine, Notice, PHRASES, Settings, data_directory, is_quiet, save_json
@@ -160,11 +160,16 @@ def speech_action_icon(action):
             path.cubicTo(14, 17, 6, 17, 2, 10)
             painter.drawEllipse(QRectF(7, 7, 6, 6))
             painter.drawLine(3, 17, 17, 3)
-        elif action == 'dismiss':
-            painter.drawEllipse(QRectF(2.5, 2.5, 15, 15))
-            path.moveTo(6, 10)
-            path.lineTo(9, 13)
-            path.lineTo(14, 7)
+        elif action == 'one_shot':
+            path.moveTo(4, 14)
+            path.lineTo(5, 12)
+            path.lineTo(5, 8)
+            path.cubicTo(5, 2, 15, 2, 15, 8)
+            path.lineTo(15, 12)
+            path.lineTo(16, 14)
+            path.closeSubpath()
+            painter.drawLine(8, 17, 12, 17)
+            painter.drawLine(10, 1, 10, 3)
         painter.drawPath(path)
         painter.end()
         icon.addPixmap(pixmap)
@@ -883,11 +888,49 @@ class Bridge(QObject):
     result = Signal(int, object, str)
 
 
+class PopupDateEdit(QDateEdit):
+    """Open a calendar from the whole date field, including its text area."""
+    def __init__(self, day):
+        super().__init__(day)
+        self.setCalendarPopup(True)
+        self.date_popup = QMenu(self)
+        self.popup_calendar = QCalendarWidget()
+        action = QWidgetAction(self.date_popup);action.setDefaultWidget(self.popup_calendar)
+        self.date_popup.addAction(action)
+        self.popup_calendar.clicked.connect(self.choose_date)
+        self.popup_calendar.activated.connect(self.choose_date)
+        self.lineEdit().installEventFilter(self)
+
+    def choose_date(self, day):
+        self.setDate(day);self.date_popup.hide()
+
+    def show_calendar(self):
+        self.popup_calendar.setSelectedDate(self.date())
+        self.date_popup.popup(self.mapToGlobal(QPoint(0, self.height())))
+        self.popup_calendar.setFocus()
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.show_calendar();event.accept()
+        else:
+            super().mousePressEvent(event)
+
+    def eventFilter(self, watched, event):
+        if watched is self.lineEdit() and event.type() == QEvent.Type.MouseButtonPress and event.button() == Qt.MouseButton.LeftButton:
+            self.show_calendar();return True
+        return super().eventFilter(watched, event)
+
+    def hideEvent(self, event):
+        self.date_popup.hide()
+        super().hideEvent(event)
+
+
 class InteractionBubble(Bubble):
     """The usual speech bubble with five actions and passive left-click remarks."""
     selected = Signal(str)
     attendance_requested = Signal()
     file_requested = Signal(str)
+    one_shot_requested = Signal()
 
     def __init__(self):
         super().__init__()
@@ -918,7 +961,7 @@ class InteractionBubble(Bubble):
         choices.setContentsMargins(0, 0, 0, 0)
         choices.setSpacing(6)
         self.buttons = {}
-        for key, title in (("calendar", "予定を聞く"), ("activity", "ファイル起動履歴を見る"), ("settings", "設定を開く"), ("hide", "非表示にする"), ("dismiss", "用事はない")):
+        for key, title in (("calendar", "予定を聞く"), ("activity", "ファイル起動履歴を見る"), ("settings", "設定を開く"), ("one_shot", "通知を設定する"), ("hide", "非表示にする")):
             choice = button(title, lambda checked=False, k=key: self.selected.emit(k), "speechChoice")
             choice.setIcon(speech_action_icon(key))
             choice.setIconSize(QSize(18, 18))
@@ -936,6 +979,31 @@ class InteractionBubble(Bubble):
         self.departure_row.hide()
         self.detail_action=button('管理画面を開く',lambda:self.selected.emit('outlook_calendar' if self.kind=='calendar' else 'activity_manager'),'speechChoice')
         layout.addWidget(self.detail_action);self.detail_action.hide()
+        self.one_shot_form = QWidget()
+        form = QVBoxLayout(self.one_shot_form)
+        form.setContentsMargins(0, 0, 0, 0);form.setSpacing(7)
+        date_time = QHBoxLayout()
+        self.reminder_date = PopupDateEdit(QDate.currentDate())
+        self.reminder_date.setDisplayFormat('yyyy/MM/dd');self.reminder_date.setCalendarPopup(True)
+        self.reminder_date.setAccessibleName('通知する日付');self.reminder_date.setToolTip('カレンダーから日付を選択できます')
+        self.reminder_time = QTimeEdit(QTime.currentTime())
+        self.reminder_time.setDisplayFormat('HH:mm');self.reminder_time.setAccessibleName('通知する時刻')
+        date_time.addWidget(self.reminder_date, 3);date_time.addWidget(self.reminder_time, 2)
+        form.addLayout(date_time)
+        self.reminder_message = QPlainTextEdit()
+        self.reminder_message.setPlaceholderText('通知内容（1000文字まで）')
+        self.reminder_message.setAccessibleName('通知内容');self.reminder_message.setFixedHeight(76)
+        form.addWidget(self.reminder_message)
+        self.reminder_status = label('', 'muted', True);form.addWidget(self.reminder_status)
+        self.inline_mail = label('', wrap=True)
+        self.inline_mail.setStyleSheet('background: #e7f1ff; color: #315878; border-radius: 5px; padding: 6px;')
+        form.addWidget(self.inline_mail);self.inline_mail.hide()
+        form_actions = QHBoxLayout()
+        self.reminder_ok = button('OK', self.one_shot_requested.emit, 'primary')
+        self.reminder_cancel = button('キャンセル', self.dismiss)
+        form_actions.addWidget(self.reminder_ok);form_actions.addWidget(self.reminder_cancel)
+        form.addLayout(form_actions)
+        layout.addWidget(self.one_shot_form);self.one_shot_form.hide()
         self.resize_text()
         for widget in [self, *self.findChildren(QWidget)]:
             widget.installEventFilter(self)
@@ -947,8 +1015,8 @@ class InteractionBubble(Bubble):
             if item:self.file_requested.emit(item.data(Qt.ItemDataRole.UserRole))
             return True
         if (event.type()==QEvent.Type.MouseButtonRelease and event.button()==Qt.MouseButton.LeftButton
-                and getattr(self,'current',None) in ('activity','calendar')
-                and watched in (self,self.text,self.content_scroll.viewport())):
+                and (getattr(self,'current',None) in ('activity','calendar') or getattr(self,'kind',None)=='menu' and getattr(self,'current',None)!='one_shot')
+                and watched in (self,self.text,self.content_scroll,self.content_scroll.viewport(),getattr(self,'choice_row',None))):
             self.dismiss();return True
         if (event.type()==QEvent.Type.MouseButtonRelease and event.button()==Qt.MouseButton.LeftButton
                 and getattr(self,'kind',None)=='calendar' and watched is self.text):
@@ -980,7 +1048,8 @@ class InteractionBubble(Bubble):
         cap = max(1, maximum - chrome)
         if self.kind != 'message':
             cap = min(200, cap)
-        width = max(1, self.width() - 36)
+        margins = self.layout().contentsMargins()
+        width = max(1, self.contentsRect().width() - margins.left() - margins.right())
         height = max(1, self.text.heightForWidth(width))
         if height > cap:
             width = max(1, width - self.content_scroll.verticalScrollBar().sizeHint().width())
@@ -994,6 +1063,7 @@ class InteractionBubble(Bubble):
 
     def open_choices(self, text="お呼びですか？", name="Yohaku"):
         self.notice = None
+        self.one_shot_form.hide()
         self.departure_row.hide()
         self.file_links.hide();self.file_links.clear();self.detail_action.hide()
         self.set_kind("menu")
@@ -1015,6 +1085,7 @@ class InteractionBubble(Bubble):
         self.current = key
 
     def display(self, notice):
+        self.one_shot_form.hide()
         self.notice = notice
         self.departure_row.hide()
         self.file_links.hide();self.file_links.clear();self.detail_action.hide();self.detail_action.setEnabled(True)
@@ -1031,6 +1102,19 @@ class InteractionBubble(Bubble):
         self.content_scroll.verticalScrollBar().setValue(0)
         self.show()  # WA_ShowWithoutActivating keeps automatic notices passive.
         self.timer.start(self.duration_ms)
+
+    def show_one_shot_form(self):
+        self.display(Notice('', 'いつ、何をお知らせしましょう？'))
+        self.current = 'one_shot';self.interactive = True
+        self.set_kind('menu')
+        now = datetime.now().astimezone() + timedelta(minutes=1)
+        self.reminder_date.setDate(QDate.currentDate())
+        # At 23:59 the default remains today, so use the last minute and let
+        # validation ask for a future day instead of silently changing the date.
+        self.reminder_time.setTime(QTime(now.hour, now.minute) if now.date()==datetime.now().date() else QTime(23,59))
+        self.reminder_message.clear();self.reminder_status.clear();self.reminder_status.hide();self.inline_mail.hide()
+        self.one_shot_form.show();self.timer.stop();self.resize_text()
+        self.activateWindow();self.reminder_message.setFocus()
 
     def show_file_history(self,text,rows):
         self.display(Notice('',text))
@@ -1290,6 +1374,7 @@ class Controller(QObject):
         self.resident.dragged.connect(self.drag_character)
         self.resident.drag_finished.connect(self.finish_drag)
         self.interaction.selected.connect(self.select_content)
+        self.interaction.one_shot_requested.connect(self.save_one_shot)
         self.history_window.refresh_requested.connect(self.refresh_history)
         self.history_window.settings_requested.connect(self.show_panel)
         self.menu = QMenu()
@@ -1885,6 +1970,10 @@ class Controller(QObject):
         self.engine.last_display = now
         self.motion.react(rule['expression'], speaking=True)
         self.mail_burst_notice = Notice('', self.engine.phrase('mail_received'), True, rule['expression'], 'notification')
+        if self.bubble.isVisible() and self.bubble.current == 'one_shot':
+            self.bubble.inline_mail.setText(self.mail_burst_notice.text)
+            self.bubble.inline_mail.show();self.bubble.resize_text();self.position()
+            return  # Notify immediately without replacing the unfinished form.
         self.bubble.display(self.mail_burst_notice)
         self.position()
 
@@ -1905,6 +1994,8 @@ class Controller(QObject):
                 pass
 
     def show_message(self):
+        if self.bubble.isVisible() and self.bubble.current == 'one_shot':
+            return
         if self.hidden or self.user_hidden or self.pending_reaction is not None:
             return
         now = datetime.now().astimezone()
@@ -1991,7 +2082,7 @@ class Controller(QObject):
     def open_choices(self):
         if self.hidden or self.user_hidden:
             return
-        if self.bubble.isVisible() and self.bubble.kind == 'menu':
+        if self.bubble.isVisible() and self.bubble.kind == 'menu' and self.bubble.current != 'one_shot':
             self.bubble.timer.stop()
             self.bubble.hide()
             return
@@ -2007,12 +2098,29 @@ class Controller(QObject):
         self.interaction.open_choices(text, CHARACTERS[self.settings.character])
         self.position()
 
+    def save_one_shot(self):
+        if self.hidden or self.user_hidden or self.bubble.current != 'one_shot' or not self.bubble.isVisible():
+            return
+        day = self.bubble.reminder_date.date();clock = self.bubble.reminder_time.time()
+        when = datetime(day.year(), day.month(), day.day(), clock.hour(), clock.minute())
+        try:
+            self.engine.one_shots.add(when, self.bubble.reminder_message.toPlainText(), datetime.now().astimezone())
+        except ValueError as error:
+            self.bubble.reminder_status.setText(str(error))
+            self.bubble.reminder_status.show()
+        except OSError:
+            self.bubble.reminder_status.setText('通知を保存できません。保存先の空き容量・権限をご確認ください。')
+            self.bubble.reminder_status.show()
+        else:
+            self.bubble.display(Notice('', f'{when:%Y/%m/%d %H:%M} に、一度だけお知らせします。'))
+        self.bubble.resize_text();self.position()
+
     def select_content(self, key):
         if self.hidden or self.user_hidden:
             return
         now = datetime.now().astimezone()
         self.engine.last_display = now
-        if key in ('calendar', 'activity', 'settings'):
+        if key in ('calendar', 'activity', 'settings', 'one_shot'):
             self.interaction.timer.stop()
             self.interaction.hide()
             self.interaction.choice_row.hide()
@@ -2034,6 +2142,12 @@ class Controller(QObject):
         elif key == "activity":
             self.motion.react(self.dialogue.rule("activity_open")["expression"])
             self.show_today_history()
+        elif key == 'one_shot':
+            self.bubble.show_one_shot_form()
+            if self.engine.one_shots.error:
+                self.bubble.reminder_status.setText(self.engine.one_shots.error)
+                self.bubble.reminder_status.show()
+                self.bubble.resize_text()
         elif key=='outlook_calendar':
             self.open_outlook_calendar()
         elif key == 'activity_manager':
@@ -2048,10 +2162,6 @@ class Controller(QObject):
             self.show_message()
         elif key == "hide":
             self.hide_character()
-        elif key == "dismiss":
-            self.clear_reaction()
-            self.bubble.timer.stop()
-            self.bubble.hide()
         elif key == "settings":
             self.motion.react(self.dialogue.rule("settings_open")["expression"])
             self.show_panel()
@@ -2337,6 +2447,8 @@ class Controller(QObject):
             self.update_mode()
         self.update_animation_policy()
         self.refresh_context_metrics(now)
+        if self.bubble.isVisible() and self.bubble.current == 'one_shot':
+            return  # Keep scheduled messages from replacing unfinished input.
         departure = self.engine.departure_notice(now, self.hidden or self.user_hidden, system_uptime_seconds)
         if departure:
             try:

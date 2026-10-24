@@ -46,12 +46,14 @@ class PreviewWindow(QMainWindow):
         self.bubble.call_requested.connect(self.toggle_choices)
 
     def selected(self, key):
-        if key in ('dismiss', 'hide'):
+        if key == 'hide':
             self.bubble.dismiss()
             if key == 'hide':
                 self.mascot.hide()
         elif key == 'calendar':
             self.selector.setCurrentIndex(self.selector.findData('calendar'))
+        elif key == 'one_shot':
+            self.bubble.show_one_shot_form()
 
     def toggle_choices(self):
         if self.bubble.isVisible() and self.bubble.kind == 'menu':

@@ -25,3 +25,7 @@ usage.json
 usage.tmp
 settings.tmp
 history.tmp
+
+one_shot_notifications.json
+one_shot_notifications.json.bak
+one_shot_notifications.json.tmp

@@ -1,4 +1,4 @@
-# Yohaku v0.16.0
+# Yohaku v0.17.0
 
 <img src="../../Yohaku/companion/assets/app/yohaku.png" width="112" alt="Yohakuのアイコン">
 
@@ -6,13 +6,14 @@
 
 | ダウンロード | サイズ | 検証 |
 |---|---|---|
-| [ZIP 1/2](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.16.0-source-part1-of-2.zip) | 12.65 MB | [SHA-256](Yohaku-v0.16.0-source-part1-of-2.zip.sha256) |
-| [ZIP 2/2](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.16.0-source-part2-of-2.zip) | 12.65 MB | [SHA-256](Yohaku-v0.16.0-source-part2-of-2.zip.sha256) |
+| [ZIP 1/2](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.17.0-source-part1-of-2.zip) | 12.69 MB | [SHA-256](Yohaku-v0.17.0-source-part1-of-2.zip.sha256) |
+| [ZIP 2/2](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.17.0-source-part2-of-2.zip) | 12.69 MB | [SHA-256](Yohaku-v0.17.0-source-part2-of-2.zip.sha256) |
 
 **両方のZIPを同じ場所へ展開し、Yohakuフォルダーを統合してください。** 共通のREADME・マニフェスト等は同一内容なので、上書き確認は許可します。片方だけでは必要な素材・コードが揃いません。
 
 それぞれ普通のZIPで、片方ずつテキスト化・復元できます。連結専用のバイナリ分割ではなく、画像やコードの途中では切っていません。実行・onedirビルドに必要な素材、4キャラ、アイコン、設定初期値、直接コマンドを含みます。ビルド済みEXEは含みません。
 
+- v0.17.0：呼び出しの「用事はない」を削除し、本文・余白クリックで閉じます。「通知を設定する」を非表示の直前に追加。吹き出し内の日付・時刻・内容とOK／キャンセルで、一度きりの通知を登録します。今日を初期日付にし、日付欄のクリックでカレンダーを表示。再起動後も保持し、一度表示したら再通知しません。
 - 履歴と予定の対話：今日の履歴を縦並びのファイルリンクで表示し、管理ボタンから全履歴のUIへ移動。予定のボタンでは従来版Outlookの予定表を開きます。
 - v0.16.0：状態の継続・復帰、会議の詰まり具合、指定ファイル／フォルダー、日本の祝日・会社休日、バッテリー・電源、話題ごとの休止・頻度低下を追加。条件は会話編集UI、休日・対象・話題の表示は専用UIで変更できます。月末・締め日の最終営業日通知にも対応。
 - v0.15.0：CPU・メモリ使用率の会話を追加。CPUは直近約1分の平均で80%以上／20%以下、メモリはPC全体で85%以上／50%以下を初期条件にします。約10分おきの通常会話で、しきい値・文章は会話編集UIとJSONから変更可能。使用率は保存しません。
@@ -28,13 +29,13 @@
 - 新着は「メールが届きました。」だけを表示し、送信者名・アドレス・件名・本文は取得しません。最初は即通知し、直後3秒以内の連続受信は同じ通知にまとめます。新着件数も出しません。
 - 同じ段階の反応は初期30秒空け、タスクバー吸着、歩き出しの向き確認・前傾・停止後の正面復帰、独立した表情・通知プレビュー、標準・控えめ・通知だけのプリセットを追加。
 - 歩行8コマの中心・足元をそろえ、タスクバー直上まで配置できるよう下限を下げました。正面への補間でも向きを保持。猫の目は琥珀色の虹彩と縦長の瞳孔へ少し調整。
-- 呼び出し中は再右クリックで閉じ、「用事はない」でキャラを残して吹き出しを閉じます。連打の反応は確認するまで左クリックで上書きせず、新着等の通知後も未確認の反応へ戻ります。
+- 呼び出し中は再右クリックで閉じ、本文・余白クリックでキャラを残して吹き出しを閉じます。連打の反応は確認するまで左クリックで上書きせず、新着等の通知後も未確認の反応へ戻ります。
 - 4キャラに正面・正面まばたき・困る・怒る表情を追加。ペンギンの翼は左右1本ずつ。5秒以内に左クリック4回で困る、7回で怒り、反応の本文をクリックして閉じるまで左クリックを停止し、自動消去しません。セリフ・回数・秒数はJSONと編集UIで変更可能。右クリック・ドラッグは数えません。
 - 会話・予定・新着・退勤前・呼び出しの吹き出しは見出しと×なし。本文と必要な選択肢だけを表示。本文の行数に合う高さで、通常メッセージ・通知はクリックで閉じます。
 - 未読が初期5件以上なら、件数を含む白い通常メッセージの候補に追加。重み2・優先度1で少し選ばれやすくし、約10分の会話機会と1時間の再発言間隔を守ります。未読数の変化だけでは通知しません。
 - 未読数は既定の受信トレイから取得。90秒以上古い値や取得不能な値では発言しません。しきい値・優先度・セリフはJSONと編集UIで変更できます。
 - ドラッグで自由に配置し位置を保存。別モニターに対応し、画面上部では吹き出しをキャラの下へ表示。
-- 左クリックで一言、右クリックで呼び出し。「予定を聞く」「ファイル起動履歴を見る」「設定を開く」「非表示にする」「用事はない」の5行。
+- 左クリックで一言、右クリックで呼び出し。「予定を聞く」「ファイル起動履歴を見る」「設定を開く」「通知を設定する」「非表示にする」の5行。
 - 未承諾・仮承諾の会議も読み込み。既定予定表と受信トレイの会議案内を統合して重複を除外し、一部取得は画面に表示。承諾・辞退・既読化・予定追加は行いません。
 - 予定は淡い黄、新着は淡い青。通知領域のアイコンの左クリックでキャラを表示／非表示。
 - つづり（ノート）、ビット（ロボット）、ペギー（ペンギン）、きなこ（お茶ねこ）。20種の表情・しぐさ＋8コマの歩行。
@@ -44,7 +45,7 @@
 - ファイル履歴は3か月・最大15,000件。ファイル名欄を拡張し取得元列を削除。ダブルクリックで開き、カレンダーの選択日は青・今日は黄。記録は初期オフ。
 - 退勤前通知は初期17:00。時刻・メッセージ・利用者が入力する勤怠URLを設定できます。PC起動時刻と経過時間を添え、サイトを開くか選択します。URL未登録なら設定へ案内。自動入力・送信は行いません。
 
-[吹き出しで履歴・予定を使う](../../Yohaku/docs/conversation-navigation.png) · [追加条件の説明](../../Yohaku/docs/ADVANCED_CONDITIONS.md) · [休日の設定](../../Yohaku/docs/advanced-calendar.png) · [CPU・メモリの表示例](../../Yohaku/docs/resource-messages.png) · [CPU条件の編集画面](../../Yohaku/docs/resource-rules.png) · [通知の登録画面](../../Yohaku/docs/registered-notifications.png) · [登録通知の仕様](../../Yohaku/docs/REGISTERED_NOTIFICATIONS.md) · [全履歴検索](../../Yohaku/docs/history-search.png) · [プリセットとプレビュー](../../Yohaku/docs/comfort-preview.png) · [タスクバー直上の歩行](../../Yohaku/docs/walk-ground.png) · [正面と連打への反応](../../Yohaku/docs/front-reactions.png) · [退勤前通知](../../Yohaku/docs/departure-preview.png) · [履歴画面](../../Yohaku/docs/history-calendar.png) · [コンパクトなメッセージ](../../Yohaku/docs/draggable-preview.png) · [未読の一言・予定・新着通知](../../Yohaku/docs/notification-colors.png) · [編集画面](../../Yohaku/docs/dialogue-editor.png) · [発生ルール](../../Yohaku/docs/dialogue-rules.png) · [JSONの仕様](../../Yohaku/docs/DIALOGUE_JSON.md)
+[単発通知の登録例](../../Yohaku/docs/one-shot-reminder.png) · [単発通知の仕様](../../Yohaku/docs/ONE_SHOT_NOTIFICATIONS.md) · [吹き出しで履歴・予定を使う](../../Yohaku/docs/conversation-navigation.png) · [追加条件の説明](../../Yohaku/docs/ADVANCED_CONDITIONS.md) · [休日の設定](../../Yohaku/docs/advanced-calendar.png) · [CPU・メモリの表示例](../../Yohaku/docs/resource-messages.png) · [CPU条件の編集画面](../../Yohaku/docs/resource-rules.png) · [通知の登録画面](../../Yohaku/docs/registered-notifications.png) · [登録通知の仕様](../../Yohaku/docs/REGISTERED_NOTIFICATIONS.md) · [全履歴検索](../../Yohaku/docs/history-search.png) · [プリセットとプレビュー](../../Yohaku/docs/comfort-preview.png) · [タスクバー直上の歩行](../../Yohaku/docs/walk-ground.png) · [正面と連打への反応](../../Yohaku/docs/front-reactions.png) · [退勤前通知](../../Yohaku/docs/departure-preview.png) · [履歴画面](../../Yohaku/docs/history-calendar.png) · [コンパクトなメッセージ](../../Yohaku/docs/draggable-preview.png) · [未読の一言・予定・新着通知](../../Yohaku/docs/notification-colors.png) · [編集画面](../../Yohaku/docs/dialogue-editor.png) · [発生ルール](../../Yohaku/docs/dialogue-rules.png) · [JSONの仕様](../../Yohaku/docs/DIALOGUE_JSON.md)
 
 ## Windowsでonedirを作る
 
@@ -56,15 +57,15 @@ py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements-build.txt
 .\.venv\Scripts\python.exe -m PyInstaller --noconfirm --clean Yohaku.spec
 .\.venv\Scripts\python.exe scripts\collect_licenses.py dist\Yohaku
-.\.venv\Scripts\python.exe -c "import shutil; shutil.make_archive('Yohaku-v0.16.0-windows-x64-onedir', 'zip', 'dist', 'Yohaku')"
+.\.venv\Scripts\python.exe -c "import shutil; shutil.make_archive('Yohaku-v0.17.0-windows-x64-onedir', 'zip', 'dist', 'Yohaku')"
 ```
 
 Python 3.12の場合は、1行目を `py -3.12 -m venv .venv` に置き換えます。
 
-出力は `dist\Yohaku\Yohaku.exe` と `Yohaku-v0.16.0-windows-x64-onedir.zip`。
+出力は `dist\Yohaku\Yohaku.exe` と `Yohaku-v0.17.0-windows-x64-onedir.zip`。
 EXEだけを取り出さず、onedir ZIP全体を展開して配布してください。
 GitHubの「Actions」→「Build Yohaku Windows onedir」→「Run workflow」でも作成できます。
 
 [詳しい手順とソース](../../Yohaku/README.md) · [取得範囲](../../Yohaku/docs/CONTEXT_NOTIFICATIONS.md) · [アプリ名とアイコン](../../Yohaku/docs/BRAND.md)
 
-238テスト通過（Linux / Qt offscreen・合成データ・COMモック）。Windows実機、実Outlook・Office、Windows EXEのビルド・実行は未検証です。
+252テスト通過（Linux / Qt offscreen・合成データ・COMモック）。Windows実機、実Outlook・Office、Windows EXEのビルド・実行は未検証です。

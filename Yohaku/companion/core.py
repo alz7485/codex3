@@ -13,6 +13,7 @@ from .dialogue import AUTO_PERSONALITY, PHRASES, DialogueStore, matches, voice_f
 from .departure import DEFAULT_MESSAGE, attendance_url, departure_body
 from .motion import ClickReactions
 from .reminders import ReminderStore, due_time
+from .one_shot import OneShotStore
 
 
 CHARACTERS = {
@@ -170,6 +171,7 @@ class Engine:
         self.notified = raw if isinstance(raw, dict) else {}
         self.departure_date = self.state.get('departure_date', '')
         self.reminders = ReminderStore(history_path.parent / 'reminders.json')
+        self.one_shots = OneShotStore(history_path.parent / 'one_shot_notifications.json')
         raw = self.state.get('custom_notified', {})
         self.custom_notified = ({key: value for key, value in raw.items()
                                  if isinstance(key, str) and isinstance(value, str)} if isinstance(raw, dict) else {})
@@ -344,6 +346,10 @@ class Engine:
                 status = f" · {event.response}" if event.response else ""
                 return Notice(f"予定まで あと{minutes}分{status}", text, True, reminder["expression"], "calendar")
         if allow_reminders:
+            message = self.one_shots.take_due(now)
+            if message is not None:
+                self.last_display = now
+                return Notice('', message, True, 'notice', 'reminder')
             notice = self.custom_notice(now)
             if notice:
                 return notice

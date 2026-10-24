@@ -129,7 +129,7 @@ class UserInterfaceTests(unittest.TestCase):
             c.bubble.hide()
             c.update_animation_policy()
 
-    def test_right_click_toggles_menu_and_no_business_dismisses_without_hiding_character(self):
+    def test_right_click_toggles_menu_and_body_dismisses_without_hiding_character(self):
         c = self.controller
         for _ in range(4): c.show_message()
         reaction = c.pending_reaction
@@ -146,9 +146,9 @@ class UserInterfaceTests(unittest.TestCase):
         c.show_message()
         self.assertFalse(c.bubble.isVisible())
         QTest.mouseClick(c.resident, Qt.MouseButton.RightButton, pos=QPoint(40, 40))
-        self.assertEqual(list(c.bubble.buttons)[-1], 'dismiss')
-        self.assertEqual(c.bubble.buttons['dismiss'].text(), '用事はない')
-        c.bubble.buttons['dismiss'].click()
+        self.assertEqual(list(c.bubble.buttons)[-1], 'hide')
+        self.assertEqual(c.bubble.buttons['one_shot'].text(), '通知を設定する')
+        QTest.mouseClick(c.bubble.text, Qt.MouseButton.LeftButton, pos=QPoint(8, 8))
         self.assertFalse(c.bubble.isVisible())
         self.assertTrue(c.resident.isVisible())
         self.assertIsNone(c.pending_reaction)
@@ -339,7 +339,7 @@ class UserInterfaceTests(unittest.TestCase):
                 self.assertTrue(c.resident.isVisible())
             c.bubble.open_choices()
             QTest.mouseClick(c.bubble.text, Qt.MouseButton.LeftButton, pos=QPoint(8, 8))
-            self.assertTrue(c.bubble.isVisible())
+            self.assertFalse(c.bubble.isVisible())
             self.assertFalse(any(button.text() == '×' for button in c.bubble.findChildren(QPushButton)))
         finally:
             c.bubble.hide()
@@ -708,7 +708,7 @@ class UserInterfaceTests(unittest.TestCase):
     def test_app_has_brand_name_version_and_windows_icon(self):
         c = self.controller
         self.assertEqual(self.app.applicationDisplayName(), "Yohaku")
-        self.assertEqual(self.app.applicationVersion(), "0.16.0")
+        self.assertEqual(self.app.applicationVersion(), "0.17.0")
         self.assertFalse(c.brand_icon.isNull())
         self.assertEqual(c.panel.windowIcon().cacheKey(), c.brand_icon.cacheKey())
         c.panel.character_buttons["B"].click()
@@ -729,7 +729,7 @@ class UserInterfaceTests(unittest.TestCase):
             self.assertIs(c.interaction, c.bubble)
             self.assertIn(c.bubble.text.text(), PHRASES[voice_for(c.settings)]["call"])
             window_id = int(c.bubble.winId())
-            self.assertEqual(set(c.interaction.buttons), {"calendar", "activity", "settings", "hide", "dismiss"})
+            self.assertEqual(set(c.interaction.buttons), {"calendar", "activity", "settings", "one_shot", "hide"})
             self.assertTrue(c.interaction.timer.isActive())
             self.assertEqual(c.interaction.timer.interval(), 60000)
             c.interaction.buttons["calendar"].click()
@@ -850,7 +850,7 @@ class UserInterfaceTests(unittest.TestCase):
         self.assertEqual(int(c.bubble.winId()), window_id)
         self.assertEqual(c.bubble.width(), width)
         self.assertTrue(c.bubble.choice_row.isVisible())
-        self.assertEqual([b.text() for b in c.bubble.buttons.values()], ["予定を聞く", "ファイル起動履歴を見る", "設定を開く", "非表示にする", "用事はない"])
+        self.assertEqual([b.text() for b in c.bubble.buttons.values()], ["予定を聞く", "ファイル起動履歴を見る", "設定を開く", "通知を設定する", "非表示にする"])
         self.assertTrue(all(not b.isCheckable() for b in c.bubble.buttons.values()))
         self.app.processEvents()
         rows = [b.geometry() for b in c.bubble.buttons.values()]
