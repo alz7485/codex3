@@ -332,6 +332,66 @@
       "target_reopened": [
         "「{target_name}」に一致する記録が、今日は{target_open_count}回あります。よく使う資料なのですね。",
         "登録した「{target_name}」は、今日{target_open_count}回の記録があります。作業の区切りに、保存の確認もどうぞ。"
+      ],
+      "active_ratio_high": [
+        "計測した時間のうち、操作ありの割合が高めです。休む時間にも出番をどうぞ。",
+        "今日の計測では、操作している時間が多め。キーボードにも小休止を。",
+        "操作ありの比率が高めですね。ひと息の欄も、空欄のままにしないように。"
+      ],
+      "active_ratio_low": [
+        "計測した範囲では、操作なしの時間が多めです。画面の外にも仕事はありますしね。",
+        "今日のPC操作の割合は控えめ。記録にない仕事まで、控えめとは限りません。",
+        "計測時間に対する操作の割合は低めです。私はPCの中の分だけ、数えています。"
+      ],
+      "meeting_overlap": [
+        "今日の残りの予定は、最大{overlapping_meetings}件が同じ時間に重なっています。予定表だけでも、席の取り合いですね。",
+        "このあとの予定に時間の重なりがあります。参加先を確かめる余白はありますか。",
+        "残りの予定に重なりを見つけました。Outlookで時刻を見直しておくと安心です。"
+      ],
+      "next_meeting_long": [
+        "次の予定は約{next_meeting_duration_minutes}分です。飲み物にも参加してもらいましょう。",
+        "このあとの予定は長めですね。資料と飲み物を、手元へどうぞ。",
+        "長めの予定が近づいています。今の作業にも、戻るためのしおりを。"
+      ],
+      "meeting_day_finished": [
+        "予定表では、今日の時間指定の予定は一区切りです。あとは、ご自身の区切りも大切に。",
+        "今日の予定表はこのあと空いています。メモを整える時間にも使えそうですね。",
+        "予定表の上では、今日の予定は終わりました。作業まで全部終えたとは、私には判断できませんが。"
+      ],
+      "meeting_remaining_long": [
+        "今日の残りの予定時間は、重複を除いて約{remaining_meeting_minutes}分です。合間にも席を確保しておきましょう。",
+        "まだ予定が長めに残っています。切り替える時間も予定のうちですよ。",
+        "このあとの予定時間は約{remaining_meeting_minutes}分。休める隙間にも、しおりをどうぞ。"
+      ],
+      "return_before_meeting": [
+        "操作が戻りましたね。このあと予定が近いので、時刻だけ確かめておきませんか。",
+        "おかえりなさい。次の予定が近づいています。再開する前に予定表をどうぞ。",
+        "操作再開のところ失礼します。予定が近いので、資料の場所だけ先に確認を。"
+      ],
+      "office_memory_pressure": [
+        "Office文書が{open_office_files}個、メモリは約{memory_percent}%使用中です。片づけるなら保存が先ですよ。",
+        "文書が多く、メモリも高めの状態が続いています。使い終えた分を保存して閉じる手も。",
+        "PCの作業机が混み合っていますね。必要な文書から残しておきましょう。保存をお忘れなく。"
+      ],
+      "battery_before_meeting": [
+        "予定が近く、電源は未接続です。バッテリーは約{battery_percent}%。充電場所も確認しておきましょうか。",
+        "このあと予定ですね。残量は約{battery_percent}%で電源未接続。資料の保存も、準備のうちです。",
+        "予定前に電源の確認はいかがですか。バッテリーは約{battery_percent}%です。"
+      ],
+      "meeting_break_after_work": [
+        "予定表では一区切り、操作も長く続いています。目にも区切りをどうぞ。",
+        "予定の終了時刻を過ぎましたね。操作も続いているので、手を休めるきっかけに。",
+        "次の作業の前に、ひと息どうぞ。予定表と手元、両方に区切りを。"
+      ],
+      "desktop_before_end": [
+        "定時が近く、デスクトップのファイルは{desktop_files}個。明日の探し物を一つ減らしておきませんか。",
+        "終える前に、よく使うファイルの置き場所だけ整えるのも手です。削除より先に保存の確認を。",
+        "定時前の小さな片づけはいかがですか。デスクトップも、明日へ引き継ぐ机ですし。"
+      ],
+      "friday_wrap": [
+        "金曜の区切りですね。計測した操作あり時間は約{daily_active_minutes}分。今週の続きはメモに預けておきましょう。",
+        "定時が近い金曜日。来週の自分に一行、引き継いでおきませんか。",
+        "今週も区切りの時間です。できたことにも、小さく丸をどうぞ。"
       ]
     },
     "冷静な案内役": {
@@ -643,6 +703,66 @@
       "target_reopened": [
         "登録した「{target_name}」に一致する記録は、今日{target_open_count}回です。",
         "今日の履歴では「{target_name}」の記録が{target_open_count}回あります。"
+      ],
+      "active_ratio_high": [
+        "計測時間に対する操作ありの割合が高めです。短い休憩をおすすめします。",
+        "今日の観測範囲では、操作ありの時間が多くなっています。手を休める区切りをどうぞ。",
+        "操作の割合が高い状態です。休憩も作業配分に含めてください。"
+      ],
+      "active_ratio_low": [
+        "計測時間に対するPC操作の割合は低めです。PC以外の活動はこの比率に含みません。",
+        "観測範囲では操作なしが多めです。仕事全体の量を示す数値ではありません。",
+        "PC操作の割合は控えめです。手元の作業から再開しましょう。"
+      ],
+      "meeting_overlap": [
+        "今日の残りの予定に重複があります。最大同時件数は{overlapping_meetings}件です。",
+        "このあとの予定の時刻が重なっています。Outlookで時間帯をご確認ください。",
+        "予定表に重なる時間帯があります。参加する予定の確認をおすすめします。"
+      ],
+      "next_meeting_long": [
+        "次の予定は約{next_meeting_duration_minutes}分です。資料と飲み物をご用意ください。",
+        "長めの予定が近づいています。現在の作業の保存をおすすめします。",
+        "次の予定の前に、必要な資料の場所を確認しておきましょう。"
+      ],
+      "meeting_day_finished": [
+        "予定表では、今日の時間指定の予定はすべて終了時刻を過ぎています。",
+        "このあとの予定表は空いています。必要ならメモの整理をどうぞ。",
+        "今日の予定表は一区切りです。実際の作業の終了は、ご自身でご判断ください。"
+      ],
+      "meeting_remaining_long": [
+        "今日の残りの予定時間は約{remaining_meeting_minutes}分です。重複する時間は一度だけ数えています。",
+        "予定が長めに残っています。切り替えと休憩の時間も確保しましょう。",
+        "残りの予定は重複を除き約{remaining_meeting_minutes}分です。必要な準備を先に確認しましょう。"
+      ],
+      "return_before_meeting": [
+        "操作再開を確認しました。次の予定が近づいています。",
+        "おかえりなさい。このあとの予定時刻をご確認ください。",
+        "操作が戻りました。作業再開の前に、近い予定の準備をどうぞ。"
+      ],
+      "office_memory_pressure": [
+        "Office文書は{open_office_files}個、メモリ使用率は約{memory_percent}%です。保存後の整理をおすすめします。",
+        "メモリ使用率が高めで、Office文書も多く開いています。不要な文書は保存して閉じましょう。",
+        "文書の数とメモリ使用率がともに高めです。作業中の内容を保存してから整理してください。"
+      ],
+      "battery_before_meeting": [
+        "予定が近く、電源は未接続です。バッテリー残量は約{battery_percent}%です。",
+        "予定前の電源確認をおすすめします。残量は約{battery_percent}%です。",
+        "電源未接続で、予定が近づいています。保存と電源の確認をどうぞ。"
+      ],
+      "meeting_break_after_work": [
+        "予定の終了時刻を過ぎ、操作も長く続いています。休憩の区切りにしましょう。",
+        "予定表では一区切りです。操作が続いているため、目と手の休息をおすすめします。",
+        "予定の後の切り替え時間です。次の作業の前に短い休憩をどうぞ。"
+      ],
+      "desktop_before_end": [
+        "定時が近づいています。デスクトップのファイルは{desktop_files}個です。保存先の確認をおすすめします。",
+        "終業前に、よく使うファイルの配置を整えると探しやすくなります。",
+        "デスクトップのファイルが多めです。必要なものを確認し、保存先を整理しましょう。"
+      ],
+      "friday_wrap": [
+        "金曜日の定時が近づいています。計測した今日の操作あり時間は約{daily_active_minutes}分です。",
+        "来週に引き継ぐ作業を、短いメモにまとめましょう。",
+        "今週の区切りです。保存と次に行う作業の確認をどうぞ。"
       ]
     },
     "元気な応援係": {
@@ -954,6 +1074,66 @@
       "target_reopened": [
         "「{target_name}」に一致する記録が、今日は{target_open_count}回あります。よく使う資料なのですね。",
         "登録した「{target_name}」は、今日{target_open_count}回の記録があります。作業の区切りに、保存の確認もどうぞ！"
+      ],
+      "active_ratio_high": [
+        "計測した時間の中では、操作ありの割合が高めです。ちょっとひと息つきましょう！",
+        "今日のPC操作の割合は高めですね。休憩の時間も取っていきましょう。",
+        "手元の操作が多めの記録です。肩を休める区切りを作りましょう！"
+      ],
+      "active_ratio_low": [
+        "計測した範囲では、PC操作の割合は少なめです。画面の外での用事もありますよね。",
+        "操作なしの時間が多めの記録です。次は手元の一つから、ゆっくりどうぞ。",
+        "PC操作の比率は控えめです。仕事全体の量とは別なので、ご自身のペースで！"
+      ],
+      "meeting_overlap": [
+        "今日の残りの予定に重なりがあります。最大{overlapping_meetings}件が同じ時間です。予定表を確認しましょう！",
+        "このあとの予定に重なる時間があるようです。先に確認しておくと安心ですね。",
+        "予定の時間帯が重なっています。Outlookで見ておきましょう！"
+      ],
+      "next_meeting_long": [
+        "次の予定は約{next_meeting_duration_minutes}分です。資料と飲み物を準備しましょう！",
+        "長めの予定が近いですね。いまの作業を保存して、ひと呼吸どうぞ。",
+        "次の予定の準備はできていますか。少し長めなので、手元を整えておきましょう！"
+      ],
+      "meeting_day_finished": [
+        "予定表では、今日の時間指定の予定は一区切りです！",
+        "このあとの予定表は空いています。気になるメモを整えておきましょう。",
+        "今日の予定の時刻はすべて過ぎました。次はご自身の作業のペースでどうぞ！"
+      ],
+      "meeting_remaining_long": [
+        "残りの予定は、重複を除いて約{remaining_meeting_minutes}分です。合間にひと息も忘れずに！",
+        "今日はまだ予定が長めに残っています。準備を一つずつ進めましょう。",
+        "このあとの予定時間は約{remaining_meeting_minutes}分です。休める時間も大切にしましょう！"
+      ],
+      "return_before_meeting": [
+        "おかえりなさい！ このあと予定が近づいています。",
+        "操作が戻りましたね。次の予定を確認してから、再開しましょう！",
+        "予定の前に戻られたところですね。時刻と資料だけ、先に見ておきましょう。"
+      ],
+      "office_memory_pressure": [
+        "文書が{open_office_files}個、メモリ使用率は約{memory_percent}%です。保存して整理しましょう！",
+        "Office文書もメモリ使用率も多めです。使い終えた分から、保存してひと休みさせましょう。",
+        "PCの手元が混み合っていますね。作業中の内容を保存してから片づけましょう！"
+      ],
+      "battery_before_meeting": [
+        "予定が近く、バッテリーは約{battery_percent}%です。電源につなげるか確認しましょう！",
+        "電源未接続のまま予定が近づいています。残量は約{battery_percent}%です。",
+        "このあとの準備に、電源確認も加えましょう！ 保存もお忘れなく。"
+      ],
+      "meeting_break_after_work": [
+        "予定表では一区切りです。操作も続いているので、ここでひと息つきましょう！",
+        "予定の終了時刻を過ぎました。手を休めるきっかけにしてみませんか。",
+        "次の作業の前に、目も肩もひと休みしましょう！"
+      ],
+      "desktop_before_end": [
+        "定時が近いですね。デスクトップに{desktop_files}個のファイルがあります。置き場所を確認しましょう！",
+        "終える前に、小さな片づけはいかがですか。よく使うものから整えましょう。",
+        "明日のために、保存先の確認をしておきましょう！"
+      ],
+      "friday_wrap": [
+        "金曜日の区切りですね！ 計測した今日の操作あり時間は約{daily_active_minutes}分です。",
+        "来週の自分に、一行メモを残しておきましょう！",
+        "今週できたことも振り返って、保存と引き継ぎを確認しましょう！"
       ]
     },
     "のんびりした同僚": {
@@ -1265,6 +1445,66 @@
       "target_reopened": [
         "「{target_name}」に一致する記録が、今日は{target_open_count}回あります。よく使う資料なのだね。",
         "登録した「{target_name}」は、今日{target_open_count}回の記録があります。作業の区切りに、保存の確認もどう？"
+      ],
+      "active_ratio_high": [
+        "計測した時間の中では、操作してる割合が高めだね。少しお茶にしない？",
+        "PCの操作が多めの記録だよ。手も休ませてあげよう。",
+        "今日は操作の割合が高めだね。ひと息の時間も入れておこう。"
+      ],
+      "active_ratio_low": [
+        "計測した分では、PCの操作の割合は少なめだよ。画面の外にも用事はあるもんね。",
+        "操作してない時間が多めの記録だね。再開は小さいことからでもいいよ。",
+        "PCの中で見える操作は控えめだね。自分のペースでいこう。"
+      ],
+      "meeting_overlap": [
+        "残りの予定に時間の重なりがあるよ。いちばん重なるところは{overlapping_meetings}件だね。",
+        "このあとの予定、時間が重なってるみたい。予定表を見ておこうか。",
+        "残りの予定に重なる時間があるよ。先に確かめておくと落ち着けそうだね。"
+      ],
+      "next_meeting_long": [
+        "次の予定は約{next_meeting_duration_minutes}分だよ。飲み物も持っていこうか。",
+        "少し長めの予定が近いね。手元の作業に目印をつけておこう。",
+        "次の予定の前に、資料と飲み物を用意しておこうね。"
+      ],
+      "meeting_day_finished": [
+        "予定表では、今日の時間指定の予定は一区切りだよ。",
+        "このあとの予定表は空いてるね。メモを整えるのもよさそう。",
+        "今日の予定の時刻は全部過ぎたね。あとは自分のペースで区切ろう。"
+      ],
+      "meeting_remaining_long": [
+        "残りの予定時間は、重なりを除いて約{remaining_meeting_minutes}分だよ。合間にはひと息つこうね。",
+        "今日はまだ予定が長めに残ってるよ。慌てず準備していこう。",
+        "このあとの予定は約{remaining_meeting_minutes}分だね。休める隙間も残しておこう。"
+      ],
+      "return_before_meeting": [
+        "おかえり。このあと予定が近いから、時刻を見ておこうか。",
+        "操作が戻ったね。次の予定だけ確かめてから再開しよう。",
+        "戻ったところだね。予定が近いので、資料の場所だけ確認しておこうか。"
+      ],
+      "office_memory_pressure": [
+        "文書が{open_office_files}個、メモリは約{memory_percent}%使ってるよ。保存して、少し整理しようか。",
+        "開いた文書もメモリも多めだね。使い終わったものから、保存して閉じよう。",
+        "PCの作業机が混んでるみたい。大事な内容を保存してから片づけようね。"
+      ],
+      "battery_before_meeting": [
+        "予定が近くて、バッテリーは約{battery_percent}%だよ。電源はつながってないみたい。",
+        "このあとの準備に、電源の確認も入れておこうか。",
+        "残量は約{battery_percent}%で、電源は未接続だよ。予定の前に保存しておこうね。"
+      ],
+      "meeting_break_after_work": [
+        "予定表では一区切りだね。操作も続いてるから、ちょっとひと息つこう。",
+        "予定の終了時刻を過ぎたね。次の作業の前に、手を休めておこうか。",
+        "操作も長く続いてるね。予定表の区切りを休憩のきっかけにしよう。"
+      ],
+      "desktop_before_end": [
+        "定時が近いね。デスクトップのファイルは{desktop_files}個あるよ。置き場所だけ整えておこうか。",
+        "終える前に、よく使うファイルを探しやすくしておこうね。",
+        "小さな片づけで、明日が少し楽になるかも。保存先を確かめておこう。"
+      ],
+      "friday_wrap": [
+        "金曜日の区切りだね。今日計測した操作あり時間は約{daily_active_minutes}分だよ。",
+        "来週の自分へ、短いメモを置いておこうか。",
+        "今週の続きはメモに預けて、保存を確認しておこうね。"
       ]
     },
     "馴れ馴れしい関西弁": {
@@ -1576,6 +1816,66 @@
       "target_reopened": [
         "「{target_name}」に合う記録、今日{target_open_count}回あるで。よく使うんやな。",
         "登録した「{target_name}」、今日の記録は{target_open_count}回や。区切りついたら保存も確認しよ。"
+      ],
+      "active_ratio_high": [
+        "計測した時間のうち、操作してる割合が高めやで。ちょっと手ぇ休めよか。",
+        "PC操作が多めの記録やな。ひと息の時間も入れとこ。",
+        "今日の計測やと操作の割合が高いな。ここでお茶でもどない？"
+      ],
+      "active_ratio_low": [
+        "記録の範囲やと、PC操作の割合は少なめやな。画面の外も忙しいもんな。",
+        "計測した分は操作なしが多めや。仕事全体は、この数字だけや分からへんで。",
+        "PC操作の比率は控えめやね。続きはぼちぼちいこか。"
+      ],
+      "meeting_overlap": [
+        "残りの予定、時間が重なってるで。いちばん重なるとこは{overlapping_meetings}件や。",
+        "このあとの予定、重なる時間あるな。予定表で確かめとこか。",
+        "予定の時間帯が重なっとるで。先に見るんが安心やな。"
+      ],
+      "next_meeting_long": [
+        "次の予定、約{next_meeting_duration_minutes}分やで。飲み物も用意しとこ。",
+        "長めの予定が近いな。今の作業、保存して区切っとこか。",
+        "このあとの予定の前に、資料の場所だけ確かめとこ。"
+      ],
+      "meeting_day_finished": [
+        "予定表やと、今日の時間指定の予定は一区切りやで。",
+        "このあとの予定表、空いとるな。メモ整える時間にしよか。",
+        "今日の予定の時刻は全部過ぎたな。あとは自分の作業のペースでええよ。"
+      ],
+      "meeting_remaining_long": [
+        "残りの予定は、重なり抜いて約{remaining_meeting_minutes}分あるで。合間に休もや。",
+        "今日はまだ予定が長めに残っとるな。準備は一個ずついこ。",
+        "このあとの予定時間、約{remaining_meeting_minutes}分や。休める隙間も確保しといてな。"
+      ],
+      "return_before_meeting": [
+        "おかえり。次の予定が近いで。先に時刻、見とこか。",
+        "操作戻ったな。このあと予定あるし、資料の場所確かめとこ。",
+        "戻ってきたとこやな。再開前に、近い予定だけ確認しよか。"
+      ],
+      "office_memory_pressure": [
+        "文書{open_office_files}個で、メモリ約{memory_percent}%やで。片づけるなら保存が先や。",
+        "文書もメモリも多めやな。使い終わった分、保存して閉じよか。",
+        "PCの手元、けっこう混んどるな。大事な内容から保存しとこ。"
+      ],
+      "battery_before_meeting": [
+        "予定近いし、電源見とこか。残量は約{battery_percent}%で、つながってへんで。",
+        "このあとの準備に、電源の確認も足しとこ。",
+        "バッテリー約{battery_percent}%で電源未接続や。予定の前に保存もしとこな。"
+      ],
+      "meeting_break_after_work": [
+        "予定表やと一区切りやな。操作も続いとるし、ちょっと休もか。",
+        "予定の終了時刻過ぎたで。手ぇ休めるきっかけにしよ。",
+        "次の仕事の前にひと息や。操作も長いこと続いてるしな。"
+      ],
+      "desktop_before_end": [
+        "定時近いで。デスクトップに{desktop_files}個あるし、置き場所だけ整えとこか。",
+        "終わる前に、よく使うファイルだけ見つけやすくしとこ。",
+        "明日の探し物、一個減らしとこや。保存先の確認からな。"
+      ],
+      "friday_wrap": [
+        "金曜の区切りやな。計測した今日の操作あり時間、約{daily_active_minutes}分やで。",
+        "来週の自分に、一行だけ引き継いどこか。",
+        "今週できた分も数えとこや。保存と次の一個、確認して終えよ。"
       ]
     },
     "寡黙な先輩": {
@@ -1887,6 +2187,66 @@
       "target_reopened": [
         "「{target_name}」に一致する記録は今日{target_open_count}回だ。",
         "登録した「{target_name}」は今日{target_open_count}回の記録がある。保存も確認しよう。"
+      ],
+      "active_ratio_high": [
+        "計測時間に対して、操作の割合が高めだ。少し休もう。",
+        "操作ありの記録が多めだ。手を休めてくれ。",
+        "…\n（お茶に誘う口実が、見つかった。）"
+      ],
+      "active_ratio_low": [
+        "記録上、操作の割合は少なめだ。PC以外の用事もあるからな。",
+        "操作なしの時間が多めの記録だ。再開は一つずつでいい。",
+        "計測範囲の数字だ。仕事全体の量とは別に見てくれ。"
+      ],
+      "meeting_overlap": [
+        "残りの予定に重なりがある。最大{overlapping_meetings}件だ。",
+        "このあとの予定の時刻が重なっている。確認しよう。",
+        "予定表に重なる時間がある。参加先を確かめておこう。"
+      ],
+      "next_meeting_long": [
+        "次の予定は約{next_meeting_duration_minutes}分だ。飲み物を手元に。",
+        "長めの予定が近い。今の作業を保存しよう。",
+        "次の予定の資料を、先に用意しよう。"
+      ],
+      "meeting_day_finished": [
+        "予定表では、今日の予定は一区切りだ。",
+        "このあとの予定表は空いている。メモを整理しよう。",
+        "今日の予定の時刻は過ぎた。手元は自分のペースでいい。"
+      ],
+      "meeting_remaining_long": [
+        "残りの予定は重複を除き約{remaining_meeting_minutes}分だ。合間に休もう。",
+        "予定が長めに残っている。準備は順に進めよう。",
+        "このあと約{remaining_meeting_minutes}分の予定だ。休む時間も取ってくれ。"
+      ],
+      "return_before_meeting": [
+        "おかえり。次の予定が近い。",
+        "操作が戻ったな。予定の時刻を確認しよう。",
+        "戻ったところか。近い予定の資料を手元に。"
+      ],
+      "office_memory_pressure": [
+        "文書が{open_office_files}個、メモリは約{memory_percent}%だ。保存して整理しよう。",
+        "文書もメモリも多めだ。使い終えたものから保存を。",
+        "片づけは保存してからだ。文書とメモリが混み合っている。"
+      ],
+      "battery_before_meeting": [
+        "予定が近い。残量は約{battery_percent}%で電源未接続だ。",
+        "予定前に電源を確認しよう。",
+        "電源は未接続だ。予定に移る前に保存を。"
+      ],
+      "meeting_break_after_work": [
+        "予定表では一区切りだ。操作も続いている。少し休もう。",
+        "予定の終了時刻を過ぎた。手を休めるきっかけにしよう。",
+        "次へ移る前に、ひと息。操作も長く続いている。"
+      ],
+      "desktop_before_end": [
+        "定時が近い。デスクトップは{desktop_files}個だ。置き場所を確認しよう。",
+        "終える前に、よく使うファイルを整えておこう。",
+        "保存先を確かめよう。明日のために。"
+      ],
+      "friday_wrap": [
+        "金曜の区切りだ。計測した今日の操作あり時間は約{daily_active_minutes}分だ。",
+        "来週の一手を、メモに残そう。",
+        "…\n（来週の自分にも、お茶の時間は残したい。）"
       ]
     },
     "孤高の債務者": {
@@ -2198,6 +2558,66 @@
       "target_reopened": [
         "今日{target_open_count}回ある……「{target_name}」に一致する記録。\nよく使う資料だろうか、その一つ。",
         "今日{target_open_count}回の記録……登録した「{target_name}」。\n一緒に確かめておきたい、保存の区切り。"
+      ],
+      "active_ratio_high": [
+        "高めになっている……計測時間に対する操作の割合。\nここで取っておきたい、短い休息。",
+        "多く記録されている……操作ありの時間。\n確保しておきたい、手を止める区切り。",
+        "高めの比率……今日の観測範囲でのPC操作。\n次の一手の前に、ひと息。"
+      ],
+      "active_ratio_low": [
+        "低めになっている……計測時間に対する操作の割合。\n画面の外にもある、仕事の時間。",
+        "操作なしが多め……いま見えている記録。\nそこだけでは測れない、一日の仕事。",
+        "控えめな比率……観測範囲でのPC操作。\n手元から始める、次の一つ。"
+      ],
+      "meeting_overlap": [
+        "重なっている……今日の残りの予定。\n最大{overlapping_meetings}件という、同じ時間の予定。",
+        "確かめておきたい……予定の重なる時間帯。\n先に整理する、参加先の確認。",
+        "残りの予定にある……時間の重複。\nOutlookで確かめたい、時刻の並び。"
+      ],
+      "next_meeting_long": [
+        "約{next_meeting_duration_minutes}分……次の予定の長さ。\n手元にそろえたい、資料と飲み物。",
+        "長めになっている……このあとの予定。\n先に済ませたい、いまの作業の保存。",
+        "予定に移る前に確かめたい……資料の場所。\n長めの時間に備える、小さな準備。"
+      ],
+      "meeting_day_finished": [
+        "予定表ではついた……今日の区切り。\nこのあとの時間指定の予定は、いまのところ空白。",
+        "空いている……このあとの予定表。\n手元で整えておきたい、残すべきメモ。",
+        "すべて過ぎた……今日の予定の終了時刻。\n実際の作業は、自分のペース。"
+      ],
+      "meeting_remaining_long": [
+        "約{remaining_meeting_minutes}分……重複を除いた、今日の残りの予定時間。\n確保しておきたい、合間の休息。",
+        "まだ長めに残っている……今日の予定。\n一つずつ整える、次への準備。",
+        "合間にも必要な、ひと息。\nこのあと約{remaining_meeting_minutes}分という、予定表の時間。"
+      ],
+      "return_before_meeting": [
+        "戻ってきた……PCの操作。\n先に確かめたい、近づいている予定。",
+        "再開の前に見ておきたい……次の予定の時刻。\n戻ったいまが、その確認の機会。",
+        "予定が近い……操作が戻った、そのあとに。\n手元へ用意したい、必要な資料。"
+      ],
+      "office_memory_pressure": [
+        "文書{open_office_files}個、メモリ約{memory_percent}%……混み合う作業場所。\n整理の前に済ませたい、保存。",
+        "高めの使用率と、多めの文書。\n使い終えたものから確かめたい、保存の状態。",
+        "片づける前に確かめたい……作業中の内容。\n混み合っている、文書とメモリ。"
+      ],
+      "battery_before_meeting": [
+        "予定前に確かめたい……電源。\n未接続、残量約{battery_percent}%という状態。",
+        "近づいている……次の予定。\n準備に加えておきたい、電源の確認。",
+        "残り約{battery_percent}%……電源未接続のバッテリー。\n予定へ移る前に済ませたい、作業の保存。"
+      ],
+      "meeting_break_after_work": [
+        "予定表の上では、一区切り。\n操作も続くいま、取っておきたい休息。",
+        "過ぎている……予定の終了時刻。\n長く操作した手を休める、小さなきっかけ。",
+        "次へ移る前に置きたい……ひと呼吸。\n操作の続く手元にも、作業の区切り。"
+      ],
+      "desktop_before_end": [
+        "定時前に確かめたい……ファイルの置き場所。\nデスクトップに{desktop_files}個という記録。",
+        "明日へ整えておきたい……よく使う資料の場所。\n終える前の、小さな片づけ。",
+        "先に確かめたい……必要なファイルの保存先。\n探し物を減らすための、明日への引き継ぎ。"
+      ],
+      "friday_wrap": [
+        "金曜の区切りに残しておきたい……来週の一行。\n計測した今日の操作あり時間は、約{daily_active_minutes}分。",
+        "渡しておきたい……来週の自分への段取り。\nこちらも見ておく、次の返済予定。",
+        "数えておきたい……今週できた分。\n手元を整えて残す、次の一手。"
       ]
     }
   },
@@ -3200,6 +3620,333 @@
       "expression": "curious",
       "weight": 1,
       "cooldown_minutes": 60
+    },
+    {
+      "id": "active_ratio_high",
+      "label": "計測時間のうち操作の割合が高い",
+      "enabled": true,
+      "trigger": "auto",
+      "expression": "think",
+      "weight": 1,
+      "priority": 0,
+      "cooldown_minutes": 120,
+      "condition": {
+        "kind": "metric_ratio",
+        "numerator": "daily_active_minutes",
+        "denominator": "observed_minutes",
+        "minimum_total": 120,
+        "minimum": 85,
+        "maximum": 100
+      }
+    },
+    {
+      "id": "active_ratio_low",
+      "label": "計測時間のうち操作の割合が低め",
+      "enabled": true,
+      "trigger": "auto",
+      "expression": "relaxed",
+      "weight": 1,
+      "priority": 0,
+      "cooldown_minutes": 120,
+      "condition": {
+        "kind": "all",
+        "conditions": [
+          {
+            "kind": "metric_ratio",
+            "numerator": "daily_active_minutes",
+            "denominator": "observed_minutes",
+            "minimum_total": 120,
+            "minimum": 0,
+            "maximum": 25
+          },
+          {
+            "kind": "metric_range",
+            "metric": "idle_minutes",
+            "minimum": 0,
+            "maximum": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "meeting_overlap",
+      "label": "今日の残りの予定に重なりがある",
+      "enabled": true,
+      "trigger": "auto",
+      "expression": "think",
+      "weight": 1,
+      "priority": 0,
+      "cooldown_minutes": 180,
+      "condition": {
+        "kind": "metric_range",
+        "metric": "overlapping_meetings",
+        "minimum": 2,
+        "maximum": null
+      }
+    },
+    {
+      "id": "next_meeting_long",
+      "label": "次の予定が長め",
+      "enabled": true,
+      "trigger": "auto",
+      "expression": "notice",
+      "weight": 1,
+      "priority": 0,
+      "cooldown_minutes": 120,
+      "condition": {
+        "kind": "all",
+        "conditions": [
+          {
+            "kind": "before_meeting",
+            "minimum_minutes": 0,
+            "maximum_minutes": 30
+          },
+          {
+            "kind": "metric_range",
+            "metric": "next_meeting_duration_minutes",
+            "minimum": 90,
+            "maximum": null
+          }
+        ]
+      }
+    },
+    {
+      "id": "meeting_day_finished",
+      "label": "予定表で今日の予定が一区切り",
+      "enabled": true,
+      "trigger": "auto",
+      "expression": "happy",
+      "weight": 1,
+      "priority": 0,
+      "cooldown_minutes": 180,
+      "condition": {
+        "kind": "all",
+        "conditions": [
+          {
+            "kind": "metric_range",
+            "metric": "remaining_meetings",
+            "minimum": 0,
+            "maximum": 0
+          },
+          {
+            "kind": "metric_range",
+            "metric": "completed_meetings",
+            "minimum": 1,
+            "maximum": null
+          },
+          {
+            "kind": "metric_range",
+            "metric": "until_work_end_minutes",
+            "minimum": 0,
+            "maximum": 240
+          },
+          {
+            "kind": "business_day",
+            "expected": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "meeting_remaining_long",
+      "label": "今日の残りの予定時間が長い",
+      "enabled": true,
+      "trigger": "auto",
+      "expression": "think",
+      "weight": 1,
+      "priority": 0,
+      "cooldown_minutes": 180,
+      "condition": {
+        "kind": "metric_range",
+        "metric": "remaining_meeting_minutes",
+        "minimum": 180,
+        "maximum": null
+      }
+    },
+    {
+      "id": "return_before_meeting",
+      "label": "操作再開のあとに予定が近い",
+      "enabled": true,
+      "trigger": "auto",
+      "expression": "notice",
+      "weight": 1,
+      "priority": 0,
+      "cooldown_minutes": 60,
+      "condition": {
+        "kind": "all",
+        "conditions": [
+          {
+            "kind": "idle_return",
+            "idle_minutes": 30,
+            "window_minutes": 10
+          },
+          {
+            "kind": "before_meeting",
+            "minimum_minutes": 0,
+            "maximum_minutes": 20
+          }
+        ]
+      }
+    },
+    {
+      "id": "office_memory_pressure",
+      "label": "文書が多くメモリも高め",
+      "enabled": true,
+      "trigger": "auto",
+      "expression": "think",
+      "weight": 1,
+      "priority": 0,
+      "cooldown_minutes": 120,
+      "condition": {
+        "kind": "all",
+        "conditions": [
+          {
+            "kind": "metric_range",
+            "metric": "open_office_files",
+            "minimum": 8,
+            "maximum": null
+          },
+          {
+            "kind": "metric_sustained",
+            "metric": "memory_percent",
+            "minimum": 85,
+            "maximum": 100,
+            "duration_minutes": 5
+          }
+        ]
+      }
+    },
+    {
+      "id": "battery_before_meeting",
+      "label": "予定前に電源未接続で残量が少なめ",
+      "enabled": true,
+      "trigger": "auto",
+      "expression": "notice",
+      "weight": 1,
+      "priority": 0,
+      "cooldown_minutes": 120,
+      "condition": {
+        "kind": "all",
+        "conditions": [
+          {
+            "kind": "metric_range",
+            "metric": "battery_percent",
+            "minimum": 21,
+            "maximum": 30
+          },
+          {
+            "kind": "metric_range",
+            "metric": "ac_connected",
+            "minimum": 0,
+            "maximum": 0
+          },
+          {
+            "kind": "before_meeting",
+            "minimum_minutes": 0,
+            "maximum_minutes": 20
+          }
+        ]
+      }
+    },
+    {
+      "id": "meeting_break_after_work",
+      "label": "予定表の区切りに操作も続いている",
+      "enabled": true,
+      "trigger": "auto",
+      "expression": "think",
+      "weight": 1,
+      "priority": 0,
+      "cooldown_minutes": 120,
+      "condition": {
+        "kind": "all",
+        "conditions": [
+          {
+            "kind": "after_meeting",
+            "minimum_minutes": 0,
+            "maximum_minutes": 15
+          },
+          {
+            "kind": "metric_range",
+            "metric": "active_streak_minutes",
+            "minimum": 60,
+            "maximum": null
+          },
+          {
+            "kind": "metric_range",
+            "metric": "idle_minutes",
+            "minimum": 0,
+            "maximum": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "desktop_before_end",
+      "label": "定時前にデスクトップのファイルが多い",
+      "enabled": true,
+      "trigger": "auto",
+      "expression": "think",
+      "weight": 1,
+      "priority": 0,
+      "cooldown_minutes": 120,
+      "condition": {
+        "kind": "all",
+        "conditions": [
+          {
+            "kind": "metric_range",
+            "metric": "desktop_files",
+            "minimum": 100,
+            "maximum": null
+          },
+          {
+            "kind": "metric_range",
+            "metric": "until_work_end_minutes",
+            "minimum": 0,
+            "maximum": 30
+          },
+          {
+            "kind": "business_day",
+            "expected": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "friday_wrap",
+      "label": "金曜の定時前に記録を振り返る",
+      "enabled": true,
+      "trigger": "auto",
+      "expression": "happy",
+      "weight": 1,
+      "priority": 0,
+      "cooldown_minutes": 180,
+      "condition": {
+        "kind": "all",
+        "conditions": [
+          {
+            "kind": "weekday",
+            "days": [
+              4
+            ]
+          },
+          {
+            "kind": "business_day",
+            "expected": true
+          },
+          {
+            "kind": "metric_range",
+            "metric": "until_work_end_minutes",
+            "minimum": 0,
+            "maximum": 30
+          },
+          {
+            "kind": "metric_range",
+            "metric": "observed_minutes",
+            "minimum": 120,
+            "maximum": null
+          }
+        ]
+      }
     }
   ],
   "options": {
@@ -3232,5 +3979,6 @@
   "personality_wording_version": 1,
   "senior_silence_version": 1,
   "debtor_voice_version": 1,
-  "debtor_style_version": 1
+  "debtor_style_version": 1,
+  "extended_context_version": 1
 }

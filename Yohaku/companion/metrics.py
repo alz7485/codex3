@@ -17,4 +17,9 @@ METRICS = {
     'daily_meeting_minutes': '今日の会議の合計時間（分・重複を除く）',
     'consecutive_meetings': '現在または次の連続会議の件数',
     'next_meeting_gap_minutes': '次の会議前に取れる休憩（分）',
+    'remaining_meetings': '今日の残りの予定数（進行中を含む）',
+    'completed_meetings': '今日の終了時刻を過ぎた予定数',
+    'remaining_meeting_minutes': '今日の残りの予定時間（分・重複を除く）',
+    'overlapping_meetings': '今日の残りの予定の最大同時件数',
+    'next_meeting_duration_minutes': '次の予定の長さ（分）',
 }

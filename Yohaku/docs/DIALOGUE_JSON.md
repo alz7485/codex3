@@ -65,18 +65,24 @@
 
 `trigger` は、`call` では `click`、`meeting` では `reminder`、操作時の案内では `action`、新着通知では `notification`、その他の話題では `auto` です。編集画面が自動で指定します。
 
-`condition.kind` は次の9種です。
+`condition.kind` は次の15種です。
 
 | 種類 | 条件の項目 |
 |---|---|
 | `metric_range` | `metric` と `minimum` / `maximum`。上限null可。不明値は候補にしない |
-| `all` / `any` | `conditions` 配列に1〜8件。最大4階層。すべて／いずれかを満たす条件 |
+| `all` / `any` | `conditions` 配列に1〜8件。最大4階層。すべて／いずれかを満たす条件。`conditions` はこの2種類だけで指定可 |
 | `always` | 常時候補 |
 | `time_range` | `start` / `end` を `HH:mm` で指定。開始を含み終了を含まない。日跨ぎ対応。同時刻なら終日 |
 | `weekday` | `days` に月曜0〜日曜6。1つ以上 |
 | `session_range` | `minimum_minutes` / `maximum_minutes`、`first_only`。上限null可。起動からの経過であり、実際の作業時間ではない |
 | `before_meeting` | `minimum_minutes` 超〜 `maximum_minutes` 以内に開始する予定。接続済みで最新の予定データを使えるときだけ |
 | `after_meeting` | 終了時刻から `minimum_minutes` 以上〜 `maximum_minutes` 以内の予定。同じく接続が必要 |
+| `metric_ratio` | `numerator` / `denominator` / `minimum_total` / `minimum` / `maximum`。最低計測量を満たすときだけ割合（%）を判定。詳細は[割合条件](EXTENDED_LOGIC.md) |
+| `metric_sustained` | `metric` / `minimum` / `maximum` / `duration_minutes`。範囲内の状態が指定分続く |
+| `metric_transition` | `metric` と変化前 `minimum` / `maximum`、変化後 `to_minimum` / `to_maximum`、`duration_minutes` / `window_minutes` |
+| `idle_return` | `idle_minutes` 以上の操作なしから戻り、`window_minutes` 以内 |
+| `watched_file` | `target_id` / `state` / `minimum` / `maximum`。登録した対象の履歴を判定 |
+| `business_day` | `expected` がtrueなら営業日、falseなら休日。会社休日の設定に従う |
 
 `weight` は1〜100。同じ優先度の候補内での出現しやすさです。`cooldown_minutes` は0〜1,440分。自動会話はこの間隔を守ります。手動でキャラを続けて左クリックしたときは間隔を緩めて応答します。候補をすべて無効にした場合、手動操作には編集画面での確認を案内し、自動会話は出しません。初回限定の起動後挨拶は、該当する場合に優先します。
 
@@ -151,3 +157,8 @@ v0.18.2では先輩の心の声の表示を「…」だけの返事に限定し�
 
 
 v0.18.3の `debtor_style_version: 1` は、孤高の債務者の体言止め・倒置法への既定文章の更新済みの印です。対応表は `companion/assets/dialogue/debtor_style_v1.json`。旧既定と完全一致した文章だけを更新します。
+
+
+## 割合と残りの予定（v0.19.1）
+
+`metric_ratio` は分子・分母・分母の最低計測量・下限と上限の%で指定します。`extended_context_version: 1` は12話題を追加済みの印です。[初期値と形式](EXTENDED_LOGIC.md)を参照してください。

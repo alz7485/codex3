@@ -78,14 +78,14 @@ class PersonalityTests(unittest.TestCase):
 
     def test_all_seven_voices_cover_every_topic_with_independent_original_phrases(self):
         document=defaults();ids={r['id'] for r in document['rules']}
-        self.assertEqual(len(VOICE_NAMES),7);self.assertEqual(len(ids),64)
+        self.assertEqual(len(VOICE_NAMES),7);self.assertEqual(len(ids),76)
         self.assertEqual(tuple(document['phrases']),VOICE_NAMES)
         for voice,bank in document['phrases'].items():
             self.assertEqual(set(bank),ids)
-            self.assertEqual(sum(map(len,bank.values())),181)
+            self.assertEqual(sum(map(len,bank.values())),217)
             for key,lines in bank.items():
                 self.assertEqual(len(lines),len(set(lines)),(voice,key))
-        self.assertEqual(sum(sum(map(len,bank.values())) for bank in document['phrases'].values()),1267)
+        self.assertEqual(sum(sum(map(len,bank.values())) for bank in document['phrases'].values()),1519)
         self.assertLess(max(map(len,(line for lines in document['phrases']['寡黙な先輩'].values() for line in lines))),90)
 
     def test_old_four_voice_document_adds_three_without_rewriting_file_or_user_edits(self):
@@ -152,7 +152,8 @@ class PersonalityTests(unittest.TestCase):
         context={'until_work_end_minutes':100,'file_name':'テスト.xlsx','file_open_count':3,
             'target_name':'月次確認','target_open_count':4,'open_office_files':8,'desktop_files':99,
             'weekly_events':10,'daily_events':6,'unread_mail_count':12,'cpu_percent':90,'memory_percent':88,
-            'daily_meeting_minutes':240,'consecutive_meetings':3,'next_meeting_gap_minutes':5,'battery_percent':20}
+            'daily_meeting_minutes':240,'consecutive_meetings':3,'next_meeting_gap_minutes':5,'battery_percent':20,
+            'overlapping_meetings':2,'next_meeting_duration_minutes':90,'remaining_meeting_minutes':180,'daily_active_minutes':160}
         engine.context.update(context)
         for rule in store.data['rules']:rule['enabled']=True
         for voice in ADDED_VOICE_NAMES:

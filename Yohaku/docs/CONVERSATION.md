@@ -21,7 +21,7 @@
 
 ## 話題を選ぶ条件
 
-7種の各性格に181、合計1,267の定型文があります。セリフ・キャラ設定・発生ロジックは `companion/assets/dialogue/default_dialogue.json` に収録しています。アプリの会話編集画面で変更すると `%LOCALAPPDATA%\Yohaku\dialogue.json` に保存し、再起動なしで反映します。
+7種の各性格に217、合計1,519の定型文があります。セリフ・キャラ設定・発生ロジックは `companion/assets/dialogue/default_dialogue.json` に収録しています。アプリの会話編集画面で変更すると `%LOCALAPPDATA%\Yohaku\dialogue.json` に保存し、再起動なしで反映します。
 
 | 話題 | 候補になる条件 |
 |---|---|
@@ -76,3 +76,6 @@ CPU・メモリ使用率も通常会話の候補に含みます。CPUの高負�
 
 
 [7種類の性格と追加3種の例](PERSONALITIES.md)：性格は見た目と独立して設定・編集できます。
+
+
+[v0.19.1の追加12話題と割合条件](EXTENDED_LOGIC.md)：計測範囲の比率と、残りの予定の重なり・時間を使って、通常会話を選択します。

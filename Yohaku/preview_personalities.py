@@ -26,7 +26,7 @@ def main():
             app.processEvents();p.drawPixmap(x,y+12,bubble.grab());widgets.append(bubble)
         mascot=Mascot(72,character='A');mascot.frame_index=24;mascot.show();app.processEvents()
         p.drawPixmap(x+235,570,mascot.grab());widgets.append(mascot)
-    text(40,676,'実装ウィジェットによるセリフの表示例 / 7性格、合計1,267件 / Windows実機では未検証',12)
+    text(40,676,'実装ウィジェットによるセリフの表示例 / 7性格、合計1,519件 / Windows実機では未検証',12)
     p.end();board.save(str(Path(__file__).parent/'docs/personality-examples.png'))
     for widget in widgets:widget.hide()
     print('Rendered personality-examples.png')

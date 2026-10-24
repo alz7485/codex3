@@ -99,6 +99,65 @@ class OutlookReadTests(unittest.TestCase):
             result = read_calendar(show_titles, whole_week)
         return result, calendar, inbox
 
+    def test_prior_day_ongoing_calendar_and_pending_request_reach_remaining_schedule(self):
+        from companion.advanced_context import remaining_meeting_metrics
+        lower = NOW.replace(hour=0, minute=0)
+        start = lower - timedelta(hours=1)
+        end = NOW + timedelta(minutes=30)
+        appointment = self.appointment(start=start)
+        appointment.EndUTC = end
+        request = self.request(start=start, extra={f'{APPOINTMENT}/820E0040': end})
+        for appointments, requests in (([appointment], []), ([], [request])):
+            with self.subTest(source='calendar' if appointments else 'pending'):
+                result, _, _ = self.read(appointments, requests)
+                self.assertTrue(result.complete)
+                values = remaining_meeting_metrics(result, NOW)
+                self.assertEqual(values['remaining_meetings'], 1)
+                self.assertEqual(values['remaining_meeting_minutes'], 30)
+                self.assertEqual(values['overlapping_meetings'], 1)
+
+        # Reproduce the original late-day false "all finished" path through
+        # the actual Controller metric merge and conversation engine.
+        import tempfile
+        from pathlib import Path
+        from unittest.mock import Mock
+        from companion import core, dialogue, ui
+        from companion.advanced_context import ConditionTimeline
+        now = NOW.replace(hour=16, minute=30)
+        appointment.EndUTC = now + timedelta(minutes=30)
+        finished = self.appointment('CCDD', start=lower+timedelta(hours=9))
+        finished.EndUTC = lower+timedelta(hours=10)
+        with patch(__name__ + '.NOW', now):
+            events, _, _ = self.read([appointment, finished])
+        with tempfile.TemporaryDirectory() as temporary:
+            folder = Path(temporary)
+            store = dialogue.DialogueStore(folder/'dialogue.json')
+            for row in store.data['rules']:
+                row['enabled'] = row['trigger'] != 'auto' or row['id'] == 'meeting_day_finished'
+            settings = core.Settings(context_enabled=False, quiet_start='00:00', quiet_end='00:00')
+            engine = core.Engine(settings, folder/'history.json', dialogue=store)
+            engine.started = now-timedelta(hours=2)
+            engine.last_display = now-timedelta(minutes=11)
+            engine.session_spoken = True
+            fake = types.SimpleNamespace(dialogue=store, settings=settings, engine=engine, usage=None,
+                connected=True, connected_at=now, weekly_events=0, daily_events=len(events), events=events,
+                condition_timeline=ConditionTimeline(), panel=types.SimpleNamespace(advanced_context_status=Mock()))
+            ui.Controller.refresh_context_metrics(fake, now)
+            self.assertEqual(engine.context['remaining_meetings'], 1)
+            self.assertEqual(engine.context['completed_meetings'], 1)
+            self.assertEqual(engine.context['remaining_meeting_minutes'], 30)
+            self.assertIsNone(engine.next_notice(now, events, connected=True))
+
+    def test_calendar_day_boundaries_exclude_ended_at_midnight_and_starting_tomorrow(self):
+        lower = NOW.replace(hour=0, minute=0)
+        ended = self.appointment('AAAA', start=lower-timedelta(hours=1))
+        ended.EndUTC = lower
+        tomorrow = self.appointment('BBBB', start=lower+timedelta(days=1))
+        finished = self.appointment('CCCC', start=lower-timedelta(hours=2))
+        finished.EndUTC = lower+timedelta(hours=1)
+        result, _, _ = self.read([ended, tomorrow, finished])
+        self.assertEqual([e.end for e in result], [finished.EndUTC])
+
     def test_unaccepted_and_tentative_calendar_items_are_included(self):
         result, calendar, _ = self.read([self.appointment('AABB', response=5), self.appointment('CCDD', response=2)])
         self.assertEqual([e.response for e in result], ['未承諾', '仮承諾'])

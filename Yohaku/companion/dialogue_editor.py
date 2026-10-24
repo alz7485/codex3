@@ -162,6 +162,11 @@ class DialogueEditor(QMainWindow):
         self.first_only = QCheckBox('起動後、最初の会話だけで使う')
         self.metric_selector = QComboBox()
         for key, title in METRICS.items(): self.metric_selector.addItem(title, key)
+        self.ratio_denominator=QComboBox()
+        for key,title in METRICS.items():self.ratio_denominator.addItem(title,key)
+        self.ratio_total=QDoubleSpinBox();self.ratio_total.setRange(.001,100000);self.ratio_total.setDecimals(3);self.ratio_total.setValue(120)
+        self.ratio_denominator.setToolTip('分子と同じ単位の全体量を選びます。分子が分母を超える値や取得不能な値では成立しません。')
+        self.ratio_total.setToolTip('分母がこの量に達してから割合を判定します。単位は選んだ分母の集計値と同じです。')
         self.metric_minimum, self.metric_maximum = QDoubleSpinBox(), QDoubleSpinBox()
         for field in (self.metric_minimum, self.metric_maximum):
             field.setRange(-43200, 100000)
@@ -188,6 +193,8 @@ class DialogueEditor(QMainWindow):
                 ('',self.to_no_maximum),('操作なし時間',self.idle_length),('発生後に話せる期間',self.event_window),
                 ('対象ファイル・フォルダー',self.target_selector),('記録の状態',self.target_state),('営業日・休日',self.business_expected)]:
             widget.setAccessibleName(title or widget.text());form.addRow(title,widget)
+        for title,widget in [('割合の分母',self.ratio_denominator),('分母の最低計測量（分母と同じ単位）',self.ratio_total)]:
+            widget.setAccessibleName(title);form.addRow(title,widget)
         form.addRow(label('対象ファイルと会社休日は設定の「休日・対象ファイル・話題の表示」で登録します。履歴記録がオフなら対象ファイルの条件は成立しません。変化後の発言は1回だけで、未表示のまま期間を過ぎると見送ります。','muted',True))
         form.addRow(label('時間帯は開始を含み終了を含みません。同時刻なら終日。曜日と時刻はPCのローカル設定です。予定の前後はOutlook接続時だけ候補になります。', 'muted', True))
         form.addRow(label('出現しやすさは同じ優先度の候補内で使います。「呼びかけ」と「予定のお知らせ」は個別の操作・通知に対応します。', 'muted', True))
@@ -202,6 +209,8 @@ class DialogueEditor(QMainWindow):
         for widget in (self.expression, self.kind):
             widget.currentIndexChanged.connect(self.update_rule)
         self.metric_selector.currentIndexChanged.connect(self.update_rule)
+        self.ratio_denominator.currentIndexChanged.connect(self.update_rule)
+        self.ratio_total.valueChanged.connect(self.update_rule)
         self.metric_minimum.valueChanged.connect(self.update_rule)
         self.metric_maximum.valueChanged.connect(self.update_rule)
         self.details.textChanged.connect(self.update_rule)
@@ -371,10 +380,12 @@ class DialogueEditor(QMainWindow):
         self.maximum.setValue(c.get('maximum_minutes') or 0)
         self.no_maximum.setChecked(c.get('maximum_minutes') is None)
         self.first_only.setChecked(c.get('first_only', False))
-        self.metric_selector.setCurrentIndex(max(0, self.metric_selector.findData(c.get('metric', 'idle_minutes'))))
+        self.metric_selector.setCurrentIndex(max(0, self.metric_selector.findData(c.get('numerator',c.get('metric','daily_active_minutes' if c['kind']=='metric_ratio' else 'idle_minutes')))))
+        self.ratio_denominator.setCurrentIndex(max(0,self.ratio_denominator.findData(c.get('denominator','observed_minutes'))))
+        self.ratio_total.setValue(c.get('minimum_total',120))
         self.metric_minimum.setValue(c.get('minimum', 0))
         self.metric_maximum.setValue(c.get('maximum') or 0)
-        if c['kind'] in ('metric_range','metric_sustained','metric_transition','watched_file'): self.no_maximum.setChecked(c.get('maximum') is None)
+        if c['kind'] in ('metric_range','metric_sustained','metric_transition','watched_file','metric_ratio'): self.no_maximum.setChecked(c.get('maximum') is None)
         self.duration.setValue(c.get('duration_minutes',0));self.event_window.setValue(c.get('window_minutes',10))
         self.idle_length.setValue(c.get('idle_minutes',30))
         self.to_minimum.setValue(c.get('to_minimum',0));self.to_maximum.setValue(c.get('to_maximum',50) or 0)
@@ -402,9 +413,14 @@ class DialogueEditor(QMainWindow):
         ranged = automatic and kind in ('session_range', 'before_meeting', 'after_meeting')
         self.minimum.setEnabled(ranged)
         self.maximum.setEnabled(ranged and (kind != 'session_range' or not self.no_maximum.isChecked()))
-        metric_kind=kind in ('metric_range','metric_sustained','metric_transition')
-        self.rule_form.labelForField(self.metric_minimum).setText('変化前の下限' if kind=='metric_transition' else '記録回数の下限' if kind=='watched_file' else '集計値の下限')
-        self.rule_form.labelForField(self.metric_maximum).setText('変化前の上限' if kind=='metric_transition' else '記録回数の上限' if kind=='watched_file' else '集計値の上限')
+        metric_kind=kind in ('metric_range','metric_sustained','metric_transition','metric_ratio')
+        self.rule_form.labelForField(self.metric_selector).setText('割合の分子' if kind=='metric_ratio' else '集計値')
+        self.rule_form.labelForField(self.metric_minimum).setText('割合の下限（%）' if kind=='metric_ratio' else '変化前の下限' if kind=='metric_transition' else '記録回数の下限' if kind=='watched_file' else '集計値の下限')
+        self.rule_form.labelForField(self.metric_maximum).setText('割合の上限（%）' if kind=='metric_ratio' else '変化前の上限' if kind=='metric_transition' else '記録回数の上限' if kind=='watched_file' else '集計値の上限')
+        for field in (self.metric_selector, self.metric_minimum, self.metric_maximum):
+            field.setAccessibleName(self.rule_form.labelForField(field).text())
+        for field in (self.metric_minimum, self.metric_maximum):
+            field.setAccessibleDescription('0〜100%で指定します。' if kind == 'metric_ratio' else '')
         count_kind=kind=='watched_file' and self.target_state.currentData()=='count_range'
         self.no_maximum.setEnabled(automatic and (kind=='session_range' or metric_kind or count_kind))
         self.metric_maximum.setEnabled(not self.no_maximum.isChecked())
@@ -414,6 +430,7 @@ class DialogueEditor(QMainWindow):
                 (self.day_row, automatic and kind == 'weekday'), (self.minimum, ranged), (self.maximum, ranged),
                 (self.no_maximum, automatic and (kind=='session_range' or metric_kind or count_kind)),
                 (self.metric_selector, automatic and metric_kind), (self.metric_minimum, automatic and (metric_kind or count_kind)),
+                (self.ratio_denominator,automatic and kind=='metric_ratio'),(self.ratio_total,automatic and kind=='metric_ratio'),
                 (self.metric_maximum, automatic and (metric_kind or count_kind)), (self.details, automatic and kind in ('all', 'any')), (self.first_only, automatic and kind == 'session_range'),
                 (self.duration,automatic and kind in ('metric_sustained','metric_transition')),
                 (self.to_minimum,automatic and kind=='metric_transition'),(self.to_maximum,automatic and kind=='metric_transition'),
@@ -435,6 +452,8 @@ class DialogueEditor(QMainWindow):
                      maximum=None if self.no_maximum.isChecked() else self.metric_maximum.value())
             if c['kind'] in ('metric_sustained','metric_transition'):c['duration_minutes']=self.duration.value()
             if c['kind']=='metric_transition':c.update(to_minimum=self.to_minimum.value(),to_maximum=None if self.to_no_maximum.isChecked() else self.to_maximum.value(),window_minutes=self.event_window.value())
+        elif c['kind']=='metric_ratio':
+            c.update(numerator=self.metric_selector.currentData(),denominator=self.ratio_denominator.currentData(),minimum_total=self.ratio_total.value(),minimum=self.metric_minimum.value(),maximum=None if self.no_maximum.isChecked() else self.metric_maximum.value())
         elif c['kind']=='idle_return':c.update(idle_minutes=self.idle_length.value(),window_minutes=self.event_window.value())
         elif c['kind']=='watched_file':c.update(target_id=self.target_selector.currentData() or '',state=self.target_state.currentData(),minimum=int(self.metric_minimum.value()),maximum=None if self.no_maximum.isChecked() else int(self.metric_maximum.value()))
         elif c['kind']=='business_day':c['expected']=self.business_expected.currentData()
@@ -552,7 +571,8 @@ class DialogueEditor(QMainWindow):
                 if target.resolve() == self.store.path.resolve():
                     self.status.setText('使用中のJSONには「保存して反映」で保存してください。')
                     return
-                target.write_text(json.dumps(candidate, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+                from .dialogue import document_text
+                target.write_text(document_text(candidate), encoding='utf-8', newline='\n')
                 self.status.setText('JSONを書き出しました。現在の会話への反映は「保存して反映」で行います。')
             except OSError as error:
                 self.status.setText(f'書き出せませんでした。{error}')

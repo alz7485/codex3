@@ -1,6 +1,7 @@
 """Bounded condition state: continuous observations, recovery events and meeting gaps."""
 import json
 import math
+from datetime import timedelta
 
 TEMPORAL_KINDS = {'metric_sustained','metric_transition','idle_return'}
 EVENT_KINDS = {'metric_transition','idle_return'}
@@ -11,7 +12,9 @@ def condition_key(condition): return json.dumps(condition,sort_keys=True,separat
 
 def children(condition):
     yield condition
-    for child in condition.get('conditions',()): yield from children(child)
+    if condition.get('kind') in ('all', 'any'):
+        for child in condition.get('conditions', ()):
+            yield from children(child)
 
 
 def in_range(value,minimum,maximum):
@@ -77,3 +80,27 @@ def meeting_metrics(events,now,gap_minutes=10):
     future=[e.start for e in remaining if e.start>now]
     return {'daily_meeting_minutes':total,'consecutive_meetings':groups[0][0] if groups else 0,
             'next_meeting_gap_minutes':max(0,(min(future)-current_end).total_seconds()/60) if future else None}
+
+
+def remaining_meeting_metrics(events, now):
+    """Today's remaining schedule, using half-open intervals and a union."""
+    day_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    day_end = day_start + timedelta(days=1)
+    today = [event for event in events if event.end > event.start
+             and event.start < day_end and event.end > day_start]
+    remaining = [event for event in today if event.end > now]
+    future = sorted((event for event in remaining if event.start > now), key=lambda event:event.start)
+    intervals = sorted((max(now,event.start),min(day_end,event.end)) for event in remaining)
+    total = 0.0; end = None; edges = []
+    for start, stop in intervals:
+        uncovered_start = max(start,end) if end is not None else start
+        total += max(0,(stop-uncovered_start).total_seconds()/60)
+        end = max(end,stop) if end is not None else stop
+        edges.extend(((start,1),(stop,-1)))
+    simultaneous = maximum = 0
+    for _time, change in sorted(edges):
+        simultaneous += change  # End (-1) precedes start (+1) at an equal time.
+        maximum = max(maximum,simultaneous)
+    return {'remaining_meetings':len(remaining), 'completed_meetings':sum(event.end<=now for event in today),
+            'remaining_meeting_minutes':total, 'overlapping_meetings':maximum,
+            'next_meeting_duration_minutes':(future[0].end-future[0].start).total_seconds()/60 if future else None}

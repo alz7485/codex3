@@ -106,7 +106,7 @@ class PersonalityWordingTests(unittest.TestCase):
         self.assertEqual(engine.phrase('call'),'どうした。')
         lines=[line for phrases in store.data['phrases']['寡黙な先輩'].values() for line in phrases]
         thoughts=[line for line in lines if '\n（' in line]
-        self.assertEqual(len(thoughts),32);self.assertEqual(len(lines),181)
+        self.assertEqual(len(thoughts),34);self.assertEqual(len(lines),217)
         for line in thoughts:self.assertRegex(line,r'^…\n（[^（）\n]+）$')
 
     def test_previous_thought_variant_moves_to_silence_without_changing_custom_text_or_file(self):

@@ -21,12 +21,16 @@ PERSONALITY_WORDING_PATH = DEFAULT_PATH.with_name('personality_wording_v1.json')
 KINDS = {'always': 'いつでも', 'time_range': '時間帯', 'weekday': '曜日',
          'session_range': '起動からの経過', 'before_meeting': '予定の前', 'after_meeting': '予定のあと', 'metric_range': 'PC・ファイル・予定の集計値', 'all': 'すべての条件（AND）', 'any': 'いずれかの条件（OR）',
          'metric_sustained':'集計値が一定時間続く', 'metric_transition':'集計値の変化・回復',
-         'idle_return':'操作なしから戻った', 'watched_file':'指定ファイル・フォルダーの記録', 'business_day':'営業日・休日'}
+         'idle_return':'操作なしから戻った', 'watched_file':'指定ファイル・フォルダーの記録', 'business_day':'営業日・休日',
+         'metric_ratio':'集計値の割合（%）'}
 ACTION_IDS = ('calendar_intro', 'calendar_unavailable', 'calendar_empty', 'activity_open', 'settings_open', 'no_conversation', 'reminder_disabled', 'click_concern', 'click_angry')
 NEW_RULE_IDS = ('idle_short', 'idle_long', 'active_long', 'daily_busy', 'daily_light', 'many_open_files', 'few_open_files', 'desktop_busy', 'desktop_tidy', 'before_start', 'before_end', 'ending_soon', 'after_hours', 'repeat_file', 'missed_yesterday', 'week_busy', 'week_light', 'today_busy', 'today_light')
 RESOURCE_RULE_IDS = ('cpu_high', 'cpu_low', 'memory_high', 'memory_low')
 ADVANCED_RULE_IDS = ('cpu_recovered','memory_recovered','idle_returned','meetings_long','meetings_consecutive',
                      'meeting_short_break','battery_low','power_connected','target_unopened','target_reopened')
+EXTENDED_RULE_IDS = ('active_ratio_high','active_ratio_low','meeting_overlap','next_meeting_long',
+    'meeting_day_finished','meeting_remaining_long','return_before_meeting','office_memory_pressure',
+    'battery_before_meeting','meeting_break_after_work','desktop_before_end','friday_wrap')
 MAX_BYTES = 2 * 1024 * 1024
 
 
@@ -43,8 +47,19 @@ def _integer(value, minimum, maximum):
     return type(value) is int and minimum <= value <= maximum
 
 
+def _finite_number(value):
+    # Python integers are finite, including those too large to convert to float.
+    return type(value) is int or type(value) is float and math.isfinite(value)
+
+
 def _text(value, limit=1000):
     return isinstance(value, str) and bool(value.strip()) and len(value) <= limit
+
+
+def document_text(document):
+    """Keep readable JSON unless indentation would exceed the read limit."""
+    text = json.dumps(document, ensure_ascii=False, indent=2) + '\n'
+    return text if len(text.encode('utf-8')) <= MAX_BYTES else json.dumps(document, ensure_ascii=False)
 
 
 def validate(document):
@@ -111,6 +126,8 @@ def validate(document):
 def validate_condition(condition, key='', depth=0):
     _require(depth <= 4 and isinstance(condition, dict) and isinstance(condition.get('kind'), str) and condition['kind'] in KINDS, f'{key}: 条件の種類・深さが不正です。')
     kind = condition['kind']
+    _require(kind in ('all', 'any') or 'conditions' not in condition,
+             f'{key}: 詳細条件 conditions はAND／ORだけで指定できます。')
     if kind in ('all', 'any'):
         children = condition.get('conditions')
         _require(isinstance(children, list) and 1 <= len(children) <= 8, f'{key}: 詳細条件は1〜8件の配列にしてください。')
@@ -119,7 +136,7 @@ def validate_condition(condition, key='', depth=0):
     elif kind in ('metric_range','metric_sustained','metric_transition'):
         _require(isinstance(condition.get('metric'), str) and condition['metric'] in METRICS, f'{key}: 集計値の種類が不正です。')
         minimum, maximum = condition.get('minimum'), condition.get('maximum')
-        numeric = lambda v: type(v) in (int, float) and math.isfinite(v) and -43200 <= v <= 100000
+        numeric = lambda v: _finite_number(v) and -43200 <= v <= 100000
         _require(numeric(minimum) and (maximum is None or numeric(maximum) and maximum >= minimum), f'{key}: 集計値の下限・上限が不正です。')
         if kind in ('metric_sustained','metric_transition'):
             _require(_integer(condition.get('duration_minutes'),0,1440), f'{key}: 継続時間は0〜1440分です。')
@@ -136,6 +153,12 @@ def validate_condition(condition, key='', depth=0):
         _require(_integer(condition.get('minimum'),0,15000) and (condition.get('maximum') is None or _integer(condition['maximum'],condition['minimum'],15000)),f'{key}: 記録回数の範囲が不正です。')
     elif kind=='business_day':
         _require(type(condition.get('expected')) is bool,f'{key}: 営業日・休日を指定してください。')
+    elif kind=='metric_ratio':
+        _require(all(isinstance(condition.get(name),str) and condition[name] in METRICS for name in ('numerator','denominator')),f'{key}: 割合の分子・分母となる集計値を選んでください。')
+        total=condition.get('minimum_total');low=condition.get('minimum');high=condition.get('maximum')
+        numeric = _finite_number
+        _require(numeric(total) and 0<total<=100000,f'{key}: 分母の最低計測量は0より大きく100000以下です。')
+        _require(numeric(low) and 0<=low<=100 and (high is None or numeric(high) and low<=high<=100),f'{key}: 割合は0〜100%の範囲で指定してください。')
     elif kind == 'time_range':
         for name in ('start', 'end'):
             value = condition.get(name)
@@ -154,6 +177,9 @@ def validate_condition(condition, key='', depth=0):
 def upgrade(document):
     if not isinstance(document, dict) or type(document.get('schema_version')) is not int or document.get('schema_version') not in (1, 2):
         return document
+    _require(isinstance(document.get('rules'), list)
+             and all(isinstance(rule, dict) for rule in document['rules']),
+             '発生ルールの形式が不正です。')
     document = upgrade_voice_names(document)
     if document['schema_version'] == 2:
         return upgrade_personalities(upgrade_advanced(upgrade_resources(upgrade_names(upgrade_comfort(upgrade_click_reactions(upgrade_mail(document)))))))
@@ -277,7 +303,7 @@ def upgrade_debtor_wording(document):
 def upgrade_debtor_style(document):
     """Update stock narration without rewriting user-authored sentences."""
     if document.get('debtor_style_version') == 1 or not isinstance(document.get('phrases'), dict):
-        return document
+        return upgrade_extended_context(document)
     result = deepcopy(document)
     bank = result['phrases'].get(DEBTOR_VOICE)
     changes = json.loads(DEFAULT_PATH.with_name('debtor_style_v1.json').read_text(encoding='utf-8'))
@@ -287,6 +313,29 @@ def upgrade_debtor_style(document):
                 replacements = {row['before']: row['after'] for row in rows}
                 bank[topic] = [replacements.get(line, line) if isinstance(line, str) else line for line in bank[topic]]
     result['debtor_style_version'] = 1
+    return upgrade_extended_context(result)
+
+
+def upgrade_extended_context(document):
+    if document.get('extended_context_version') == 1:
+        return document
+    result=deepcopy(document)
+    if isinstance(result.get('rules'),list) and isinstance(result.get('phrases'),dict):
+        base=json.loads(DEFAULT_PATH.read_text(encoding='utf-8'))
+        existing={row.get('id') for row in result['rules'] if isinstance(row,dict) and isinstance(row.get('id'),str)}
+        for key in EXTENDED_RULE_IDS:
+            if key in existing:continue
+            if len(result['rules'])>=200:break
+            result['rules'].append(deepcopy(next(row for row in base['rules'] if row['id']==key)))
+            for voice,bank in result['phrases'].items():
+                if isinstance(bank,dict) and voice in base['phrases']:bank[key]=deepcopy(base['phrases'][voice][key])
+    result['extended_context_version']=1
+    if len(json.dumps(result, ensure_ascii=False).encode('utf-8')) > MAX_BYTES:
+        # Optional stock topics must never displace a valid, edited document.
+        result = deepcopy(document)
+        result['extended_context_version'] = 1
+        if len(json.dumps(result, ensure_ascii=False).encode('utf-8')) > MAX_BYTES:
+            return document
     return result
 
 
@@ -294,6 +343,8 @@ def upgrade_advanced(document):
     if document.get('advanced_context_version')==1: return upgrade_conversation_flow(document)
     result=deepcopy(document); base=json.loads(DEFAULT_PATH.read_text(encoding='utf-8'))
     if isinstance(result.get('rules'),list) and isinstance(result.get('phrases'),dict):
+        _require(all(isinstance(rule, dict) for rule in result['rules']),
+                 '発生ルールの形式が不正です。')
         existing={r.get('id') for r in result['rules'] if isinstance(r,dict) and isinstance(r.get('id'),str)}
         for key in ADVANCED_RULE_IDS:
             if len(result['rules'])>=200: break
@@ -512,7 +563,7 @@ class DialogueStore:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         temporary = self.path.with_suffix('.json.tmp')
         try:
-            temporary.write_text(json.dumps(candidate, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+            temporary.write_text(document_text(candidate), encoding='utf-8', newline='\n')
             if self.path.exists():
                 shutil.copy2(self.path, self.path.with_suffix('.json.bak'))
             temporary.replace(self.path)
@@ -542,7 +593,13 @@ def matches(rule, now, started, session_spoken, events, connected, context=None)
         return all(values) if kind == 'all' else any(values)
     if kind == 'metric_range':
         value = (context or {}).get(c['metric'])
-        return type(value) in (int, float) and math.isfinite(value) and value >= c['minimum'] and (c['maximum'] is None or value <= c['maximum'])
+        return _finite_number(value) and value >= c['minimum'] and (c['maximum'] is None or value <= c['maximum'])
+    if kind == 'metric_ratio':
+        numerator,denominator=context.get(c['numerator']),context.get(c['denominator'])
+        valid = _finite_number
+        if not (valid(numerator) and valid(denominator) and denominator>=c['minimum_total'] and 0<=numerator<=denominator):return False
+        percent=numerator/denominator*100
+        return percent>=c['minimum'] and (c['maximum'] is None or percent<=c['maximum'])
     if kind == 'always':
         return True
     if kind == 'time_range':

@@ -171,7 +171,7 @@ def merge_events(appointments, requests, lower, upper):
 
     return sorted((event for logical, event in merged.items()
                    if logical not in blocked and series_active(logical)
-                   and lower <= event.start < upper), key=lambda event: event.start)
+                   and event.start < upper and event.end > lower), key=lambda event: event.start)
 
 
 def read_calendar(show_titles: bool = False, whole_week: bool = False) -> list[Event]:
@@ -219,7 +219,7 @@ def read_calendar(show_titles: bool = False, whole_week: bool = False) -> list[E
                 try:
                     if not item.AllDayEvent:
                         start, end = utc_time(item.StartUTC), utc_time(item.EndUTC)
-                        if lower <= start < upper and end > start:
+                        if start < upper and end > lower and end > start:
                             response = optional(item, 'ResponseStatus', 0)
                             status = optional(item, 'MeetingStatus', 0)
                             event = event_from(item, start, end, show_titles,

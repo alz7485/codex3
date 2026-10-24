@@ -26,7 +26,7 @@ from .dialogue import AUTO_PERSONALITY, BUBBLE_MS, PROFILES, DialogueError, Dial
 from .outlook import read_calendar
 from .metadata import APP_DISPLAY_NAME, VERSION
 from .context import ResourceSampler, UsageLedger, input_idle_seconds, desktop_file_count, office_file_count, work_metrics, system_power_metrics
-from .advanced_context import ConditionTimeline, meeting_metrics
+from .advanced_context import ConditionTimeline, meeting_metrics, remaining_meeting_metrics
 from .mail import OutlookMailWatcher
 from .preferences import PRESETS, snapped_y
 from .departure import attendance_url, system_uptime_seconds
@@ -890,6 +890,8 @@ class Bridge(QObject):
 
 class PopupDateEdit(QDateEdit):
     """Open a calendar from the whole date field, including its text area."""
+    opening = Signal()
+    chosen = Signal()
     def __init__(self, day):
         super().__init__(day)
         self.setCalendarPopup(True)
@@ -902,9 +904,13 @@ class PopupDateEdit(QDateEdit):
         self.lineEdit().installEventFilter(self)
 
     def choose_date(self, day):
-        self.setDate(day);self.date_popup.hide()
+        if self.minimumDate() <= day <= self.maximumDate():
+            self.setDate(day);self.date_popup.hide()
+            self.chosen.emit()
 
     def show_calendar(self):
+        self.opening.emit()
+        self.popup_calendar.setDateRange(self.minimumDate(), self.maximumDate())
         self.popup_calendar.setSelectedDate(self.date())
         self.date_popup.popup(self.mapToGlobal(QPoint(0, self.height())))
         self.popup_calendar.setFocus()
@@ -923,6 +929,29 @@ class PopupDateEdit(QDateEdit):
     def hideEvent(self, event):
         self.date_popup.hide()
         super().hideEvent(event)
+
+
+class ReminderTimeEdit(QLineEdit):
+    """Edit the whole HH:mm value without QTimeEdit's section replacement."""
+    def __init__(self, clock):
+        super().__init__()
+        self._minimum = QTime(0, 0)
+        self.setInputMask('00:00;_')
+        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.setToolTip('24時間表記で入力します（例：09:05、17:30）。時刻全体の貼り付けもできます。')
+        self.setTime(clock)
+
+    def time(self):
+        return QTime.fromString(self.text(), 'HH:mm')
+
+    def setTime(self, clock):
+        self.setText(clock.toString('HH:mm'))
+
+    def setMinimumTime(self, clock):
+        self._minimum = clock
+
+    def minimumTime(self):
+        return self._minimum
 
 
 class InteractionBubble(Bubble):
@@ -986,8 +1015,8 @@ class InteractionBubble(Bubble):
         self.reminder_date = PopupDateEdit(QDate.currentDate())
         self.reminder_date.setDisplayFormat('yyyy/MM/dd');self.reminder_date.setCalendarPopup(True)
         self.reminder_date.setAccessibleName('通知する日付');self.reminder_date.setToolTip('カレンダーから日付を選択できます')
-        self.reminder_time = QTimeEdit(QTime.currentTime())
-        self.reminder_time.setDisplayFormat('HH:mm');self.reminder_time.setAccessibleName('通知する時刻')
+        self.reminder_time = ReminderTimeEdit(QTime.currentTime())
+        self.reminder_time.setAccessibleName('通知する時刻（24時間表記、HH:mm）')
         date_time.addWidget(self.reminder_date, 3);date_time.addWidget(self.reminder_time, 2)
         form.addLayout(date_time)
         self.reminder_message = QPlainTextEdit()
@@ -1004,6 +1033,17 @@ class InteractionBubble(Bubble):
         form_actions.addWidget(self.reminder_ok);form_actions.addWidget(self.reminder_cancel)
         form.addLayout(form_actions)
         layout.addWidget(self.one_shot_form);self.one_shot_form.hide()
+        self._time_error = ''
+        self._adjusting_reminder_bounds = False
+        self._reminder_date_recheck = False
+        self.reminder_bounds_timer = QTimer(self)
+        self.reminder_bounds_timer.setInterval(1000)
+        self.reminder_bounds_timer.timeout.connect(self.refresh_one_shot_bounds)
+        self.reminder_date.dateChanged.connect(self.confirm_reminder_date)
+        self.reminder_date.chosen.connect(self.confirm_reminder_date)
+        self.reminder_date.opening.connect(self.refresh_one_shot_bounds)
+        self.reminder_time.textChanged.connect(lambda: self.refresh_one_shot_bounds())
+        self.reminder_time.textEdited.connect(self.confirm_reminder_date)
         self.resize_text()
         for widget in [self, *self.findChildren(QWidget)]:
             widget.installEventFilter(self)
@@ -1066,6 +1106,7 @@ class InteractionBubble(Bubble):
         self.content_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
 
     def open_choices(self, text="お呼びですか？", name="Yohaku"):
+        self.reminder_bounds_timer.stop()
         self.notice = None
         self.one_shot_form.hide()
         self.departure_row.hide()
@@ -1089,6 +1130,7 @@ class InteractionBubble(Bubble):
         self.current = key
 
     def display(self, notice):
+        self.reminder_bounds_timer.stop()
         self.one_shot_form.hide()
         self.notice = notice
         self.departure_row.hide()
@@ -1111,14 +1153,57 @@ class InteractionBubble(Bubble):
         self.display(Notice('', 'いつ、何をお知らせしましょう？'))
         self.current = 'one_shot';self.interactive = True
         self.set_kind('menu')
-        now = datetime.now().astimezone() + timedelta(minutes=1)
-        self.reminder_date.setDate(QDate.currentDate())
-        # At 23:59 the default remains today, so use the last minute and let
-        # validation ask for a future day instead of silently changing the date.
-        self.reminder_time.setTime(QTime(now.hour, now.minute) if now.date()==datetime.now().date() else QTime(23,59))
+        earliest = datetime.now().astimezone().replace(second=0, microsecond=0) + timedelta(minutes=1)
+        day = QDate(earliest.year, earliest.month, earliest.day)
+        self.reminder_date.setMinimumDate(day)
+        self.reminder_date.setDate(day)
+        self.reminder_time.setTime(QTime(earliest.hour, earliest.minute))
         self.reminder_message.clear();self.reminder_status.clear();self.reminder_status.hide();self.inline_mail.hide()
+        self._reminder_date_recheck = False
+        self.refresh_one_shot_bounds()
+        self.reminder_bounds_timer.start()
         self.one_shot_form.show();self.timer.stop();self.resize_text()
         self.activateWindow();self.reminder_message.setFocus()
+
+    def confirm_reminder_date(self, *_):
+        if not self._adjusting_reminder_bounds:
+            self._reminder_date_recheck = False
+            self.refresh_one_shot_bounds()
+
+    def refresh_one_shot_bounds(self, now=None):
+        if self.current != 'one_shot':
+            return
+        now = now or datetime.now().astimezone()
+        earliest = now.replace(second=0, microsecond=0) + timedelta(minutes=1)
+        minimum_day = QDate(earliest.year, earliest.month, earliest.day)
+        if self.reminder_date.minimumDate() != minimum_day:
+            if self.reminder_date.date() < minimum_day and self.one_shot_form.isVisible():
+                self._reminder_date_recheck = True
+            self._adjusting_reminder_bounds = True
+            try:
+                self.reminder_date.setMinimumDate(minimum_day)
+            finally:
+                self._adjusting_reminder_bounds = False
+        self.reminder_date.popup_calendar.setMinimumDate(minimum_day)
+        minimum_time = QTime(earliest.hour, earliest.minute) if self.reminder_date.date() == minimum_day else QTime(0, 0)
+        self.reminder_time.setMinimumTime(minimum_time)
+        clock = self.reminder_time.time()
+        error = ('選択できる日付が変わりました。日付か時刻を選び直してください。' if self._reminder_date_recheck
+                 else '時刻は24時間表記のHH:mmで入力してください。' if not clock.isValid()
+                 else f'選択した日の時刻は{minimum_time.toString("HH:mm")}以降を指定してください。' if clock < minimum_time else '')
+        self.reminder_ok.setEnabled(not error)
+        if error:
+            self.reminder_status.setText(error);self.reminder_status.show()
+        elif self._time_error and self.reminder_status.text() == self._time_error:
+            self.reminder_status.clear();self.reminder_status.hide()
+        changed = self._time_error != error
+        self._time_error = error
+        if changed and self.one_shot_form.isVisible():
+            self.resize_text()
+
+    def hideEvent(self, event):
+        self.reminder_bounds_timer.stop()
+        super().hideEvent(event)
 
     def show_file_history(self,text,rows):
         self.display(Notice('',text))
@@ -1891,6 +1976,7 @@ class Controller(QObject):
             values['daily_events'] = self.daily_events
             if self.daily_events is not None:
                 values.update(meeting_metrics(self.events,now,self.engine.context_options.data['consecutive_gap_minutes']))
+                values.update(remaining_meeting_metrics(self.events,now))
             upcoming = [event for event in self.events if event.start > now]
             if upcoming:
                 values['next_event_minutes'] = min((event.start - now).total_seconds() / 60 for event in upcoming)
@@ -2105,10 +2191,15 @@ class Controller(QObject):
     def save_one_shot(self):
         if self.hidden or self.user_hidden or self.bubble.current != 'one_shot' or not self.bubble.isVisible():
             return
+        now = datetime.now().astimezone()
+        self.bubble.refresh_one_shot_bounds(now)
+        if not self.bubble.reminder_ok.isEnabled():
+            self.bubble.resize_text();self.position()
+            return
         day = self.bubble.reminder_date.date();clock = self.bubble.reminder_time.time()
         when = datetime(day.year(), day.month(), day.day(), clock.hour(), clock.minute())
         try:
-            self.engine.one_shots.add(when, self.bubble.reminder_message.toPlainText(), datetime.now().astimezone())
+            self.engine.one_shots.add(when, self.bubble.reminder_message.toPlainText(), now)
         except ValueError as error:
             self.bubble.reminder_status.setText(str(error))
             self.bubble.reminder_status.show()

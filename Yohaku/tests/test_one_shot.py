@@ -126,6 +126,91 @@ class OneShotInterfaceTests(unittest.TestCase):
         self.c.bubble.reminder_time.setTime(QTime(10,30))
         self.c.bubble.reminder_message.setPlainText(text)
 
+    def test_time_can_be_replaced_as_a_whole_with_leading_zero_and_pasted(self):
+        from PySide6.QtCore import Qt, QTime
+        from PySide6.QtTest import QTest
+        self.fill_future()
+        field = self.c.bubble.reminder_time
+        field.setFocus()
+        for text in ('17:30', '09:05', '00:00', '23:59'):
+            field.selectAll(); QTest.keyClicks(field, text)
+            self.assertEqual(field.time(), QTime.fromString(text, 'HH:mm'))
+            self.assertTrue(self.c.bubble.reminder_ok.isEnabled())
+        clipboard = self.app.clipboard()
+        previous = clipboard.text()
+        try:
+            clipboard.setText('14:45')
+            field.selectAll(); field.paste()
+            self.assertEqual(field.time(), QTime(14, 45))
+        finally:
+            clipboard.setText(previous)
+
+    def test_incomplete_and_invalid_time_never_save_or_discard_message(self):
+        from PySide6.QtTest import QTest
+        self.fill_future()
+        b = self.c.bubble
+        for text in ('2', '29:85', ''):
+            b.reminder_time.selectAll()
+            b.reminder_time.clear()
+            QTest.keyClicks(b.reminder_time, text)
+            self.assertFalse(b.reminder_ok.isEnabled())
+            self.c.save_one_shot()
+            self.assertEqual(self.c.engine.one_shots.data['notifications'], [])
+            self.assertEqual(b.reminder_message.toPlainText(), '打合せの準備')
+
+    def test_past_days_disabled_in_both_calendars_and_today_past_time_blocks_ok(self):
+        from PySide6.QtCore import QDate, QTime
+        now = datetime(2026, 10, 26, 13, 45, 30).astimezone()
+        class Frozen(datetime):
+            @classmethod
+            def now(cls, tz=None):
+                return now
+        b = self.c.bubble
+        with patch('companion.ui.datetime', Frozen):
+            b.show_one_shot_form()
+            today = QDate(2026, 10, 26)
+            self.assertEqual(b.reminder_date.minimumDate(), today)
+            self.assertEqual(b.reminder_date.popup_calendar.minimumDate(), today)
+            b.reminder_date.show_calendar()
+            self.assertEqual(b.reminder_date.calendarWidget().minimumDate(), today)
+            b.reminder_date.choose_date(today.addDays(-1))
+            self.assertEqual(b.reminder_date.date(), today)
+            self.assertEqual(b.reminder_time.minimumTime(), QTime(13, 46))
+            for clock in (QTime(0, 0), QTime(13, 45)):
+                b.reminder_time.setTime(clock)
+                self.assertFalse(b.reminder_ok.isEnabled())
+            b.reminder_time.setTime(QTime(13, 46))
+            self.assertTrue(b.reminder_ok.isEnabled())
+            b.reminder_date.setDate(today.addDays(1))
+            b.reminder_time.setTime(QTime(0, 0))
+            self.assertEqual(b.reminder_time.minimumTime(), QTime(0, 0))
+            self.assertTrue(b.reminder_ok.isEnabled())
+            b.reminder_date.setDate(today)
+            self.assertFalse(b.reminder_ok.isEnabled())
+
+    def test_elapsed_time_is_rechecked_before_save_and_midnight_requires_date_review(self):
+        from PySide6.QtCore import QTime
+        clock = datetime(2026, 10, 26, 23, 58, 30).astimezone()
+        class Frozen(datetime):
+            @classmethod
+            def now(cls, tz=None):
+                return clock
+        b = self.c.bubble
+        with patch('companion.ui.datetime', Frozen):
+            b.show_one_shot_form(); b.reminder_message.setPlainText('保持する本文')
+            self.assertEqual(b.reminder_time.time(), QTime(23, 59))
+            clock += timedelta(minutes=1)
+            self.c.save_one_shot()
+            self.assertFalse(b.reminder_ok.isEnabled())
+            self.assertIn('日付', b.reminder_status.text())
+            self.assertEqual(self.c.engine.one_shots.data['notifications'], [])
+            self.assertEqual(b.reminder_message.toPlainText(), '保持する本文')
+            b.reminder_date.choose_date(b.reminder_date.date())
+            self.assertTrue(b.reminder_ok.isEnabled())
+            b.show_one_shot_form()
+            self.assertEqual(b.reminder_time.time(), QTime(0, 0))
+            self.assertTrue(b.reminder_ok.isEnabled())
+
     def test_five_actions_and_today_default_with_no_auto_dismissal_or_headers(self):
         from PySide6.QtCore import QDate
         b=self.c.bubble

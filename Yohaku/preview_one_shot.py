@@ -12,7 +12,7 @@ def main():
     app=create_application()
     menu=InteractionBubble();menu.open_choices('お呼びですか？')
     form=InteractionBubble();form.show_one_shot_form()
-    form.reminder_date.setDate(QDate.currentDate());form.reminder_time.setTime(QTime(15,0))
+    form.reminder_date.setDate(QDate.currentDate().addDays(1));form.reminder_time.setTime(QTime(15,0))
     form.reminder_message.setPlainText('会議資料を確認する')
     form.resize_text();app.processEvents()
     height=max(menu.height(),form.height())+220
