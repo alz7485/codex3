@@ -71,8 +71,9 @@ class ComfortLogicTests(unittest.TestCase):
         result = validate(upgrade(old))
         self.assertEqual(result['options']['interval_minutes'], 23)
         self.assertEqual(result['options']['click_repeat_seconds'], 30)
-        for bank in result['phrases'].values():
-            self.assertEqual(bank['mail_received'], ['メールが届きました。', '新しいメールが届きました。'])
+        for voice, bank in result['phrases'].items():
+            self.assertEqual(bank['mail_received'], defaults()['phrases'][voice]['mail_received'])
+            self.assertTrue(all('山田' not in line and '{mail_from}' not in line for line in bank['mail_received']))
             self.assertEqual(bank['chat'][0], '自分で編集した会話')
         self.assertIn('山田', old['phrases']['控えめな皮肉屋']['mail_received'][0])
         self.assertEqual(upgrade(result), result)

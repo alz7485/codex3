@@ -69,7 +69,7 @@ def validate(document):
     _require(options['click_angry_count'] > options['click_concern_count'], '怒る回数は困る回数より多くしてください。')
     _require(options['click_recovery_seconds'] >= options['click_window_seconds'], '連打のリセット時間は判定期間以上にしてください。')
     phrases = document.get('phrases')
-    _require(isinstance(phrases, dict) and set(phrases) == set(VOICE_NAMES), '4種の性格のセリフを指定してください。')
+    _require(isinstance(phrases, dict) and set(phrases) == set(VOICE_NAMES), f'{len(VOICE_NAMES)}種の性格のセリフを指定してください。')
     profiles = document.get('profiles')
     _require(isinstance(profiles, dict) and set(profiles) == set('ABEF'), 'A/B/E/Fのキャラ設定が必要です。')
     for key, profile in profiles.items():
@@ -152,7 +152,7 @@ def upgrade(document):
     if not isinstance(document, dict) or type(document.get('schema_version')) is not int or document.get('schema_version') not in (1, 2):
         return document
     if document['schema_version'] == 2:
-        return upgrade_advanced(upgrade_resources(upgrade_names(upgrade_comfort(upgrade_click_reactions(upgrade_mail(document))))))
+        return upgrade_personalities(upgrade_advanced(upgrade_resources(upgrade_names(upgrade_comfort(upgrade_click_reactions(upgrade_mail(document)))))))
     result = deepcopy(document)
     base = json.loads(DEFAULT_PATH.read_text(encoding='utf-8'))
     result['schema_version'] = 2
@@ -169,7 +169,36 @@ def upgrade(document):
                 for voice, bank in result['phrases'].items():
                     if isinstance(bank, dict) and voice in base['phrases']:
                         bank[rule['id']] = deepcopy(base['phrases'][voice][rule['id']])
-    return upgrade_advanced(upgrade_resources(upgrade_names(upgrade_comfort(upgrade_click_reactions(upgrade_mail(result))))))
+    return upgrade_personalities(upgrade_advanced(upgrade_resources(upgrade_names(upgrade_comfort(upgrade_click_reactions(upgrade_mail(result)))))))
+
+
+def upgrade_personalities(document):
+    """Add missing voice banks once, matching only the user's existing topics."""
+    if document.get('personality_expansion_version') == 1:
+        return document
+    phrases, rules = document.get('phrases'), document.get('rules')
+    if (not isinstance(phrases, dict) or not isinstance(rules, list)
+            or not all(isinstance(phrases.get(voice), dict) for voice in ORIGINAL_VOICE_NAMES)
+            or not all(isinstance(rule, dict) and isinstance(rule.get('id'), str) for rule in rules)):
+        return document  # Validation reports malformed input without inventing content.
+    result = deepcopy(document)
+    base = json.loads(DEFAULT_PATH.read_text(encoding='utf-8'))
+    fallback = phrases[ORIGINAL_VOICE_NAMES[0]]
+    for voice in ADDED_VOICE_NAMES:
+        if voice in phrases:
+            continue
+        bank = {}
+        for rule in rules:
+            key = rule['id']
+            if key in base['phrases'][voice]:
+                bank[key] = deepcopy(base['phrases'][voice][key])
+            elif key in fallback:
+                # User-authored topics have no bundled text. Keep their words
+                # intact as an editable starting point for each new voice.
+                bank[key] = deepcopy(fallback[key])
+        result['phrases'][voice] = bank
+    result['personality_expansion_version'] = 1
+    return result
 
 
 def upgrade_advanced(document):
@@ -361,7 +390,9 @@ def defaults():
 
 
 # Voice identifiers stay stable so existing personality overrides keep working.
-VOICE_NAMES = ('控えめな皮肉屋', '冷静な案内役', '元気な応援係', 'のんびりした同僚')
+ORIGINAL_VOICE_NAMES = ('控えめな皮肉屋', '冷静な案内役', '元気な応援係', 'のんびりした同僚')
+ADDED_VOICE_NAMES = ('馴れ馴れしい関西弁', '寡黙な先輩', '倒置法の使い手')
+VOICE_NAMES = (*ORIGINAL_VOICE_NAMES, *ADDED_VOICE_NAMES)
 _DEFAULT = defaults()
 PHRASES = _DEFAULT['phrases']
 PROFILES = {key: (p['voice'], p['description'], p['tagline']) for key, p in _DEFAULT['profiles'].items()}
