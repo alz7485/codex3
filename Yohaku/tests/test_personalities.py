@@ -28,6 +28,29 @@ class PersonalityTests(unittest.TestCase):
         self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
         self.path=Path(self.temp.name)/'dialogue.json'
 
+    def test_debtor_style_updates_stock_preserving_custom_text_order_and_source_file(self):
+        document=defaults();document.pop('debtor_style_version')
+        document['phrases']['孤高の債務者']['call']=['独自の呼びかけ','呼んだな。\n聞こう……用件を。']
+        self.path.write_text(json.dumps(document,ensure_ascii=False));raw=self.path.read_bytes()
+        store=DialogueStore(self.path)
+        self.assertFalse(store.error);self.assertEqual(self.path.read_bytes(),raw)
+        self.assertEqual(store.data['phrases']['孤高の債務者']['call'],['独自の呼びかけ','聞かせてほしい……いまの用件。'])
+        store.save(store.data)
+        self.assertEqual(read_document(self.path),store.data)
+        self.assertEqual(self.path.with_suffix('.json.bak').read_bytes(),raw)
+
+    def test_debtor_style_marker_preserves_later_edit_and_custom_topic_is_not_rewritten(self):
+        document=defaults()
+        document['phrases']['孤高の債務者']['call']=['呼んだな。\n聞こう……用件を。']
+        self.assertEqual(upgrade(document),document)
+        document.pop('debtor_style_version')
+        custom=deepcopy(next(r for r in document['rules'] if r['id']=='chat'));custom.update(id='my_style',label='独自の話題')
+        document['rules'].append(custom)
+        for bank in document['phrases'].values():bank['my_style']=['呼んだな。\n聞こう……用件を。']
+        result=validate(upgrade(document))
+        self.assertEqual(result['phrases']['孤高の債務者']['my_style'],['呼んだな。\n聞こう……用件を。'])
+        self.assertEqual(result['rules'],document['rules'])
+
     def test_legacy_debtor_name_migrates_settings_profile_and_edited_bank(self):
         document=defaults()
         document['phrases']['倒置法の使い手']=document['phrases'].pop('孤高の債務者')

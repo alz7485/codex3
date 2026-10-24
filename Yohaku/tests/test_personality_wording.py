@@ -14,7 +14,11 @@ from companion.dialogue import (DialogueError, DialogueStore, PERSONALITY_WORDIN
 
 
 def v018_document():
-    document=defaults();document.pop('personality_wording_version');document.pop('senior_silence_version')
+    document=defaults();document.pop('personality_wording_version');document.pop('senior_silence_version');document.pop('debtor_style_version')
+    style=json.loads(PERSONALITY_WORDING_PATH.with_name('debtor_style_v1.json').read_text())
+    for topic,rows in style.items():
+        before={row['after']:row['before'] for row in rows}
+        document['phrases']['孤高の債務者'][topic]=[before.get(line,line) for line in document['phrases']['孤高の債務者'][topic]]
     changes=json.loads(PERSONALITY_WORDING_PATH.read_text())
     for voice,topics in changes['voices'].items():
         voice='孤高の債務者' if voice=='倒置法の使い手' else voice
@@ -51,7 +55,7 @@ class PersonalityWordingTests(unittest.TestCase):
         self.assertEqual(updated['phrases']['寡黙な先輩']['call'],[
             '独自の返事','ここにいる。','…\n（呼ばれると、少しうれしい。）'])
         self.assertEqual(updated['phrases']['孤高の債務者']['chat'],[
-            '独自の語り。','次の一手を決めよう。\n小さくていい……進める一手なら。'])
+            '独自の語り。',defaults()['phrases']['孤高の債務者']['chat'][0]])
         self.assertEqual(updated['rules'],old['rules']);self.assertEqual(updated['options'],old['options'])
 
     def test_custom_topic_with_stock_like_text_and_deleted_topic_are_not_rewritten_or_restored(self):

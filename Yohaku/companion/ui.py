@@ -1037,6 +1037,9 @@ class InteractionBubble(Bubble):
         screen = self.screen() or QApplication.primaryScreen()
         maximum = self.available_height or (screen.availableGeometry().height() - 16 if screen else 600)
         # Measure the fixed chrome/choices separately from the scrollable body.
+        # A temporary 1px viewport must not introduce a scrollbar that narrows
+        # the label and keeps an otherwise unnecessary extra line alive.
+        self.content_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.text.setMinimumHeight(0)
         self.content_scroll.setFixedHeight(1)
         if self.file_links.isVisible():
@@ -1060,6 +1063,7 @@ class InteractionBubble(Bubble):
         self.layout().activate()
         # QWidget.adjustSize() can impose a 100px minimum on a top-level window.
         self.resize(self.width(), self.layout().sizeHint().height())
+        self.content_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
 
     def open_choices(self, text="お呼びですか？", name="Yohaku"):
         self.notice = None

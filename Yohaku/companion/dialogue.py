@@ -261,7 +261,7 @@ def upgrade_senior_silence(document):
 
 def upgrade_debtor_wording(document):
     if document.get('debtor_voice_version') == 1 or not isinstance(document.get('phrases'), dict):
-        return document
+        return upgrade_debtor_style(document)
     result = deepcopy(document)
     bank = result['phrases'].get(DEBTOR_VOICE)
     changes = json.loads(DEFAULT_PATH.with_name('debtor_wording_v1.json').read_text(encoding='utf-8'))
@@ -271,6 +271,22 @@ def upgrade_debtor_wording(document):
                 replacements = {row['before']: row['after'] for row in rows}
                 bank[topic] = [replacements.get(line, line) if isinstance(line, str) else line for line in bank[topic]]
     result['debtor_voice_version'] = 1
+    return upgrade_debtor_style(result)
+
+
+def upgrade_debtor_style(document):
+    """Update stock narration without rewriting user-authored sentences."""
+    if document.get('debtor_style_version') == 1 or not isinstance(document.get('phrases'), dict):
+        return document
+    result = deepcopy(document)
+    bank = result['phrases'].get(DEBTOR_VOICE)
+    changes = json.loads(DEFAULT_PATH.with_name('debtor_style_v1.json').read_text(encoding='utf-8'))
+    if isinstance(bank, dict):
+        for topic, rows in changes.items():
+            if isinstance(bank.get(topic), list):
+                replacements = {row['before']: row['after'] for row in rows}
+                bank[topic] = [replacements.get(line, line) if isinstance(line, str) else line for line in bank[topic]]
+    result['debtor_style_version'] = 1
     return result
 
 
