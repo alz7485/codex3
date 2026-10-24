@@ -1,29 +1,30 @@
-# CADFlow Studio 1.18.0
+# CADFlow Studio 1.19.0
 
 Excel / CSVの行と作図ブロックから、AutoCAD用のSCRを作成するWindows向けデスクトップアプリです。
 
-**[最新版ZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/CADFlowStudio/CADFlow_Studio_v1.18.0.zip)** / [SHA256](CADFlow_Studio_v1.18.0.zip.sha256)
+**[最新版ZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/CADFlowStudio/CADFlow_Studio_v1.19.0.zip)** / [SHA256](CADFlow_Studio_v1.19.0.zip.sha256)
 
-公開日: 2026-10-23（JST）。**Pythonソース版**です。EXEは含みません。
+公開日: 2026-10-24（JST）。**Pythonソース版**です。EXEは含みません。
 WindowsでonedirのEXEを作成するコマンドと`CADFlowStudio.spec`をZIP内に同梱しています。
 
-![CADFlow Studio 1.18.0](Main_UI_v1.18.0.png)
+![フォルダで整理したCADFlow Studio 1.19.0](Main_UI_v1.19.0.png)
 
-## 構造を一つ減らしました
+## ブロックをフォルダで管理
 
-作図プリセットと共通ブロックの別管理を統合し、**プロジェクト → ブロック → コマンド**にしました。
-通常はブロックを並べ、各ブロックの中にコマンドを直接追加します。
-条件分岐・繰り返し・条件・ローカル変数もブロック内に設定します。
+ブロック一覧へフォルダと子フォルダを追加しました。大量のブロックを「外形」「穴」「注記」「共通処理」などへ分類できます。
 
-- **● 作図対象**: 一覧の上から順に直接実行します。
-- **◇ 呼び出し専用**: 同じ一覧で管理し、BLOCKコマンドから呼び出して再利用します。
-- 名前を変えても呼び出しは維持します。使用中の削除と循環参照を防止します。
-- 文字高さ・寸法尺度などの**設定プリセット**は、作図の階層と別に維持しています。
+- フォルダの作成・名前変更・移動、複数ブロックのまとめ移動。
+- 折りたたみ・全展開と、ブロック名・条件・フォルダ名による検索。
+- フォルダ利用時は対象行・サイズの設定をボタンにまとめ、一覧を広く表示。
+- 「順」列で実際の作図順を表示。フォルダ移動や検索では作図順・対象を変更しません。
+- フォルダを削除してもブロックは未分類へ戻して保持します。
+- 分類はプロジェクトJSONに保存し、Undo / Redoにも対応。
 
-旧JSONは開くと自動移行します。単に一度だけ呼び出していた中間層は取り込みます。
-入力表、対象行、実行順、条件、変数、サイズ設定を引き継ぎ、読込だけでは元ファイルを書き換えません。
-保存後はモデル版11のblocks配列だけを持ち、作図用presetsキーは保存しません。
-旧版アプリで使うJSONが必要な場合は、別名保存やバックアップで残してください。
+作図の構造は **プロジェクト → ブロック → コマンド** のままです。
+「● 作図対象」は番号順に直接実行し、「◇ 呼び出し専用」はBLOCKコマンドから呼び出します。
+フォルダのない旧JSONもそのまま開いて分類できます。保存モデル版11を維持しています。
+
+[画像つきフォルダ操作ガイド](folder-guide-v1.19.0/)で操作と保存形式、`docs/BLOCKS.md`でブロックと旧形式の移行を説明しています。
 
 ## 引き続き利用できる機能
 
@@ -38,7 +39,7 @@ WindowsでonedirのEXEを作成するコマンドと`CADFlowStudio.spec`をZIP�
 
 ## 起動
 
-ZIPをすべて展開し、`CADFlow_Studio_v1.18.0`フォルダーでPowerShellを開きます。
+ZIPをすべて展開し、`CADFlow_Studio_v1.19.0`フォルダーでPowerShellを開きます。
 Python 3.11以降（標準のTkinterを含む）が必要です。
 
 ```powershell
@@ -47,19 +48,13 @@ py -3 src/main.py
 ```
 
 `CADFlow Studio.pyw`のダブルクリックでも起動できます。
-ZIP内の`docs/BLOCKS.md`で新しい構造と移行、`docs/USABILITY.md`で操作、`EXE_BUILD_ONEDIR.md`でEXE化を確認できます。
+onedir形式のEXE化はZIP内の`EXE_BUILD_ONEDIR.md`を参照してください。
 
 ## 検証
 
-基本処理154件・実際のTk GUI操作122件の**計276件合格**。
-旧形式とのSCR全文・図形座標の比較、旧版の最大深さ、条件・変数・once、改名・取消・Undo・参照保護を検証しています。
-ZIPのCRC・各ファイルSHA256・展開後のスモーク検証も通過。詳細はZIP内の`docs/VALIDATION.md`です。
+基本処理175件・実際のTk GUI操作156件の**計331件合格、スキップなし**。
+分類によるSCR・図形座標の不変、複数選択・検索・Undo・JSON再読込・再起動復元、300ブロックと1500段のフォルダ階層を検証しました。
+詳細と環境・制限はZIP内の`docs/VALIDATION.md`に記録しています。
 Windows EXEのビルド・実行とAutoCAD実機でのSCR実行は未検証です。
 
-SHA256:
-
-```text
-713ea0538c21c857bb2116cb991e3460dfa661abc9c1b35e45245e4b31c9c347
-```
-
-[旧版1.17.0 ZIP](CADFlow_Studio_v1.17.0.zip) / [旧版SHA256](CADFlow_Studio_v1.17.0.zip.sha256)
+[前版1.18.0の画像つきブロック作成手順](block-guide-v1.18.0/)も参照できます。1.19のフォルダ操作はZIP内の新ガイドを確認してください。
