@@ -170,7 +170,7 @@ class ExtendedContextInterfaceTests(unittest.TestCase):
             controller=Controller(self.app)
             try:
                 for timer in (controller.tick_timer,controller.poll_timer,controller.animation_timer,controller.activity_timer,controller.context_timer):timer.stop()
-                now=datetime.now().astimezone()
+                now=datetime.now().astimezone().replace(hour=12, minute=0, second=0, microsecond=0)
                 controller.events=[Event('a',now+timedelta(minutes=10),now+timedelta(minutes=100))]
                 controller.connected=True;controller.connected_at=now;controller.daily_events=1
                 controller.settings.context_enabled=False

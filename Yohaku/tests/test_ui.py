@@ -708,7 +708,7 @@ class UserInterfaceTests(unittest.TestCase):
     def test_app_has_brand_name_version_and_windows_icon(self):
         c = self.controller
         self.assertEqual(self.app.applicationDisplayName(), "Yohaku")
-        self.assertEqual(self.app.applicationVersion(), "0.19.1")
+        self.assertEqual(self.app.applicationVersion(), "0.19.2")
         self.assertFalse(c.brand_icon.isNull())
         self.assertEqual(c.panel.windowIcon().cacheKey(), c.brand_icon.cacheKey())
         c.panel.character_buttons["B"].click()
@@ -731,7 +731,7 @@ class UserInterfaceTests(unittest.TestCase):
             window_id = int(c.bubble.winId())
             self.assertEqual(set(c.interaction.buttons), {"calendar", "activity", "settings", "one_shot", "hide"})
             self.assertTrue(c.interaction.timer.isActive())
-            self.assertEqual(c.interaction.timer.interval(), 60000)
+            self.assertEqual(c.interaction.timer.interval(), 20000)
             c.interaction.buttons["calendar"].click()
             self.assertIn("件名は非表示", c.interaction.text.text())
             self.assertNotIn("SECRET", c.interaction.text.text())
@@ -925,20 +925,20 @@ class UserInterfaceTests(unittest.TestCase):
             c.user_hidden = False
             c.apply_visibility()
 
-    def test_bubble_one_minute_lifetime_and_calendar_tick_does_not_restart_timer(self):
+    def test_message_twenty_seconds_notification_one_minute_and_calendar_tick_keeps_timer(self):
         from PySide6.QtTest import QTest
         c = self.controller
         c.sample()
         self.assertEqual(c.bubble.timer.interval(), 60000)
         c.open_choices()
-        self.assertEqual(c.bubble.timer.interval(), 60000)
+        self.assertEqual(c.bubble.timer.interval(), 20000)
         c.select_content("calendar")
-        self.assertEqual(c.bubble.timer.interval(), 60000)
+        self.assertEqual(c.bubble.timer.interval(), 20000)
         with patch.object(c, "select_content") as refresh:
             c.tick()
             refresh.assert_not_called()
-        c.select_content("message")
-        self.assertEqual(c.bubble.timer.interval(), 60000)
+        c.show_message()
+        self.assertEqual(c.bubble.timer.interval(), 20000)
         # Exercise the same timer's hide path without a real one-minute wait.
         c.bubble.timer.start(1)
         QTest.qWait(20)

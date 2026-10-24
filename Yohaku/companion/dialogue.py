@@ -181,6 +181,7 @@ def upgrade(document):
              and all(isinstance(rule, dict) for rule in document['rules']),
              '発生ルールの形式が不正です。')
     document = upgrade_voice_names(document)
+    document = upgrade_display_timing(document)
     if document['schema_version'] == 2:
         return upgrade_personalities(upgrade_advanced(upgrade_resources(upgrade_names(upgrade_comfort(upgrade_click_reactions(upgrade_mail(document)))))))
     result = deepcopy(document)
@@ -200,6 +201,19 @@ def upgrade(document):
                     if isinstance(bank, dict) and voice in base['phrases']:
                         bank[rule['id']] = deepcopy(base['phrases'][voice][rule['id']])
     return upgrade_personalities(upgrade_advanced(upgrade_resources(upgrade_names(upgrade_comfort(upgrade_click_reactions(upgrade_mail(result)))))))
+
+
+def upgrade_display_timing(document):
+    """Update the former one-minute default once, keeping custom durations."""
+    if document.get('display_timing_version') == 1 or not isinstance(document.get('options'), dict):
+        return document
+    result = deepcopy(document)
+    if result['options'].get('bubble_seconds') == 60:
+        result['options']['bubble_seconds'] = 20
+    result['display_timing_version'] = 1
+    if len(json.dumps(result, ensure_ascii=False).encode('utf-8')) > MAX_BYTES:
+        result.pop('display_timing_version')
+    return result
 
 
 def canonical_voice(voice):

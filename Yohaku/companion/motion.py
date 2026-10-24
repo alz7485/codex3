@@ -54,7 +54,7 @@ class Motion:
     def __init__(self, uniform=random.uniform):
         self.uniform = uniform
         self.elapsed = 0.0
-        self.wait = self.uniform(2.0, 4.0)
+        self.wait = self.uniform(0.05, 0.2)
         self.distance = 0.0
         self.direction = -1
         self.facing = 1
@@ -83,6 +83,12 @@ class Motion:
         self.expression_until = self.elapsed + seconds
         self.talk_until = self.elapsed + 2.8 if speaking else 0.0
 
+    def start_soon(self):
+        self.wait = self.uniform(0.05, 0.2)
+        self.phase, self.phase_elapsed = 'idle', 0.0
+        self.speed = 0.0
+        self.walking = False
+
     def advance(self, dt, x, lower, upper, walk_allowed):
         dt = max(0.0, min(0.1, dt))  # Never jump after sleep/resume.
         self.elapsed += dt
@@ -96,7 +102,7 @@ class Motion:
         if walk_allowed and upper > lower and self.was_blocked:
             # Let the pointer/menu interaction finish, then resume promptly
             # instead of carrying a long pre-interaction pause forward.
-            self.wait = min(1.4, max(0.8, self.wait))
+            self.wait = self.uniform(0.05, 0.2)
             self.was_blocked = False
         if not walk_allowed or upper <= lower:
             self.was_blocked = True
@@ -146,7 +152,7 @@ class Motion:
                 if self.walking:
                     self.facing = self.direction
                 if self.distance < 0.08 or next_x in (lower, upper):
-                    self.wait = self.uniform(2, 5)
+                    self.wait = self.uniform(0.4, 1.2)
                     self.distance = 0
                     self.direction *= -1
                     self.phase, self.phase_elapsed = 'settle', 0.0

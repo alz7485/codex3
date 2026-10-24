@@ -3951,7 +3951,7 @@
   ],
   "options": {
     "interval_minutes": 10,
-    "bubble_seconds": 60,
+    "bubble_seconds": 20,
     "meeting_lead_minutes": 10,
     "suppress_during_meetings": true,
     "repeat_window": 12,
@@ -3980,5 +3980,6 @@
   "senior_silence_version": 1,
   "debtor_voice_version": 1,
   "debtor_style_version": 1,
-  "extended_context_version": 1
+  "extended_context_version": 1,
+  "display_timing_version": 1
 }

@@ -172,8 +172,10 @@ class ComfortInterfaceTests(unittest.TestCase):
                 c.last_motion_time = clock - .05
                 with patch('companion.ui.time.monotonic', return_value=clock):
                     c.animate()
-                if step < 40:
+                if step < 4:
                     self.assertEqual(c.motion_x, 200)
+                if step == 20:
+                    self.assertNotEqual(c.motion_x, 200)
             self.assertNotEqual(c.motion_x, 200)
             position = c.motion_x
             cursor.return_value = QPoint(224, 500)

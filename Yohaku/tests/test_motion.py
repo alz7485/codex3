@@ -24,13 +24,13 @@ class MotionTests(unittest.TestCase):
                             distances.append(trip_distance)
                             trip_distance = 0.0
                     previous_walking = motion.walking
-                self.assertLessEqual(starts[0], 4.5)
-                self.assertGreaterEqual(len(starts), 6)
-                self.assertLessEqual(longest_pause, 5.7)
+                self.assertLessEqual(starts[0], 0.7)
+                self.assertGreaterEqual(len(starts), 10)
+                self.assertLessEqual(longest_pause, 2.0)
                 self.assertTrue(distances)
                 self.assertTrue(all(23.9 <= distance <= 56.1 for distance in distances))
 
-    def test_reading_a_bubble_keeps_still_then_resumes_after_a_short_pause(self):
+    def test_interactive_input_keeps_still_then_resumes_promptly(self):
         motion = Motion(uniform=lambda a, b: b)
         motion.wait = 55  # A long pause must not survive a completed interaction.
         for _ in range(600):
@@ -45,8 +45,8 @@ class MotionTests(unittest.TestCase):
             if x != previous and first_move is None:
                 first_move = (step + 1) * .1
         self.assertIsNotNone(first_move)
-        self.assertGreaterEqual(first_move, .8)
-        self.assertLessEqual(first_move, 2.0)
+        self.assertGreaterEqual(first_move, .2)
+        self.assertLessEqual(first_move, .7)
 
     def test_facing_is_retained_when_a_walk_finishes(self):
         motion = Motion(uniform=lambda a, b: a)

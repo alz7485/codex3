@@ -254,7 +254,8 @@ class DialogueEditor(QMainWindow):
         }
         self.options['selection_policy'].addItem('未使用・久しぶりの話題を優先', 'least_recent')
         self.options['selection_policy'].addItem('出現しやすさで抽選', 'weighted')
-        titles = ('自動会話の間隔', '吹き出しの表示時間', '予定のお知らせ', '同じセリフを避ける数', '会議中', '連続する話題', '話題の選び方', '始業時刻', '定時（終業時刻）', '操作ありと判定する最終操作からの秒数',
+        self.options['bubble_seconds'].setToolTip('通常メッセージと呼び出しの表示時間です。通知は1分、入力フォームは自動で閉じません。')
+        titles = ('自動会話の間隔', '通常メッセージの表示時間', '予定のお知らせ', '同じセリフを避ける数', '会議中', '連続する話題', '話題の選び方', '始業時刻', '定時（終業時刻）', '操作ありと判定する最終操作からの秒数',
                   'クリックへの反応', '連打を数える期間', '困る反応を始める回数', '怒る反応を始める回数', '最後のクリックから回数をリセットするまで', '同じ段階の反応を繰り返すまで')
         for (key, widget), title in zip(self.options.items(), titles):
             widget.setAccessibleName(title)

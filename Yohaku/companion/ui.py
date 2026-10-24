@@ -583,7 +583,7 @@ class Panel(QMainWindow):
         self.interval_spin.valueChanged.connect(lambda value: self.update_setting('interval', value))
         row.addWidget(self.interval_spin)
         form.addLayout(row)
-        form.addWidget(label("初期設定は約10分ごと。時間帯・曜日・予定の前後で話題を変え、吹き出しは約1分表示します。会議中・非表示中は自動会話を休みます。", "muted", True))
+        form.addWidget(label("初期設定は約10分ごと。通常メッセージは20秒、メール・予定などの通知は1分表示します。会議中・非表示中は自動会話を休みます。", "muted", True))
         form.addWidget(button("会話文・発生ルールを編集", self.dialogue_requested.emit))
         layout.addWidget(card)
         monitor = QFrame(objectName='card')
@@ -881,7 +881,11 @@ class Bubble(QFrame):
         self.layout().activate()
         self.resize(self.width(), self.layout().sizeHint().height())
         self.show()
-        self.timer.start(self.duration_ms)
+        self.timer.start(self.display_duration_ms())
+
+    def display_duration_ms(self):
+        notice = self.notice
+        return 60000 if notice is not None and (notice.important or notice.kind in ('notification', 'reminder', 'departure')) else self.duration_ms
 
 
 class Bridge(QObject):
@@ -1112,7 +1116,7 @@ class InteractionBubble(Bubble):
         self.departure_row.hide()
         self.file_links.hide();self.file_links.clear();self.detail_action.hide()
         self.set_kind("menu")
-        self.timer.start(self.duration_ms)
+        self.timer.start(self.display_duration_ms())
         self.current = None
         self.interactive = True
         self.heading.setText(name)
@@ -1147,7 +1151,7 @@ class InteractionBubble(Bubble):
         self.resize_text()
         self.content_scroll.verticalScrollBar().setValue(0)
         self.show()  # WA_ShowWithoutActivating keeps automatic notices passive.
-        self.timer.start(self.duration_ms)
+        self.timer.start(self.display_duration_ms())
 
     def show_one_shot_form(self):
         self.display(Notice('', 'いつ、何をお知らせしましょう？'))
@@ -1736,10 +1740,10 @@ class Controller(QObject):
         self.panel.sync_behavior()
         self.panel.refresh_dialogue()
         self.bubble.duration_ms = self.dialogue.data['options']['bubble_seconds'] * 1000
-        if self.pending_reaction is not None and self.bubble.notice is self.pending_reaction:
+        if self.bubble.current == 'one_shot' or self.pending_reaction is not None and self.bubble.notice is self.pending_reaction:
             self.bubble.timer.stop()
         elif self.bubble.isVisible():
-            self.bubble.timer.start(self.bubble.duration_ms)
+            self.bubble.timer.start(self.bubble.display_duration_ms())
         self.engine.category_last.clear()
         self.engine.last_category = None
         self.engine.recent = []  # Old indices may refer to deleted/reordered lines.
@@ -1855,13 +1859,13 @@ class Controller(QObject):
             point = QCursor.pos()
             if point != self.hover_point:
                 self.hover_point = point
-                self.hover_until = now + 2.0
+                self.hover_until = now + 0.2
         else:
             self.hover_point = None
         # Give a moving pointer time to click, without pinning the character
         # forever beneath an untouched pointer. This transient position is not logged.
         hover_pause = hovered and now < self.hover_until
-        blocked = self.pending_reaction is not None or self.bubble.isVisible() or self.panel.isVisible() or self.history_window.isVisible() or (self.editor is not None and self.editor.isVisible()) or (self.reminder_editor is not None and self.reminder_editor.isVisible()) or (self.context_editor is not None and self.context_editor.isVisible()) or hover_pause
+        blocked = self.pending_reaction is not None or (self.bubble.isVisible() and self.bubble.interactive) or self.panel.isVisible() or self.history_window.isVisible() or (self.editor is not None and self.editor.isVisible()) or (self.reminder_editor is not None and self.reminder_editor.isVisible()) or (self.context_editor is not None and self.context_editor.isVisible()) or hover_pause
         self.motion_x = self.motion.advance(dt, self.motion_x if self.motion_x is not None else upper,
                                           lower, upper, self.settings.walking and not blocked)
         frame = self.motion.frame()
@@ -2055,7 +2059,7 @@ class Controller(QObject):
         self.mail_burst_last = clock
         if continuing:
             if self.bubble.isVisible() and self.bubble.notice is self.mail_burst_notice:
-                self.bubble.timer.start(self.bubble.duration_ms)
+                self.bubble.timer.start(self.bubble.display_duration_ms())
             return  # Acknowledge a burst once, without revealing names or counts.
         self.engine.last_display = now
         self.motion.react(rule['expression'], speaking=True)
@@ -2103,6 +2107,8 @@ class Controller(QObject):
             self.pending_reaction = notice
         self.motion.react(notice.expression, seconds=float('inf') if reacting else seconds, speaking=True)
         self.motion.face_front(seconds if not reacting else 0)
+        if not reacting:
+            self.motion.start_soon()
         # Show the requested pose immediately, including with animation off.
         frame = self.motion.frame()
         previous = self.resident.frame_index
