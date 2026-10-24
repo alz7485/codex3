@@ -1,13 +1,17 @@
-# CADFlow Studio 1.19.0
+# CADFlow Studio 1.19.1
 
 Excel / CSVの行と作図ブロックから、AutoCAD用のSCRを作成するWindows向けデスクトップアプリです。
 
-**[最新版ZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/CADFlowStudio/CADFlow_Studio_v1.19.0.zip)** / [SHA256](CADFlow_Studio_v1.19.0.zip.sha256)
+**[最新版ZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/CADFlowStudio/CADFlow_Studio_v1.19.1.zip)** / [SHA256](CADFlow_Studio_v1.19.1.zip.sha256)
 
 公開日: 2026-10-24（JST）。**Pythonソース版**です。EXEは含みません。
 WindowsでonedirのEXEを作成するコマンドと`CADFlowStudio.spec`をZIP内に同梱しています。
 
-![フォルダで整理したCADFlow Studio 1.19.0](Main_UI_v1.19.0.png)
+![フォルダで整理したCADFlow Studio 1.19.1](Main_UI_v1.19.1.png)
+
+## ブロック操作を一覧内に集約
+
+v1.19.1では、ブロックの追加・編集・作図対象の切り替え・上下移動・削除を「ブロック一覧」タブの枠内へまとめました。一覧と操作ボタンの対応が分かる配置です。「ブロック追加」はアイコンと文字で常時表示し、登録コマンド・設定/変数・構成ツリーは枠内下部へまとめています。選択フローへ切り替えると一覧用の操作を隠します。
 
 ## ブロックをフォルダで管理
 
@@ -24,7 +28,7 @@ WindowsでonedirのEXEを作成するコマンドと`CADFlowStudio.spec`をZIP�
 「● 作図対象」は番号順に直接実行し、「◇ 呼び出し専用」はBLOCKコマンドから呼び出します。
 フォルダのない旧JSONもそのまま開いて分類できます。保存モデル版11を維持しています。
 
-[画像つきフォルダ操作ガイド](folder-guide-v1.19.0/)で操作と保存形式、`docs/BLOCKS.md`でブロックと旧形式の移行を説明しています。
+ZIP内の`docs/BLOCK_FOLDERS.md`で現在の操作と保存形式、`docs/BLOCKS.md`でブロックと旧形式の移行を説明しています。[前版1.19.0のフォルダ操作ガイド](folder-guide-v1.19.0/)も参照できます。
 
 ## 引き続き利用できる機能
 
@@ -39,7 +43,7 @@ WindowsでonedirのEXEを作成するコマンドと`CADFlowStudio.spec`をZIP�
 
 ## 起動
 
-ZIPをすべて展開し、`CADFlow_Studio_v1.19.0`フォルダーでPowerShellを開きます。
+ZIPをすべて展開し、`CADFlow_Studio_v1.19.1`フォルダーでPowerShellを開きます。
 Python 3.11以降（標準のTkinterを含む）が必要です。
 
 ```powershell
@@ -52,7 +56,8 @@ onedir形式のEXE化はZIP内の`EXE_BUILD_ONEDIR.md`を参照してくださ�
 
 ## 検証
 
-基本処理175件・実際のTk GUI操作156件の**計331件合格、スキップなし**。
+今回1.19.1では、表示調整後に既存の実Tk GUI操作**156件を再実行して全件合格、スキップなし**。Ruff F/E9と既存スモーク検証も通過しています。
+前版1.19.0の基本処理175件を含む計331件の記録は維持しています。基本処理は今回再実行していません。
 分類によるSCR・図形座標の不変、複数選択・検索・Undo・JSON再読込・再起動復元、300ブロックと1500段のフォルダ階層を検証しました。
 詳細と環境・制限はZIP内の`docs/VALIDATION.md`に記録しています。
 Windows EXEのビルド・実行とAutoCAD実機でのSCR実行は未検証です。
