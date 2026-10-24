@@ -28,6 +28,31 @@ class PersonalityTests(unittest.TestCase):
         self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
         self.path=Path(self.temp.name)/'dialogue.json'
 
+    def test_legacy_debtor_name_migrates_settings_profile_and_edited_bank(self):
+        document=defaults()
+        document['phrases']['倒置法の使い手']=document['phrases'].pop('孤高の債務者')
+        document['phrases']['倒置法の使い手']['chat']=['自分で編集した語り']
+        document['profiles']['A']['voice']='倒置法の使い手'
+        self.path.write_text(json.dumps(document,ensure_ascii=False));raw=self.path.read_bytes()
+        store=DialogueStore(self.path)
+        self.assertFalse(store.error);self.assertEqual(self.path.read_bytes(),raw)
+        self.assertNotIn('倒置法の使い手',store.data['phrases'])
+        self.assertEqual(store.data['phrases']['孤高の債務者']['chat'],['自分で編集した語り'])
+        self.assertEqual(voice_for(Settings(),store.data),'孤高の債務者')
+        settings_path=self.path.with_name('settings.json')
+        save_json(settings_path,{'personality':'倒置法の使い手'})
+        self.assertEqual(Settings.load(settings_path).personality,'孤高の債務者')
+
+    def test_debtor_wording_updates_exact_stock_only_and_preserves_custom_lines(self):
+        document=defaults();document.pop('debtor_voice_version')
+        bank=document['phrases']['孤高の債務者']
+        bank['smalltalk']=['待っていられる……呼ばれるまでの、静かな時間も。','独自のひとこと']
+        bank['chat']=['ここで待っている。\n戻るのは、そのペースでいい……こちらへは。','独自の本文']
+        result=validate(upgrade(document))
+        self.assertIn('返済',result['phrases']['孤高の債務者']['chat'][0])
+        self.assertEqual(result['phrases']['孤高の債務者']['chat'][1],'独自の本文')
+        self.assertEqual(result['phrases']['孤高の債務者']['smalltalk'],bank['smalltalk'])
+
     def test_all_seven_voices_cover_every_topic_with_independent_original_phrases(self):
         document=defaults();ids={r['id'] for r in document['rules']}
         self.assertEqual(len(VOICE_NAMES),7);self.assertEqual(len(ids),64)

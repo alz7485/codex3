@@ -13,6 +13,8 @@ from .advanced_context import condition_key, TEMPORAL_KINDS, EVENT_KINDS
 import math
 
 AUTO_PERSONALITY = "キャラクターに合わせる"
+LEGACY_DEBTOR_VOICE = '倒置法の使い手'
+DEBTOR_VOICE = '孤高の債務者'
 INTERVALS = (10, 20, 30, 60, 90, 120)  # Legacy UI/import compatibility.
 DEFAULT_PATH = Path(__file__).parent / 'assets/dialogue/default_dialogue.json'
 PERSONALITY_WORDING_PATH = DEFAULT_PATH.with_name('personality_wording_v1.json')
@@ -152,6 +154,7 @@ def validate_condition(condition, key='', depth=0):
 def upgrade(document):
     if not isinstance(document, dict) or type(document.get('schema_version')) is not int or document.get('schema_version') not in (1, 2):
         return document
+    document = upgrade_voice_names(document)
     if document['schema_version'] == 2:
         return upgrade_personalities(upgrade_advanced(upgrade_resources(upgrade_names(upgrade_comfort(upgrade_click_reactions(upgrade_mail(document)))))))
     result = deepcopy(document)
@@ -171,6 +174,23 @@ def upgrade(document):
                     if isinstance(bank, dict) and voice in base['phrases']:
                         bank[rule['id']] = deepcopy(base['phrases'][voice][rule['id']])
     return upgrade_personalities(upgrade_advanced(upgrade_resources(upgrade_names(upgrade_comfort(upgrade_click_reactions(upgrade_mail(result)))))))
+
+
+def canonical_voice(voice):
+    return DEBTOR_VOICE if voice == LEGACY_DEBTOR_VOICE else voice
+
+
+def upgrade_voice_names(document):
+    result = deepcopy(document)
+    phrases = result.get('phrases')
+    if isinstance(phrases, dict) and LEGACY_DEBTOR_VOICE in phrases and DEBTOR_VOICE not in phrases:
+        result['phrases'] = {canonical_voice(key): value for key, value in phrases.items()}
+    profiles = result.get('profiles')
+    if isinstance(profiles, dict):
+        for profile in profiles.values():
+            if isinstance(profile, dict) and profile.get('voice') == LEGACY_DEBTOR_VOICE:
+                profile['voice'] = DEBTOR_VOICE
+    return result
 
 
 def upgrade_personalities(document):
@@ -205,11 +225,11 @@ def upgrade_personalities(document):
 def upgrade_personality_wording(document):
     """Replace exact bundled v0.18 lines once; retain edits, order and removals."""
     if document.get('personality_wording_version') == 1 or not isinstance(document.get('phrases'), dict):
-        return document
+        return upgrade_senior_silence(document)
     result = deepcopy(document)
     changes = json.loads(PERSONALITY_WORDING_PATH.read_text(encoding='utf-8'))
     for voice, topics in changes['voices'].items():
-        bank = result['phrases'].get(voice)
+        bank = result['phrases'].get(canonical_voice(voice))
         if not isinstance(bank, dict):
             continue
         for topic, rows in topics.items():
@@ -219,6 +239,38 @@ def upgrade_personality_wording(document):
             replacements = {row['before']: row['after'] for row in rows}
             bank[topic] = [replacements.get(line, line) if isinstance(line, str) else line for line in lines]
     result['personality_wording_version'] = 1
+    return upgrade_senior_silence(result)
+
+
+def upgrade_senior_silence(document):
+    """Move only known bundled inner-thought variants to a silent reply."""
+    if document.get('senior_silence_version') == 1 or not isinstance(document.get('phrases'), dict):
+        return upgrade_debtor_wording(document)
+    result = deepcopy(document)
+    bank = result['phrases'].get('寡黙な先輩')
+    changes = json.loads(PERSONALITY_WORDING_PATH.read_text(encoding='utf-8'))
+    if isinstance(bank, dict):
+        for topic, rows in changes['voices']['寡黙な先輩'].items():
+            if not isinstance(bank.get(topic), list):
+                continue
+            replacements = {row['after']: '…\n（' + row['after'].split('\n（', 1)[1] for row in rows}
+            bank[topic] = [replacements.get(line, line) if isinstance(line, str) else line for line in bank[topic]]
+    result['senior_silence_version'] = 1
+    return upgrade_debtor_wording(result)
+
+
+def upgrade_debtor_wording(document):
+    if document.get('debtor_voice_version') == 1 or not isinstance(document.get('phrases'), dict):
+        return document
+    result = deepcopy(document)
+    bank = result['phrases'].get(DEBTOR_VOICE)
+    changes = json.loads(DEFAULT_PATH.with_name('debtor_wording_v1.json').read_text(encoding='utf-8'))
+    if isinstance(bank, dict):
+        for topic, rows in changes.items():
+            if isinstance(bank.get(topic), list):
+                replacements = {row['before']: row['after'] for row in rows}
+                bank[topic] = [replacements.get(line, line) if isinstance(line, str) else line for line in bank[topic]]
+    result['debtor_voice_version'] = 1
     return result
 
 
@@ -412,7 +464,7 @@ def defaults():
 
 # Voice identifiers stay stable so existing personality overrides keep working.
 ORIGINAL_VOICE_NAMES = ('控えめな皮肉屋', '冷静な案内役', '元気な応援係', 'のんびりした同僚')
-ADDED_VOICE_NAMES = ('馴れ馴れしい関西弁', '寡黙な先輩', '倒置法の使い手')
+ADDED_VOICE_NAMES = ('馴れ馴れしい関西弁', '寡黙な先輩', DEBTOR_VOICE)
 VOICE_NAMES = (*ORIGINAL_VOICE_NAMES, *ADDED_VOICE_NAMES)
 _DEFAULT = defaults()
 PHRASES = _DEFAULT['phrases']
@@ -423,7 +475,7 @@ BUBBLE_MS = _DEFAULT['options']['bubble_seconds'] * 1000
 
 def voice_for(settings, document=None):
     profiles = (document or _DEFAULT)['profiles']
-    return profiles[settings.character]['voice'] if settings.personality == AUTO_PERSONALITY else settings.personality
+    return canonical_voice(profiles[settings.character]['voice'] if settings.personality == AUTO_PERSONALITY else settings.personality)
 
 
 class DialogueStore:

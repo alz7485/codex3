@@ -24,7 +24,8 @@ def required_files(project=PROJECT):
              project / "companion/assets/characters/front_reactions.png",
              project / "companion/assets/characters/f_front.png",
              project / "companion/assets/dialogue/default_dialogue.json",
-             project / "companion/assets/dialogue/personality_wording_v1.json"]
+             project / "companion/assets/dialogue/personality_wording_v1.json",
+             project / "companion/assets/dialogue/debtor_wording_v1.json"]
     paths += [project / f"companion/assets/characters/{key}{suffix}.png"
               for key in "abef" for suffix in ("", "_motion")]
     return paths

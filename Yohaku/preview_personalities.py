@@ -22,7 +22,7 @@ def main():
         x=35+i*365;text(x,167,voice,18,True)
         for y,key,caption in ((205,'call','呼びかけ'),(315,'chat','普段の一言'),(430,'click_concern','連続クリックへの反応')):
             text(x,y,caption,12)
-            bubble=InteractionBubble();bubble.display(Notice('',document['phrases'][voice][key][0]))
+            bubble=InteractionBubble();bubble.display(Notice('',document['phrases'][voice]['smalltalk' if voice=='孤高の債務者' and key=='chat' else key][0]))
             app.processEvents();p.drawPixmap(x,y+12,bubble.grab());widgets.append(bubble)
         mascot=Mascot(72,character='A');mascot.frame_index=24;mascot.show();app.processEvents()
         p.drawPixmap(x+235,570,mascot.grab());widgets.append(mascot)

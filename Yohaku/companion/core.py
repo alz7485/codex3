@@ -9,7 +9,7 @@ import random
 import re
 from typing import Callable
 
-from .dialogue import AUTO_PERSONALITY, PHRASES, DialogueStore, matches, voice_for
+from .dialogue import AUTO_PERSONALITY, PHRASES, DialogueStore, matches, voice_for, canonical_voice
 from .departure import DEFAULT_MESSAGE, attendance_url, departure_body
 from .motion import ClickReactions
 from .reminders import ReminderStore, due_time
@@ -80,6 +80,7 @@ class Settings:
         for key, value in raw.items():
             if key in asdict(settings) and type(value) is type(getattr(settings, key)):
                 setattr(settings, key, value)
+        settings.personality = canonical_voice(settings.personality)
         if settings.personality not in (*PHRASES, AUTO_PERSONALITY):
             settings.personality = cls.personality
         if settings.character not in CHARACTERS:
@@ -202,7 +203,12 @@ class Engine:
         template = re.sub(r'\{hours_to_end\}\s*時間', '{hours_to_end}', phrases[index])
         if category == 'mail_received':
             values['mail_from'] = ''
-        return re.sub(r'\{([a-z_]+)\}', lambda match: values.get(match.group(1), match.group(0)), template)
+        text = re.sub(r'\{([a-z_]+)\}', lambda match: values.get(match.group(1), match.group(0)), template)
+        if voice == '寡黙な先輩':
+            thought = re.search(r'\n（[\s\S]*）\s*$', text)
+            if thought and text[:thought.start()].strip() != '…':
+                text = text[:thought.start()].rstrip()
+        return text
 
     def click_reaction(self, monotonic_time):
         category = self.click_reactions.click(monotonic_time, self.dialogue.data['options'])

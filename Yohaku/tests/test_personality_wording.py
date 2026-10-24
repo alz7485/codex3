@@ -14,11 +14,14 @@ from companion.dialogue import (DialogueError, DialogueStore, PERSONALITY_WORDIN
 
 
 def v018_document():
-    document=defaults();document.pop('personality_wording_version')
+    document=defaults();document.pop('personality_wording_version');document.pop('senior_silence_version')
     changes=json.loads(PERSONALITY_WORDING_PATH.read_text())
     for voice,topics in changes['voices'].items():
+        voice='孤高の債務者' if voice=='倒置法の使い手' else voice
         for topic,rows in topics.items():
             before={row['after']:row['before'] for row in rows}
+            if voice=='寡黙な先輩':
+                before.update({'…\n（'+row['after'].split('\n（',1)[1]:row['before'] for row in rows})
             document['phrases'][voice][topic]=[before.get(line,line) for line in document['phrases'][voice][topic]]
     return document
 
@@ -31,7 +34,7 @@ class PersonalityWordingTests(unittest.TestCase):
     def test_bundled_versioned_changes_upgrade_previous_default_without_changing_other_voices(self):
         old=v018_document();original=deepcopy(old)
         self.assertEqual(old['phrases']['寡黙な先輩']['call'][0],'呼んだか。')
-        self.assertEqual(old['phrases']['倒置法の使い手']['chat'][0],'小さくていい……次の一歩は。')
+        self.assertEqual(old['phrases']['孤高の債務者']['chat'][0],'小さくていい……次の一歩は。')
         updated=validate(upgrade(old))
         self.assertEqual(updated,defaults());self.assertEqual(old,original)
         for field in ('options','profiles','rules'):self.assertEqual(updated[field],old[field])
@@ -41,13 +44,13 @@ class PersonalityWordingTests(unittest.TestCase):
     def test_mixed_stock_custom_reordered_and_deleted_lines_keep_their_order_and_length(self):
         old=v018_document()
         old['phrases']['寡黙な先輩']['call']=['独自の返事','ここにいる。','呼んだか。']
-        old['phrases']['倒置法の使い手']['chat']=['独自の語り。','小さくていい……次の一歩は。']
+        old['phrases']['孤高の債務者']['chat']=['独自の語り。','小さくていい……次の一歩は。']
         old['options']['interval_minutes']=17
         old['rules'][2]['enabled']=False
         updated=validate(upgrade(old))
         self.assertEqual(updated['phrases']['寡黙な先輩']['call'],[
-            '独自の返事','ここにいる。','呼んだか。\n（呼ばれると、少しうれしい。）'])
-        self.assertEqual(updated['phrases']['倒置法の使い手']['chat'],[
+            '独自の返事','ここにいる。','…\n（呼ばれると、少しうれしい。）'])
+        self.assertEqual(updated['phrases']['孤高の債務者']['chat'],[
             '独自の語り。','次の一手を決めよう。\n小さくていい……進める一手なら。'])
         self.assertEqual(updated['rules'],old['rules']);self.assertEqual(updated['options'],old['options'])
 
@@ -67,7 +70,7 @@ class PersonalityWordingTests(unittest.TestCase):
         raw=self.path.read_bytes();store=DialogueStore(self.path)
         self.assertFalse(store.error);self.assertEqual(self.path.read_bytes(),raw)
         self.assertEqual(store.data['phrases']['寡黙な先輩']['call'][0],
-                         '呼んだか。\n（呼ばれると、少しうれしい。）')
+                         '…\n（呼ばれると、少しうれしい。）')
         with patch('pathlib.Path.replace',side_effect=OSError('disk full')):
             with self.assertRaises(OSError):store.save(store.data)
         self.assertEqual(self.path.read_bytes(),raw)
@@ -79,7 +82,7 @@ class PersonalityWordingTests(unittest.TestCase):
     def test_revision_marker_preserves_user_removal_of_thoughts_and_reversion_to_old_wording(self):
         document=defaults()
         document['phrases']['寡黙な先輩']['call'][0]='呼んだか。'
-        document['phrases']['倒置法の使い手']['chat'][0]='小さくていい……次の一歩は。'
+        document['phrases']['孤高の債務者']['chat'][0]='小さくていい……次の一歩は。'
         self.path.write_text(json.dumps(document,ensure_ascii=False))
         self.assertEqual(read_document(self.path),document)
         self.assertEqual(upgrade(upgrade(document)),document)
@@ -94,13 +97,38 @@ class PersonalityWordingTests(unittest.TestCase):
         store=DialogueStore(self.path);settings=Settings(personality='寡黙な先輩')
         engine=Engine(settings,self.path.with_name('history.json'),dialogue=store,choose=lambda values:values[0])
         text=engine.phrase('call')
-        self.assertEqual(text,'呼んだか。\n（呼ばれると、少しうれしい。）')
+        self.assertEqual(text,'…\n（呼ばれると、少しうれしい。）')
         engine.choose=lambda values:1
         self.assertEqual(engine.phrase('call'),'どうした。')
         lines=[line for phrases in store.data['phrases']['寡黙な先輩'].values() for line in phrases]
         thoughts=[line for line in lines if '\n（' in line]
         self.assertEqual(len(thoughts),32);self.assertEqual(len(lines),181)
-        for line in thoughts:self.assertRegex(line,r'^[^\n]+\n（[^（）\n]+）$')
+        for line in thoughts:self.assertRegex(line,r'^…\n（[^（）\n]+）$')
+
+    def test_previous_thought_variant_moves_to_silence_without_changing_custom_text_or_file(self):
+        document=defaults();document.pop('senior_silence_version')
+        document['phrases']['寡黙な先輩']['call']=[
+            '呼んだか。\n（呼ばれると、少しうれしい。）','独自の返事。\n（独自の心の声。）','どうした。']
+        self.path.write_text(json.dumps(document,ensure_ascii=False));raw=self.path.read_bytes()
+        store=DialogueStore(self.path)
+        self.assertFalse(store.error);self.assertEqual(self.path.read_bytes(),raw)
+        self.assertEqual(store.data['phrases']['寡黙な先輩']['call'],[
+            '…\n（呼ばれると、少しうれしい。）','独自の返事。\n（独自の心の声。）','どうした。'])
+        store.save(store.data);self.assertEqual(read_document(self.path),store.data)
+
+    def test_runtime_only_shows_thought_for_exact_silent_reply_and_keeps_saved_text(self):
+        store=DialogueStore(self.path);settings=Settings(personality='寡黙な先輩')
+        engine=Engine(settings,self.path.with_name('history.json'),dialogue=store,choose=lambda values:values[0])
+        for spoken in ('呼んだか。','通常の発言。\n続き。','……','...','…'):
+            text=spoken+'\n（お茶の時間も確保したい。）'
+            store.data['phrases']['寡黙な先輩']['call']=[text]
+            self.assertEqual(engine.phrase('call'),text if spoken=='…' else spoken)
+            self.assertEqual(store.data['phrases']['寡黙な先輩']['call'],[text])
+        store.data['phrases']['寡黙な先輩']['call']=['…']
+        self.assertEqual(engine.phrase('call'),'…')
+        settings.personality='のんびりした同僚'
+        store.data['phrases'][settings.personality]['call']=['普通の案内。\n（補足説明。）']
+        self.assertEqual(engine.phrase('call'),'普通の案内。\n（補足説明。）')
 
 
 class PersonalityWordingInterfaceTests(unittest.TestCase):
@@ -114,7 +142,7 @@ class PersonalityWordingInterfaceTests(unittest.TestCase):
         from companion.core import Notice
         bubble=InteractionBubble();self.addCleanup(bubble.hide)
         bank=defaults()['phrases']
-        for voice,topic in (('寡黙な先輩','call'),('倒置法の使い手','chat'),('倒置法の使い手','cpu_high')):
+        for voice,topic in (('寡黙な先輩','call'),('孤高の債務者','chat'),('孤高の債務者','cpu_high')):
             text=bank[voice][topic][0]
             bubble.display(Notice('',text));self.app.processEvents()
             self.assertEqual(bubble.text.text(),text)
@@ -133,7 +161,7 @@ class PersonalityWordingInterfaceTests(unittest.TestCase):
             editor=DialogueEditor(store)
             try:
                 editor.voice.setCurrentText('寡黙な先輩');editor.phrase_topics.setCurrentRow(0)
-                self.assertEqual(editor.line_edit.toPlainText(),'呼んだか。\n（呼ばれると、少しうれしい。）')
+                self.assertEqual(editor.line_edit.toPlainText(),'…\n（呼ばれると、少しうれしい。）')
                 editor.line_edit.setPlainText('了解。\n（お茶も忘れずに。）')
                 self.assertTrue(editor.save())
                 self.assertEqual(read_document(store.path)['phrases']['寡黙な先輩']['call'][0],
