@@ -1,0 +1,404 @@
+{
+  "version": 11,
+  "cad_setup": {
+    "enabled": false,
+    "legacy_make_layers": false,
+    "linetypes": [],
+    "text_styles": [],
+    "layers": [],
+    "dim_styles": []
+  },
+  "settings": {
+    "TEXT_HEIGHT": "3.5"
+  },
+  "globals": {},
+  "blocks": [
+    {
+      "id": "block_3b4423d67c5241d5b5672204b2f400e4",
+      "name": "外形の円を描く",
+      "draw": true,
+      "condition": "",
+      "variables": {},
+      "commands": [
+        {
+          "type": "CIRCLE",
+          "layer": "",
+          "linetype": "",
+          "x": "@X",
+          "y": "@Y",
+          "r": "@OD / 2",
+          "condition": ""
+        }
+      ]
+    }
+  ],
+  "input_tables": [
+    {
+      "id": "table_1",
+      "name": "円の寸法表",
+      "rows": [
+        {
+          "X": "100",
+          "Y": "100",
+          "OD": "100"
+        },
+        {
+          "X": "250",
+          "Y": "100",
+          "OD": "120"
+        },
+        {
+          "X": "420",
+          "Y": "100",
+          "OD": "140"
+        }
+      ]
+    }
+  ],
+  "active_table": "table_1",
+  "drawing": {
+    "targets": {
+      "table_1": {
+        "mode": "all",
+        "range": "",
+        "selected": [
+          0,
+          1,
+          2
+        ]
+      }
+    }
+  },
+  "custom_commands": {
+    "set_osmode": {
+      "name": "オブジェクトスナップを設定",
+      "description": "OSMODEを変更します。0で無効、1で端点など。値はAutoCADの設定に従います。",
+      "parameters": [
+        {
+          "name": "VALUE",
+          "label": "OSMODEの値",
+          "kind": "number",
+          "default": "0"
+        }
+      ],
+      "lines": [
+        "_.SETVAR",
+        "OSMODE",
+        "{VALUE}"
+      ]
+    },
+    "set_cmdecho": {
+      "name": "コマンド表示を設定",
+      "description": "CMDECHOを0または1に設定します。",
+      "parameters": [
+        {
+          "name": "VALUE",
+          "label": "CMDECHOの値",
+          "kind": "number",
+          "default": "0"
+        }
+      ],
+      "lines": [
+        "_.SETVAR",
+        "CMDECHO",
+        "{VALUE}"
+      ]
+    },
+    "set_ltscale": {
+      "name": "線種尺度を設定",
+      "description": "LTSCALEの全体尺度を設定します。",
+      "parameters": [
+        {
+          "name": "VALUE",
+          "label": "線種尺度",
+          "kind": "number",
+          "default": "1"
+        }
+      ],
+      "lines": [
+        "_.SETVAR",
+        "LTSCALE",
+        "{VALUE}"
+      ]
+    },
+    "set_lwdisplay": {
+      "name": "線の太さ表示を設定",
+      "description": "LWDISPLAYを0または1に設定します。",
+      "parameters": [
+        {
+          "name": "VALUE",
+          "label": "表示する: 1 / しない: 0",
+          "kind": "number",
+          "default": "1"
+        }
+      ],
+      "lines": [
+        "_.SETVAR",
+        "LWDISPLAY",
+        "{VALUE}"
+      ]
+    },
+    "regenerate": {
+      "name": "画面を再作図",
+      "description": "REGENを実行します。",
+      "parameters": [],
+      "lines": [
+        "_.REGEN"
+      ]
+    },
+    "layer_make": {
+      "name": "レイヤーを作成・切替",
+      "description": "同名レイヤーがあれば切り替え、なければ作成します。",
+      "parameters": [
+        {
+          "name": "NAME",
+          "label": "レイヤー名",
+          "kind": "text",
+          "default": "PARTS"
+        }
+      ],
+      "lines": [
+        "_.-LAYER",
+        "_Make",
+        "{NAME}",
+        ""
+      ]
+    },
+    "set_color": {
+      "name": "作図色を変更",
+      "description": "これから作る図形の色（CECOLOR）を設定。BYLAYER、BYBLOCK、1〜255など。",
+      "parameters": [
+        {
+          "name": "COLOR",
+          "label": "色 / ACI番号",
+          "kind": "text",
+          "default": "BYLAYER"
+        }
+      ],
+      "lines": [
+        "_.CECOLOR",
+        "{COLOR}"
+      ]
+    },
+    "layer_color": {
+      "name": "レイヤーの色を変更",
+      "description": "既存レイヤーの色を設定します。ACI番号1〜255を指定してください。",
+      "parameters": [
+        {
+          "name": "LAYER",
+          "label": "既存レイヤー名",
+          "kind": "text",
+          "default": "0"
+        },
+        {
+          "name": "COLOR",
+          "label": "ACI番号",
+          "kind": "number",
+          "default": "7"
+        }
+      ],
+      "lines": [
+        "_.-LAYER",
+        "_Color",
+        "{COLOR}",
+        "{LAYER}",
+        ""
+      ]
+    },
+    "set_linetype": {
+      "name": "作図線種を変更",
+      "description": "CELTYPEを設定。BYLAYER、BYBLOCK、または読み込み済みの線種名を指定します。",
+      "parameters": [
+        {
+          "name": "NAME",
+          "label": "線種名",
+          "kind": "text",
+          "default": "BYLAYER"
+        }
+      ],
+      "lines": [
+        "_.CELTYPE",
+        "{NAME}"
+      ]
+    },
+    "load_linetype": {
+      "name": "線種を読み込む（未読込用）",
+      "description": "未読込の線種をLINファイルから読み込みます。既存線種の再読込は応答が変わるため別手順を登録してください。",
+      "parameters": [
+        {
+          "name": "NAME",
+          "label": "未読込の線種名",
+          "kind": "text",
+          "default": "DASHED"
+        },
+        {
+          "name": "FILE",
+          "label": "LINファイル名",
+          "kind": "text",
+          "default": "acad.lin"
+        }
+      ],
+      "lines": [
+        "_.-LINETYPE",
+        "_Load",
+        "{NAME}",
+        "{FILE}",
+        ""
+      ]
+    },
+    "layer_linetype": {
+      "name": "レイヤーの線種を変更",
+      "description": "既存レイヤーへ、読み込み済み線種を割り当てます。",
+      "parameters": [
+        {
+          "name": "LAYER",
+          "label": "既存レイヤー名",
+          "kind": "text",
+          "default": "0"
+        },
+        {
+          "name": "TYPE",
+          "label": "読込済み線種名",
+          "kind": "text",
+          "default": "Continuous"
+        }
+      ],
+      "lines": [
+        "_.-LAYER",
+        "_Ltype",
+        "{TYPE}",
+        "{LAYER}",
+        ""
+      ]
+    },
+    "set_celtscale": {
+      "name": "作図線種尺度を設定",
+      "description": "CELTSCALEを設定し、これから作る図形の線種尺度を変更します。",
+      "parameters": [
+        {
+          "name": "VALUE",
+          "label": "オブジェクトの線種尺度",
+          "kind": "number",
+          "default": "1"
+        }
+      ],
+      "lines": [
+        "_.CELTSCALE",
+        "{VALUE}"
+      ]
+    },
+    "dimstyle_create": {
+      "name": "寸法スタイルを作成（新規名）",
+      "description": "現在の寸法スタイルを基にサイズを設定し、新しい名前で保存・適用します。未使用の名前を指定してください。既存名は「更新（既存名）」を使います。",
+      "parameters": [
+        {
+          "name": "NAME",
+          "label": "寸法スタイル名",
+          "kind": "text",
+          "default": "CUSTOM_DIM"
+        },
+        {
+          "name": "SCALE",
+          "label": "寸法尺度",
+          "kind": "number",
+          "default": "1"
+        },
+        {
+          "name": "HEIGHT",
+          "label": "寸法文字高さ",
+          "kind": "number",
+          "default": "3.5"
+        },
+        {
+          "name": "ARROW",
+          "label": "矢印サイズ",
+          "kind": "number",
+          "default": "2.5"
+        }
+      ],
+      "lines": [
+        "_.DIMSCALE",
+        "{SCALE}",
+        "_.DIMTXT",
+        "{HEIGHT}",
+        "_.DIMASZ",
+        "{ARROW}",
+        "_.-DIMSTYLE",
+        "_Save",
+        "{NAME}",
+        "_.-DIMSTYLE",
+        "_Restore",
+        "{NAME}"
+      ],
+      "execution": "once"
+    },
+    "dimstyle_restore": {
+      "name": "寸法スタイルを切替",
+      "description": "保存済みの寸法スタイルへ切り替えます。",
+      "parameters": [
+        {
+          "name": "NAME",
+          "label": "既存の寸法スタイル名",
+          "kind": "text",
+          "default": "Standard"
+        }
+      ],
+      "lines": [
+        "_.-DIMSTYLE",
+        "_Restore",
+        "{NAME}"
+      ]
+    },
+    "dimstyle_overwrite": {
+      "name": "寸法スタイルを更新（既存名）",
+      "description": "存在する寸法スタイルをサイズ変更して上書きします。既存名への上書き確認にYesを送る手順です。新規名には使用しないでください。",
+      "parameters": [
+        {
+          "name": "NAME",
+          "label": "寸法スタイル名",
+          "kind": "text",
+          "default": "CUSTOM_DIM"
+        },
+        {
+          "name": "SCALE",
+          "label": "寸法尺度",
+          "kind": "number",
+          "default": "1"
+        },
+        {
+          "name": "HEIGHT",
+          "label": "寸法文字高さ",
+          "kind": "number",
+          "default": "3.5"
+        },
+        {
+          "name": "ARROW",
+          "label": "矢印サイズ",
+          "kind": "number",
+          "default": "2.5"
+        }
+      ],
+      "lines": [
+        "_.-DIMSTYLE",
+        "_Restore",
+        "{NAME}",
+        "_.DIMSCALE",
+        "{SCALE}",
+        "_.DIMTXT",
+        "{HEIGHT}",
+        "_.DIMASZ",
+        "{ARROW}",
+        "_.-DIMSTYLE",
+        "_Save",
+        "{NAME}",
+        "_Yes",
+        "_.-DIMSTYLE",
+        "_Restore",
+        "{NAME}"
+      ],
+      "execution": "once"
+    }
+  },
+  "settings_presets": {},
+  "active_settings_preset": ""
+}
