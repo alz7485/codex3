@@ -9,16 +9,21 @@ import shutil
 
 from .motion import EXPRESSION_FRAMES
 from .metrics import METRICS
+from .advanced_context import condition_key, TEMPORAL_KINDS, EVENT_KINDS
 import math
 
 AUTO_PERSONALITY = "キャラクターに合わせる"
 INTERVALS = (10, 20, 30, 60, 90, 120)  # Legacy UI/import compatibility.
 DEFAULT_PATH = Path(__file__).parent / 'assets/dialogue/default_dialogue.json'
 KINDS = {'always': 'いつでも', 'time_range': '時間帯', 'weekday': '曜日',
-         'session_range': '起動からの経過', 'before_meeting': '予定の前', 'after_meeting': '予定のあと', 'metric_range': 'PC・ファイル・予定の集計値', 'all': 'すべての条件（AND）', 'any': 'いずれかの条件（OR）'}
+         'session_range': '起動からの経過', 'before_meeting': '予定の前', 'after_meeting': '予定のあと', 'metric_range': 'PC・ファイル・予定の集計値', 'all': 'すべての条件（AND）', 'any': 'いずれかの条件（OR）',
+         'metric_sustained':'集計値が一定時間続く', 'metric_transition':'集計値の変化・回復',
+         'idle_return':'操作なしから戻った', 'watched_file':'指定ファイル・フォルダーの記録', 'business_day':'営業日・休日'}
 ACTION_IDS = ('calendar_intro', 'calendar_unavailable', 'calendar_empty', 'activity_open', 'settings_open', 'no_conversation', 'reminder_disabled', 'click_concern', 'click_angry')
 NEW_RULE_IDS = ('idle_short', 'idle_long', 'active_long', 'daily_busy', 'daily_light', 'many_open_files', 'few_open_files', 'desktop_busy', 'desktop_tidy', 'before_start', 'before_end', 'ending_soon', 'after_hours', 'repeat_file', 'missed_yesterday', 'week_busy', 'week_light', 'today_busy', 'today_light')
 RESOURCE_RULE_IDS = ('cpu_high', 'cpu_low', 'memory_high', 'memory_low')
+ADVANCED_RULE_IDS = ('cpu_recovered','memory_recovered','idle_returned','meetings_long','meetings_consecutive',
+                     'meeting_short_break','battery_low','power_connected','target_unopened','target_reopened')
 MAX_BYTES = 2 * 1024 * 1024
 
 
@@ -108,11 +113,26 @@ def validate_condition(condition, key='', depth=0):
         _require(isinstance(children, list) and 1 <= len(children) <= 8, f'{key}: 詳細条件は1〜8件の配列にしてください。')
         for child in children:
             validate_condition(child, key, depth + 1)
-    elif kind == 'metric_range':
+    elif kind in ('metric_range','metric_sustained','metric_transition'):
         _require(isinstance(condition.get('metric'), str) and condition['metric'] in METRICS, f'{key}: 集計値の種類が不正です。')
         minimum, maximum = condition.get('minimum'), condition.get('maximum')
         numeric = lambda v: type(v) in (int, float) and math.isfinite(v) and -43200 <= v <= 100000
         _require(numeric(minimum) and (maximum is None or numeric(maximum) and maximum >= minimum), f'{key}: 集計値の下限・上限が不正です。')
+        if kind in ('metric_sustained','metric_transition'):
+            _require(_integer(condition.get('duration_minutes'),0,1440), f'{key}: 継続時間は0〜1440分です。')
+        if kind=='metric_transition':
+            lower,upper=condition.get('to_minimum'),condition.get('to_maximum')
+            _require(numeric(lower) and (upper is None or numeric(upper) and upper>=lower),f'{key}: 変化後の範囲が不正です。')
+            _require((maximum is not None and maximum<lower) or (upper is not None and upper<minimum),f'{key}: 変化前と変化後の範囲は重ねないでください。')
+            _require(_integer(condition.get('window_minutes'),1,60),f'{key}: 変化後に話す期間は1〜60分です。')
+    elif kind=='idle_return':
+        _require(_integer(condition.get('idle_minutes'),1,1440) and _integer(condition.get('window_minutes'),1,60),f'{key}: 操作なし時間・発言期間が不正です。')
+    elif kind=='watched_file':
+        _require(isinstance(condition.get('target_id'),str) and (condition['target_id']=='' or re.fullmatch(r'[a-zA-Z0-9_-]{1,64}',condition['target_id'])),f'{key}: 対象IDが不正です。')
+        _require(condition.get('state') in ('opened_today','not_opened_today','count_range'),f'{key}: ファイルの記録条件が不正です。')
+        _require(_integer(condition.get('minimum'),0,15000) and (condition.get('maximum') is None or _integer(condition['maximum'],condition['minimum'],15000)),f'{key}: 記録回数の範囲が不正です。')
+    elif kind=='business_day':
+        _require(type(condition.get('expected')) is bool,f'{key}: 営業日・休日を指定してください。')
     elif kind == 'time_range':
         for name in ('start', 'end'):
             value = condition.get(name)
@@ -132,7 +152,7 @@ def upgrade(document):
     if not isinstance(document, dict) or type(document.get('schema_version')) is not int or document.get('schema_version') not in (1, 2):
         return document
     if document['schema_version'] == 2:
-        return upgrade_resources(upgrade_names(upgrade_comfort(upgrade_click_reactions(upgrade_mail(document)))))
+        return upgrade_advanced(upgrade_resources(upgrade_names(upgrade_comfort(upgrade_click_reactions(upgrade_mail(document))))))
     result = deepcopy(document)
     base = json.loads(DEFAULT_PATH.read_text(encoding='utf-8'))
     result['schema_version'] = 2
@@ -149,7 +169,48 @@ def upgrade(document):
                 for voice, bank in result['phrases'].items():
                     if isinstance(bank, dict) and voice in base['phrases']:
                         bank[rule['id']] = deepcopy(base['phrases'][voice][rule['id']])
-    return upgrade_resources(upgrade_names(upgrade_comfort(upgrade_click_reactions(upgrade_mail(result)))))
+    return upgrade_advanced(upgrade_resources(upgrade_names(upgrade_comfort(upgrade_click_reactions(upgrade_mail(result))))))
+
+
+def upgrade_advanced(document):
+    if document.get('advanced_context_version')==1: return upgrade_conversation_flow(document)
+    result=deepcopy(document); base=json.loads(DEFAULT_PATH.read_text(encoding='utf-8'))
+    if isinstance(result.get('rules'),list) and isinstance(result.get('phrases'),dict):
+        existing={r.get('id') for r in result['rules'] if isinstance(r,dict) and isinstance(r.get('id'),str)}
+        for key in ADVANCED_RULE_IDS:
+            if len(result['rules'])>=200: break
+            if key not in existing:
+                result['rules'].append(deepcopy(next(r for r in base['rules'] if r['id']==key)))
+                for voice,bank in result['phrases'].items():
+                    if isinstance(bank,dict) and voice in base['phrases']: bank[key]=deepcopy(base['phrases'][voice][key])
+        for rule in result['rules']:
+            if rule.get('id') in ('cpu_high','memory_high'):
+                stock=next(r for r in base['rules'] if r['id']==rule['id'])
+                legacy=deepcopy(stock['condition']); legacy.pop('duration_minutes',None); legacy['kind']='metric_range'
+                if rule.get('condition')==legacy: rule['condition']=deepcopy(stock['condition'])
+            if rule.get('id') in ('before_start','before_end','ending_soon','after_hours'):
+                stock=next(r for r in base['rules'] if r['id']==rule['id'])
+                legacy=deepcopy(stock['condition'])
+                for i,c in enumerate(legacy.get('conditions',[])):
+                    if c['kind']=='business_day': legacy['conditions'][i]={'kind':'weekday','days':[0,1,2,3,4]}
+                if rule.get('condition')==legacy: rule['condition']=deepcopy(stock['condition'])
+    result['advanced_context_version']=1
+    return upgrade_conversation_flow(result)
+
+
+def upgrade_conversation_flow(document):
+    if document.get('conversation_flow_version')==1:return document
+    result=deepcopy(document);base=json.loads(DEFAULT_PATH.read_text(encoding='utf-8'))
+    previous={
+        '履歴を開きました。\\n日付を選んで、振り返ってみましょう。',
+        'ファイル履歴を表示しました。\\nカレンダーから日付を選んでください。',
+        '履歴を開きました！\\n日付を選んで確認しましょう。',
+        '履歴を開いたよ。\\n見たい日を選んでみてね。'}
+    for voice,bank in result.get('phrases',{}).items() if isinstance(result.get('phrases'),dict) else ():
+        if isinstance(bank,dict) and voice in base['phrases'] and isinstance(bank.get('activity_open'),list):
+            bank['activity_open']=[base['phrases'][voice]['activity_open'][0] if isinstance(line,str) and line in previous else line for line in bank['activity_open']]
+    result['conversation_flow_version']=1
+    return result
 
 
 def upgrade_resources(document):
@@ -347,6 +408,15 @@ class DialogueStore:
 def matches(rule, now, started, session_spoken, events, connected, context=None):
     c = rule['condition']
     kind = c['kind']
+    context=context or {}
+    if kind in TEMPORAL_KINDS:
+        key=condition_key(c); state=context.get('_temporal',{}).get(key,{})
+        return bool(state.get('active')) and (kind not in EVENT_KINDS or state.get('event')!=context.get('_consumed_events',{}).get(key))
+    if kind=='business_day': return context.get('business_day')==int(c['expected'])
+    if kind=='watched_file':
+        value=context.get('_target_counts',{}).get(c['target_id'])
+        if type(value) is not int: return False
+        return value>0 if c['state']=='opened_today' else value==0 if c['state']=='not_opened_today' else c['minimum']<=value and (c['maximum'] is None or value<=c['maximum'])
     if kind in ('all', 'any'):
         values = [matches({'condition': child}, now, started, session_spoken, events, connected, context) for child in c['conditions']]
         return all(values) if kind == 'all' else any(values)

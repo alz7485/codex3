@@ -16,7 +16,7 @@ from PySide6.QtGui import QAction, QColor, QCursor, QDesktopServices, QFont, QIc
 from PySide6.QtWidgets import (
     QApplication, QButtonGroup, QCalendarWidget, QCheckBox, QComboBox, QFrame, QHeaderView, QHBoxLayout, QLabel, QMainWindow,
     QMenu, QMessageBox, QPushButton, QScrollArea, QSizePolicy, QStackedWidget, QSystemTrayIcon, QTimeEdit,
-    QToolButton, QSpinBox, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget, QLineEdit, QPlainTextEdit,
+    QToolButton, QSpinBox, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget, QLineEdit, QPlainTextEdit, QListWidget, QListWidgetItem,
 )
 
 from .core import CHARACTERS, Engine, Notice, PHRASES, Settings, data_directory, is_quiet, save_json
@@ -25,7 +25,8 @@ from .motion import Motion
 from .dialogue import AUTO_PERSONALITY, BUBBLE_MS, PROFILES, DialogueError, DialogueStore, voice_for
 from .outlook import read_calendar
 from .metadata import APP_DISPLAY_NAME, VERSION
-from .context import ResourceSampler, UsageLedger, input_idle_seconds, desktop_file_count, office_file_count, work_metrics
+from .context import ResourceSampler, UsageLedger, input_idle_seconds, desktop_file_count, office_file_count, work_metrics, system_power_metrics
+from .advanced_context import ConditionTimeline, meeting_metrics
 from .mail import OutlookMailWatcher
 from .preferences import PRESETS, snapped_y
 from .departure import attendance_url, system_uptime_seconds
@@ -339,6 +340,7 @@ class Panel(QMainWindow):
     dialogue_requested = Signal()
     reminders_requested = Signal()
     clear_usage_requested = Signal()
+    context_options_requested = Signal()
 
     def __init__(self, settings, dialogue=None):
         super().__init__()
@@ -589,6 +591,9 @@ class Panel(QMainWindow):
         monitor_box.addWidget(label('入力内容は記録せず、最後の操作からの秒数で推定します。Office文書数・デスクトップ件数・PC全体のCPUとメモリ使用率も使います。使用率はアプリ起動中だけ確認し、保存しません。', 'muted', True))
         self.context_status = label('集計を準備しています。', 'muted', True)
         monitor_box.addWidget(self.context_status)
+        monitor_box.addWidget(button('休日・対象ファイル・話題の表示を設定',self.context_options_requested.emit))
+        self.advanced_context_status=label('', 'muted', True)
+        monitor_box.addWidget(self.advanced_context_status)
         monitor_box.addWidget(button('操作時間・アプリ使用日の集計を削除', self.clear_usage_requested.emit))
         self.mail_check = QCheckBox('Outlook接続中、新着メール・会議依頼をすぐ知らせる')
         self.mail_check.setChecked(self.settings.mail_enabled)
@@ -604,7 +609,7 @@ class Panel(QMainWindow):
         self.departure_check = QCheckBox('指定した時刻に知らせる')
         self.departure_check.setChecked(self.settings.departure_enabled)
         departure_box.addWidget(self.departure_check)
-        self.departure_weekdays = QCheckBox('平日（月〜金）だけ')
+        self.departure_weekdays = QCheckBox('営業日だけ（祝日・会社休日を除く）')
         self.departure_weekdays.setChecked(self.settings.departure_weekdays)
         departure_box.addWidget(self.departure_weekdays)
         self.departure_time = QTimeEdit(QTime.fromString(self.settings.departure_time, 'HH:mm'))
@@ -630,7 +635,7 @@ class Panel(QMainWindow):
         reminders = QFrame(objectName='card')
         reminders_box = box(reminders, 18, 10)
         reminders_box.addWidget(label('自分で登録する通知', 'section'))
-        reminders_box.addWidget(label('「月末の最終平日」「毎月15日までの最終平日」など、条件・時刻・メッセージを登録できます。次回の対象日も確認できます。', 'muted', True))
+        reminders_box.addWidget(label('月末や毎月の締め日を指定できます。「営業日」は祝日・会社休日を除外します。次回の対象日も確認できます。', 'muted', True))
         reminders_box.addWidget(button('通知を登録・編集', self.reminders_requested.emit))
         self.reminders_status = label('', 'muted', True)
         reminders_box.addWidget(self.reminders_status)
@@ -882,6 +887,7 @@ class InteractionBubble(Bubble):
     """The usual speech bubble with five actions and passive left-click remarks."""
     selected = Signal(str)
     attendance_requested = Signal()
+    file_requested = Signal(str)
 
     def __init__(self):
         super().__init__()
@@ -901,6 +907,12 @@ class InteractionBubble(Bubble):
         self.text.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
         self.text.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         layout.addWidget(self.content_scroll)
+        self.file_links=QListWidget()
+        self.file_links.setAccessibleName('今日開いたファイルのリンク。クリックすると開きます')
+        self.file_links.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.file_links.setStyleSheet('QListWidget { background: transparent; border: none; } QListWidget::item { padding: 5px 2px; }')
+        self.file_links.itemClicked.connect(lambda item:self.file_requested.emit(item.data(Qt.ItemDataRole.UserRole)))
+        layout.addWidget(self.file_links);self.file_links.hide()
         self.choice_row = QWidget(objectName="speechChoiceRow")
         choices = QVBoxLayout(self.choice_row)
         choices.setContentsMargins(0, 0, 0, 0)
@@ -922,11 +934,25 @@ class InteractionBubble(Bubble):
         actions.addWidget(button('あとで', self.hide))
         layout.addWidget(self.departure_row)
         self.departure_row.hide()
+        self.detail_action=button('管理画面を開く',lambda:self.selected.emit('outlook_calendar' if self.kind=='calendar' else 'activity_manager'),'speechChoice')
+        layout.addWidget(self.detail_action);self.detail_action.hide()
         self.resize_text()
         for widget in [self, *self.findChildren(QWidget)]:
             widget.installEventFilter(self)
 
     def eventFilter(self, watched, event):
+        if (event.type()==QEvent.Type.KeyPress and watched is getattr(self,'file_links',None)
+                and event.key() in (Qt.Key.Key_Return,Qt.Key.Key_Enter)):
+            item=self.file_links.currentItem()
+            if item:self.file_requested.emit(item.data(Qt.ItemDataRole.UserRole))
+            return True
+        if (event.type()==QEvent.Type.MouseButtonRelease and event.button()==Qt.MouseButton.LeftButton
+                and getattr(self,'current',None) in ('activity','calendar')
+                and watched in (self,self.text,self.content_scroll.viewport())):
+            self.dismiss();return True
+        if (event.type()==QEvent.Type.MouseButtonRelease and event.button()==Qt.MouseButton.LeftButton
+                and getattr(self,'kind',None)=='calendar' and watched is self.text):
+            self.dismiss();return True
         if event.type() == QEvent.Type.ContextMenu:
             return True  # Right-button press already toggled the call window.
         if event.type() == QEvent.Type.MouseButtonPress and event.button() == Qt.MouseButton.RightButton:
@@ -945,6 +971,9 @@ class InteractionBubble(Bubble):
         # Measure the fixed chrome/choices separately from the scrollable body.
         self.text.setMinimumHeight(0)
         self.content_scroll.setFixedHeight(1)
+        if self.file_links.isVisible():
+            row_height=self.file_links.sizeHintForRow(0) if self.file_links.count() else 0
+            self.file_links.setFixedHeight(min(max(1,self.file_links.count()*row_height+4),210))
         self.layout().invalidate()
         self.layout().activate()
         chrome = self.layout().sizeHint().height() - 1
@@ -966,6 +995,7 @@ class InteractionBubble(Bubble):
     def open_choices(self, text="お呼びですか？", name="Yohaku"):
         self.notice = None
         self.departure_row.hide()
+        self.file_links.hide();self.file_links.clear();self.detail_action.hide()
         self.set_kind("menu")
         self.timer.start(self.duration_ms)
         self.current = None
@@ -987,16 +1017,31 @@ class InteractionBubble(Bubble):
     def display(self, notice):
         self.notice = notice
         self.departure_row.hide()
+        self.file_links.hide();self.file_links.clear();self.detail_action.hide();self.detail_action.setEnabled(True)
         self.set_kind("calendar" if notice.important and notice.kind == "message" else notice.kind)
         self.current = None
         self.interactive = False
         self.choice_row.hide()
         self.heading.setText(notice.heading)
         self.text.setText(notice.text)
+        if self.kind=='calendar':
+            self.interactive=True
+            self.detail_action.setText('Outlookの予定を開く');self.detail_action.show()
         self.resize_text()
         self.content_scroll.verticalScrollBar().setValue(0)
         self.show()  # WA_ShowWithoutActivating keeps automatic notices passive.
         self.timer.start(self.duration_ms)
+
+    def show_file_history(self,text,rows):
+        self.display(Notice('',text))
+        self.current='activity';self.interactive=True
+        for name,path in rows:
+            item=QListWidgetItem(name);item.setData(Qt.ItemDataRole.UserRole,path);item.setToolTip(path)
+            font=item.font();font.setUnderline(True);item.setFont(font);item.setForeground(QColor('#2e628b'))
+            self.file_links.addItem(item)
+        self.file_links.setVisible(bool(rows))
+        self.detail_action.setText('管理画面を開く');self.detail_action.show()
+        self.resize_text();self.file_links.scrollToTop()
 
     def show_departure(self, notice, has_url):
         self.display(notice)
@@ -1168,6 +1213,8 @@ class Controller(QObject):
         self.engine = Engine(self.settings, self.path / "history.json", dialogue=self.dialogue)
         self.editor = None
         self.reminder_editor = None
+        self.context_editor = None
+        self.condition_timeline = ConditionTimeline()
         self.preview = None
         self.panel = Panel(self.settings, self.dialogue)
         self.brand_icon = QIcon(str(Path(__file__).parent / "assets/app/yohaku.ico"))
@@ -1228,6 +1275,7 @@ class Controller(QObject):
         self.bridge.result.connect(self.received)
         self.panel.changed.connect(self.save_settings)
         self.panel.dialogue_requested.connect(self.show_dialogue_editor)
+        self.panel.context_options_requested.connect(self.show_context_options)
         self.panel.reminders_requested.connect(self.show_reminder_editor)
         self.refresh_reminder_status()
         self.panel.clear_usage_requested.connect(self.clear_usage)
@@ -1249,6 +1297,12 @@ class Controller(QObject):
         self.menu.addAction("設定を開く", self.show_panel)
         self.menu.addAction("会話を編集", self.show_dialogue_editor)
         self.menu.addAction("通知を登録・編集", self.show_reminder_editor)
+        self.menu.addAction('休日・対象ファイル・話題の表示',self.show_context_options)
+        self.topic_menu=self.menu.addMenu('直前の話題')
+        self.topic_menu.addAction('今日はこの話題を休む',lambda:self.change_topic_preference('mute'))
+        self.topic_menu.addAction('この話題を減らす',lambda:self.change_topic_preference('reduce'))
+        self.topic_menu.addAction('この話題の表示設定を戻す',lambda:self.change_topic_preference('reset'))
+        self.menu.aboutToShow.connect(self.refresh_topic_menu)
         self.pause_action = self.menu.addAction("1時間おやすみ", self.pause)
         self.share_action = self.menu.addAction("画面共有モード", self.share)
         self.menu.addSeparator()
@@ -1258,6 +1312,9 @@ class Controller(QObject):
         self.resident.context_requested.connect(lambda _: self.open_choices())
         self.bubble.call_requested.connect(self.open_choices)
         self.bubble.attendance_requested.connect(self.open_attendance)
+        self.bubble.file_requested.connect(self.open_history_file)
+        self.navigation_bridge=Bridge();self.navigation_bridge.result.connect(self.outlook_opened)
+        self.outlook_open_busy=False;self.outlook_open_notice=None
         self.tray = QSystemTrayIcon(self)
         self.apply_character()
         self.tray.setToolTip("Yohaku — 左クリックで表示切り替え / 右クリックでメニュー")
@@ -1332,6 +1389,7 @@ class Controller(QObject):
             self.bubble.hide()
             self.history_window.hide()
             self.panel.hide()
+            if self.context_editor: self.context_editor.hide()
             if self.editor:
                 self.editor.hide()
             if self.preview:
@@ -1373,6 +1431,7 @@ class Controller(QObject):
             self.bubble.resize_text()
 
     def request_quit(self):
+        if self.context_editor is not None and not self.context_editor.close(): return
         if self.editor is not None and self.editor.dirty:
             self.editor.show()
             self.editor.raise_()
@@ -1388,12 +1447,12 @@ class Controller(QObject):
     def refresh_reminder_status(self):
         store = self.engine.reminders
         enabled = sum(rule['enabled'] for rule in store.data['notifications'])
-        self.panel.reminders_status.setText(store.error or f'登録{len(store.data["notifications"])}件 · 有効{enabled}件 · 平日は月〜金')
+        self.panel.reminders_status.setText(store.error or f'登録{len(store.data["notifications"])}件 · 有効{enabled}件 · 平日は月〜金 / 営業日は休日設定を参照')
 
     def show_reminder_editor(self):
         if self.reminder_editor is None:
             from .reminder_editor import ReminderEditor
-            self.reminder_editor = ReminderEditor(self.engine.reminders)
+            self.reminder_editor = ReminderEditor(self.engine.reminders,self.engine.context_options)
             self.reminder_editor.setWindowIcon(self.brand_icon)
             self.reminder_editor.saved.connect(self.refresh_reminder_status)
         elif not self.reminder_editor.dirty:
@@ -1405,7 +1464,7 @@ class Controller(QObject):
     def show_dialogue_editor(self):
         if self.editor is None:
             from .dialogue_editor import DialogueEditor
-            self.editor = DialogueEditor(self.dialogue)
+            self.editor = DialogueEditor(self.dialogue,self.engine.context_options)
             self.editor.setWindowIcon(self.brand_icon)
             self.editor.saved.connect(self.dialogue_saved)
         elif not self.editor.dirty:
@@ -1413,6 +1472,40 @@ class Controller(QObject):
         self.editor.show()
         self.editor.raise_()
         self.editor.activateWindow()
+
+    def refresh_topic_menu(self):
+        rule=self.dialogue.rule(self.engine.last_category)
+        self.topic_menu.setEnabled(rule is not None and rule['trigger']=='auto')
+        self.topic_menu.setTitle('直前の話題：'+rule['label'] if rule else '直前の話題（まだありません）')
+
+    def change_topic_preference(self,action):
+        key=self.engine.last_category
+        rule=self.dialogue.rule(key)
+        if not rule or rule['trigger']!='auto': return
+        previous=self.engine.topic_preferences.preference(key)
+        try:
+            self.engine.topic_preferences.update(key,muted_date=datetime.now().astimezone().date().isoformat() if action=='mute' else previous['muted_date'] if action=='reduce' else '',
+                                                reduced=True if action=='reduce' else previous['reduced'] if action=='mute' else False)
+        except (OSError,ValueError) as error:
+            self.panel.saved_label.setText(f'話題の設定を保存できません。{error}'); return
+        if self.bubble.kind=='message' and self.pending_reaction is None: self.bubble.hide()
+        if self.context_editor: self.context_editor.load_topic()
+
+    def show_context_options(self):
+        if self.context_editor is None:
+            from .context_editor import ContextOptionsEditor
+            self.context_editor=ContextOptionsEditor(self.engine.context_options,self.engine.topic_preferences,self.dialogue)
+            self.context_editor.setWindowIcon(self.brand_icon)
+            self.context_editor.saved.connect(self.context_options_saved)
+        elif not self.context_editor.dirty: self.context_editor.revert()
+        self.context_editor.show(); self.context_editor.raise_(); self.context_editor.activateWindow()
+
+    def context_options_saved(self):
+        self.condition_timeline=ConditionTimeline()
+        self.engine.consumed_events.clear()
+        self.refresh_context_metrics(datetime.now().astimezone())
+        if self.editor: self.editor.refresh_targets()
+        if self.reminder_editor and not self.reminder_editor.dirty: self.reminder_editor.revert()
 
     def show_preview(self):
         if self.hidden or self.user_hidden:
@@ -1594,7 +1687,7 @@ class Controller(QObject):
         # Give a moving pointer time to click, without pinning the character
         # forever beneath an untouched pointer. This transient position is not logged.
         hover_pause = hovered and now < self.hover_until
-        blocked = self.pending_reaction is not None or self.bubble.isVisible() or self.panel.isVisible() or self.history_window.isVisible() or (self.editor is not None and self.editor.isVisible()) or (self.reminder_editor is not None and self.reminder_editor.isVisible()) or hover_pause
+        blocked = self.pending_reaction is not None or self.bubble.isVisible() or self.panel.isVisible() or self.history_window.isVisible() or (self.editor is not None and self.editor.isVisible()) or (self.reminder_editor is not None and self.reminder_editor.isVisible()) or (self.context_editor is not None and self.context_editor.isVisible()) or hover_pause
         self.motion_x = self.motion.advance(dt, self.motion_x if self.motion_x is not None else upper,
                                           lower, upper, self.settings.walking and not blocked)
         frame = self.motion.frame()
@@ -1612,6 +1705,8 @@ class Controller(QObject):
 
     def configure_context(self):
         self.context_generation += 1
+        self.condition_timeline=ConditionTimeline()
+        self.engine.consumed_events.clear()
         self.resource_sampler = ResourceSampler()
         self.resource_values = {}
         self.resource_at = None
@@ -1643,6 +1738,8 @@ class Controller(QObject):
         clock = time.monotonic()
         dt, self.last_usage_time = clock - self.last_usage_time, clock
         self.resource_values = self.resource_sampler.sample(clock)
+        try: self.resource_values.update(system_power_metrics())
+        except Exception: pass
         self.resource_at = now
         try:
             idle = input_idle_seconds()
@@ -1689,6 +1786,7 @@ class Controller(QObject):
     def refresh_context_metrics(self, now):
         options = self.dialogue.data['options']
         values = work_metrics(now, options['work_start'], options['work_end'])
+        values['business_day']=None if self.engine.context_options.error else int(self.engine.context_options.calendar().is_business_day(now.date()))
         if self.usage is not None:
             app_usage = self.usage.metrics(now)
             values.update({key: app_usage[key] for key in ('missed_yesterday', 'days_since_last_use')})
@@ -1702,18 +1800,26 @@ class Controller(QObject):
         if fresh:
             values['weekly_events'] = self.weekly_events
             values['daily_events'] = self.daily_events
+            if self.daily_events is not None:
+                values.update(meeting_metrics(self.events,now,self.engine.context_options.data['consecutive_gap_minutes']))
             upcoming = [event for event in self.events if event.start > now]
             if upcoming:
                 values['next_event_minutes'] = min((event.start - now).total_seconds() / 60 for event in upcoming)
         if self.settings.file_logging:
             try:
                 values.update(self.activity_history.repeat_summary(now) or {})
+                if not self.activity_error and self.activity_tracker.baselined:
+                    values['_target_counts']=self.activity_history.target_counts(self.engine.context_options.data['targets'],now)
             except (OSError, sqlite3.Error):
                 pass
         if (self.settings.outlook_enabled and self.settings.mail_enabled and self.unread_at
                 and 0 <= (now - self.unread_at).total_seconds() < 90):
             values['unread_mail_count'] = self.unread_count
+        values['_temporal']=self.condition_timeline.update(time.monotonic(),values,self.dialogue.data['rules'])
+        self.engine.consumed_events={k:v for k,v in self.engine.consumed_events.items() if k in values['_temporal']}
         self.engine.context = values
+        self.panel.advanced_context_status.setText(self.engine.context_options.error or self.engine.topic_preferences.error or
+            f'営業日・休日を参照 · 対象{len(self.engine.context_options.data["targets"])}件 · 話題の表示を個別設定できます')
 
     def clear_usage(self):
         try:
@@ -1783,6 +1889,7 @@ class Controller(QObject):
         self.position()
 
     def shutdown(self):
+        if self.context_editor: self.context_editor.hide()
         self.pending_reaction = None
         self.static_pose_timer.stop()
         if self.preview:
@@ -1860,7 +1967,7 @@ class Controller(QObject):
 
     def resume_reaction(self):
         if (self.pending_reaction is None or self.hidden or self.user_hidden
-                or self.bubble.isVisible()):
+                or self.bubble.isVisible() or self.history_window.isVisible() or self.panel.isVisible()):
             return
         self.motion.react(self.pending_reaction.expression, seconds=float('inf'))
         self.motion.face_front(0)
@@ -1926,6 +2033,12 @@ class Controller(QObject):
             self.interaction.content(key, CHARACTERS[self.settings.character], self.engine.phrase("calendar_intro") + "\n\n" + text)
         elif key == "activity":
             self.motion.react(self.dialogue.rule("activity_open")["expression"])
+            self.show_today_history()
+        elif key=='outlook_calendar':
+            self.open_outlook_calendar()
+        elif key == 'activity_manager':
+            self.bubble.timer.stop();self.bubble.hide()
+            self.bubble.current=None
             self.history_window.calendar.setDateRange(QDate.currentDate().addMonths(-3), QDate.currentDate())
             self.refresh_history()
             self.history_window.show()
@@ -1943,6 +2056,47 @@ class Controller(QObject):
             self.motion.react(self.dialogue.rule("settings_open")["expression"])
             self.show_panel()
         self.position()
+
+    def show_today_history(self):
+        now=datetime.now().astimezone();text=self.engine.phrase('activity_open')
+        try:
+            rows=self.activity_history.for_day(now.date(),now,15000)
+            seen=set();files=[]
+            for name,path,_source,_opened in rows:
+                key=path.replace('/','\\').casefold()
+                if key not in seen:seen.add(key);files.append((name,path))
+            if len(files)>50:text+='\n直近50ファイルです。全件は管理画面で確認できます。'
+            if not files:text+='\n今日の記録はまだありません。'
+            if not self.settings.file_logging:text+='\nファイル履歴の記録はオフです。'
+            if self.activity_error:text+='\n一部の記録を確認できていません。管理画面で状態を確認できます。'
+        except (OSError,sqlite3.Error):
+            files=[];text+='\n履歴を読み込めませんでした。管理画面で状態をご確認ください。'
+        self.bubble.show_file_history(text,files[:50])
+
+    def open_history_file(self,path):
+        if not QDesktopServices.openUrl(QUrl.fromLocalFile(path)):
+            self.bubble.text.setText('ファイルを開けませんでした。移動・削除や関連付けをご確認ください。')
+            self.bubble.resize_text();self.position()
+
+    def open_outlook_calendar(self):
+        if self.outlook_open_busy:return
+        self.outlook_open_busy=True;self.outlook_open_notice=self.bubble.notice
+        self.bubble.detail_action.setEnabled(False)
+        def worker():
+            try:
+                from .outlook import show_calendar
+                show_calendar();error=''
+            except Exception as exception:error=str(exception) if isinstance(exception,RuntimeError) else 'Outlookの予定表を開けませんでした。'
+            self.navigation_bridge.result.emit(0,None,error)
+        threading.Thread(target=worker,daemon=True).start()
+
+    def outlook_opened(self,_generation,_value,error):
+        self.outlook_open_busy=False;self.bubble.detail_action.setEnabled(True)
+        if self.bubble.notice is not self.outlook_open_notice:return
+        if error:
+            self.bubble.text.setText(self.bubble.text.text()+'\n\n'+error)
+            self.bubble.resize_text();self.position()
+        else:self.bubble.dismiss()
 
     def refresh_history(self):
         now = datetime.now().astimezone()
@@ -2198,7 +2352,7 @@ class Controller(QObject):
         fresh = self.connected_at is not None and (now - self.connected_at).total_seconds() < 300
         try:
             notice = self.engine.next_notice(now, self.events, self.hidden or self.user_hidden, self.connected and fresh,
-                                             allow_chatter=not (self.pending_reaction is not None or self.interaction.isVisible() or self.panel.isVisible() or self.history_window.isVisible() or (self.editor is not None and self.editor.isVisible()) or (self.reminder_editor is not None and self.reminder_editor.isVisible())),
+                                             allow_chatter=not (self.pending_reaction is not None or self.interaction.isVisible() or self.panel.isVisible() or self.history_window.isVisible() or (self.editor is not None and self.editor.isVisible()) or (self.reminder_editor is not None and self.reminder_editor.isVisible()) or (self.context_editor is not None and self.context_editor.isVisible())),
                                              allow_reminders=not (self.pending_reaction is not None or self.bubble.isVisible()))
         except OSError:
             self.panel.calendar_detail.setText("通知履歴を保存できません。保存先の権限をご確認ください。")
@@ -2231,6 +2385,7 @@ class Controller(QObject):
         self.panel.mode_label.setText("画面共有モード" if self.hidden else (f"{paused:%H:%M}までおやすみ" if paused else "キャラは非表示" if self.user_hidden else "通常モード"))
 
     def share(self):
+        if self.context_editor: self.context_editor.hide()
         self.hidden = not self.hidden
         self.bubble.hide()
         self.interaction.hide()

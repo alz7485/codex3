@@ -87,6 +87,8 @@ class ResourceTests(unittest.TestCase):
         for key, boundary, outside in (('cpu_high',80,79.9), ('cpu_low',20,20.1),
                                        ('memory_high',85,84.9), ('memory_low',50,50.1)):
             rule = next(r for r in document['rules'] if r['id'] == key)
+            rule=deepcopy(rule)
+            rule['condition']['kind']='metric_range'  # Numeric boundary, independent of the continuity gate.
             metric = rule['condition']['metric']
             args = (now, now, True, [], False)
             self.assertTrue(matches(rule, *args, {metric:boundary}))
@@ -96,6 +98,10 @@ class ResourceTests(unittest.TestCase):
             engine = Engine(Settings(quiet_start='00:00', quiet_end='00:00'), Path(temporary)/'history.json', choose=lambda xs:xs[0])
             for rule in engine.dialogue.data['rules']: rule['enabled'] = rule['id'] == 'cpu_high'
             engine.context = {'cpu_percent':87}
+            from companion.advanced_context import ConditionTimeline
+            timeline=ConditionTimeline()
+            for second in range(0,181,5):
+                engine.context['_temporal']=timeline.update(second,engine.context,engine.dialogue.data['rules'])
             notice = engine.conversation(now, manual=False)
             self.assertEqual(notice.kind, 'message')
             self.assertFalse(notice.important)

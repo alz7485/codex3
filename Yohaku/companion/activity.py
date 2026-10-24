@@ -161,6 +161,23 @@ class FileHistory:
             row = db.execute("SELECT name, COUNT(*) AS n FROM files WHERE opened >= ? AND opened < ? GROUP BY path COLLATE NOCASE ORDER BY n DESC, MAX(opened) DESC LIMIT 1", (start, end)).fetchone()
         return {'file_name': row[0], 'file_open_count': row[1]} if row else {'file_name': '', 'file_open_count': 0}
 
+    def target_counts(self, targets, now):
+        """Match retained observations only; never scan or open a target folder."""
+        counts={target['id']:0 for target in targets}
+        if not targets or not self.path.exists(): return counts
+        day=now.astimezone().date()
+        start=datetime.combine(day,time.min).astimezone().astimezone(timezone.utc).isoformat()
+        end=datetime.combine(day+timedelta(days=1),time.min).astimezone().astimezone(timezone.utc).isoformat()
+        with self._connect() as db:
+            rows=db.execute('SELECT path, COUNT(*) FROM files WHERE opened>=? AND opened<? GROUP BY path',(start,end)).fetchall()
+        for target in targets:
+            key=ntpath.normpath(target['path']).casefold().rstrip('\\')
+            for path,count in rows:
+                normalized=ntpath.normpath(path).casefold()
+                if normalized==key or (target['kind']=='folder' and normalized.startswith(key+'\\')):
+                    counts[target['id']]+=count
+        return counts
+
     def search(self, text, now):
         """Search every retained row; dates and the per-day display cap do not apply."""
         query = text.strip().casefold()

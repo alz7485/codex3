@@ -161,6 +161,10 @@ class Engine:
         self.last_category = None
         self.session_spoken = False
         self.context = {}
+        from .context_options import ContextOptionsStore, TopicPreferences
+        self.context_options=ContextOptionsStore(history_path.parent/'context_options.json')
+        self.topic_preferences=TopicPreferences(history_path.parent/'topic_preferences.json')
+        self.consumed_events={}
         self.click_reactions = ClickReactions()
         raw = self.state.get("notified", {})
         self.notified = raw if isinstance(raw, dict) else {}
@@ -209,8 +213,14 @@ class Engine:
     def conversation(self, now: datetime, events: list[Event] = (), connected=False, manual=True) -> Notice | None:
         """Evaluate validated declarative JSON rules; no expressions or code execution."""
         options = self.dialogue.data['options']
+        self.context['business_day']=None if self.context_options.error else int(self.context_options.calendar().is_business_day(now.date()))
+        self.context['_consumed_events']=self.consumed_events
+        if self.topic_preferences.error:return None
         candidates = [r for r in self.dialogue.data['rules'] if r['trigger'] == 'auto' and r['enabled']
                       and matches(r, now, self.started, self.session_spoken, events, connected, self.context)]
+        candidates=[r for r in candidates if self.topic_preferences.preference(r['id'])['muted_date']!=now.date().isoformat()
+                    and (not self.topic_preferences.preference(r['id'])['reduced'] or r['id'] not in self.category_last
+                         or (now-self.category_last[r['id']]).total_seconds()>=max(1,r['cooldown_minutes'])*120)]
         if not candidates:
             return None
         first = [r for r in candidates if r['condition']['kind'] == 'session_range'
@@ -235,8 +245,25 @@ class Engine:
         self.session_spoken = True
         self.last_category = category
         self.category_last[category] = now
+        from .advanced_context import condition_key, EVENT_KINDS
+        def matched_conditions(condition):
+            if not matches({'condition':condition},now,self.started,self.session_spoken,events,connected,self.context):return
+            yield condition
+            for child in condition.get('conditions',()):yield from matched_conditions(child)
+        matched=list(matched_conditions(self.dialogue.rule(category)['condition']))
+        for condition in matched:
+            key=condition_key(condition)
+            if condition['kind'] in EVENT_KINDS and self.context.get('_temporal',{}).get(key,{}).get('active'):
+                self.consumed_events[key]=self.context['_temporal'][key]['event']
+        replacements={}
+        for condition in matched:
+            if condition['kind']=='watched_file':
+                target=next((t for t in self.context_options.data['targets'] if t['id']==condition['target_id']),None)
+                if target:
+                    replacements={'target_name':target['label'],'target_open_count':str(self.context.get('_target_counts',{}).get(target['id'],0))}
+                    break
         return Notice("",
-                      self.phrase(category), expression=self.dialogue.rule(category)['expression'])
+                      self.phrase(category,replacements), expression=self.dialogue.rule(category)['expression'])
 
     def persist(self, now: datetime) -> None:
         # Keys are removed one day after the occurrence ends; cap corrupted files too.
@@ -253,7 +280,8 @@ class Engine:
                 or (self.paused_until and now < self.paused_until)):
             return None
         for rule in sorted(self.reminders.data['notifications'], key=lambda rule: rule['time']):
-            due = due_time(rule, now)
+            if self.context_options.error and rule['condition']['kind'] in ('month_end_business_day','monthly_business_day_before'):continue
+            due = due_time(rule, now, self.context_options.calendar())
             if due is None or self.custom_notified.get(rule['id']) == due.date().isoformat():
                 continue
             previous = self.custom_notified.get(rule['id'])
@@ -275,7 +303,7 @@ class Engine:
     def departure_notice(self, now, hidden=False, uptime_provider=lambda: None):
         if (not self.settings.departure_enabled or hidden or is_quiet(now, self.settings)
                 or (self.paused_until and now < self.paused_until)
-                or (self.settings.departure_weekdays and now.weekday() >= 5)
+                or (self.settings.departure_weekdays and (self.context_options.error or not self.context_options.calendar().is_business_day(now.date())))
                 or self.departure_date == now.date().isoformat()):
             return None
         hour, minute = map(int, self.settings.departure_time.split(':'))
@@ -323,9 +351,15 @@ class Engine:
         if options["suppress_during_meetings"] and connected and any(event.start <= now < event.end for event in events):
             return None  # Keep casual remarks out of calendar meeting time.
         if allow_chatter and self.settings.chatter and elapsed >= options["interval_minutes"] * 60:
+            previous=(self.last_display,self.session_spoken,self.last_category,dict(self.category_last),
+                      list(self.recent),dict(self.consumed_events))
             notice = self.conversation(now, events, connected, manual=False)
             if notice:
                 self.last_display = now
-                self.persist(now)
+                try:self.persist(now)
+                except OSError:
+                    (self.last_display,self.session_spoken,self.last_category,self.category_last,
+                     self.recent,self.consumed_events)=previous
+                    raise
             return notice
         return None

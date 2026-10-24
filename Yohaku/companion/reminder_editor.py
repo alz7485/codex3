@@ -13,8 +13,9 @@ from .ui import box, button, label
 class ReminderEditor(QMainWindow):
     saved = Signal()
 
-    def __init__(self, store):
+    def __init__(self, store, context_options=None):
         super().__init__()
+        self.context_options=context_options
         self.store = store
         self.draft = deepcopy(store.data)
         self.loading = False
@@ -96,7 +97,7 @@ class ReminderEditor(QMainWindow):
         split.addWidget(self.fields)
         split.setSizes([260, 540])
         layout.addWidget(split, 1)
-        layout.addWidget(label('平日は月〜金です。祝日・会社独自の休日は除外しません。通知は指定時刻から10分以内に1回。アプリ停止中・非表示・画面共有・おやすみ・静かな時間中は表示しません。', 'muted', True))
+        layout.addWidget(label('「平日」は月〜金、「営業日」は祝日・会社休日も除外します。通知は指定時刻から10分以内に1回。アプリ停止中・非表示・画面共有・おやすみ・静かな時間中は表示しません。', 'muted', True))
         row = QHBoxLayout()
         row.addWidget(button('変更を取り消す', self.revert))
         row.addStretch()
@@ -148,7 +149,7 @@ class ReminderEditor(QMainWindow):
             return
         kind = self.kind.currentData()
         condition = {'kind': kind}
-        if kind in ('monthly_day', 'monthly_weekday_before'):
+        if kind in ('monthly_day', 'monthly_weekday_before','monthly_business_day_before'):
             condition['day'] = self.day.value()
         if kind == 'weekly':
             condition['weekdays'] = [i for i, check in enumerate(self.weekdays) if check.isChecked()]
@@ -162,11 +163,13 @@ class ReminderEditor(QMainWindow):
 
     def update_preview(self, rule):
         kind = rule['condition']['kind']
-        self.day.setEnabled(kind in ('monthly_day', 'monthly_weekday_before'))
+        self.day.setEnabled(kind in ('monthly_day', 'monthly_weekday_before','monthly_business_day_before'))
         self.weekday_row.setEnabled(kind == 'weekly')
-        self.form.setRowVisible(self.day, kind in ('monthly_day', 'monthly_weekday_before'))
+        self.form.setRowVisible(self.day, kind in ('monthly_day', 'monthly_weekday_before','monthly_business_day_before'))
         self.form.setRowVisible(self.weekday_row, kind == 'weekly')
         descriptions = {
+            'month_end_business_day':'日本の祝日・会社休日・営業曜日を使い、月末から営業日まで繰り上げます。設定は「休日・対象ファイル・話題の表示」で変更できます。',
+            'monthly_business_day_before':'基準日を含め、それ以前の最後の営業日に通知します。祝日・会社休日も除外し、前月に繰り上がる場合があります。',
             'daily': '毎日、指定した時刻に通知します。',
             'weekly': '選択した曜日ごとに、指定した時刻に通知します。',
             'monthly_day': 'その月に指定日がない場合は月末日に通知します。土日も対象です。',
@@ -174,7 +177,9 @@ class ReminderEditor(QMainWindow):
             'monthly_weekday_before': '基準日が平日ならその日、土日なら直前の金曜に通知します。その月にない日は月末を基準にします。1日が土日なら前月に繰り上がります。',
         }
         self.description.setText(descriptions[kind])
-        upcoming = next_occurrence(rule, datetime.now().astimezone())
+        if kind in ('month_end_business_day','monthly_business_day_before') and self.context_options and self.context_options.error:
+            self.next_date.setText('営業日設定を読み込めないため、次回日付を計算できません。');return
+        upcoming = next_occurrence(rule, datetime.now().astimezone(),self.context_options.calendar() if self.context_options else None)
         if upcoming:
             suffix = '（現在は無効）' if not rule['enabled'] else ''
             self.next_date.setText(f'次回対象日：{upcoming:%Y/%m/%d}（{WEEKDAYS[upcoming.weekday()]}）{rule["time"]} {suffix}')

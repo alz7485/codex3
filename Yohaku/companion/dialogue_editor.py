@@ -28,9 +28,13 @@ def spin(minimum, maximum, suffix=''):
 class DialogueEditor(QMainWindow):
     saved = Signal()
 
-    def __init__(self, store):
+    def __init__(self, store, context_options=None):
         super().__init__()
         self.store = store
+        if context_options is None:
+            from .context_options import ContextOptionsStore
+            context_options=ContextOptionsStore(store.path.with_name('context_options.json'))
+        self.context_options=context_options
         self.loading = True
         self.dirty = False
         self.draft = deepcopy(store.data)
@@ -165,6 +169,14 @@ class DialogueEditor(QMainWindow):
         self.details = QPlainTextEdit()
         self.details.setMaximumHeight(170)
         self.details.setAccessibleName('AND ORの詳細条件JSON配列')
+        self.duration=spin(0,1440,' 分');self.event_window=spin(1,60,' 分');self.event_window.setValue(10)
+        self.idle_length=spin(1,1440,' 分');self.idle_length.setValue(30)
+        self.to_minimum,self.to_maximum=QDoubleSpinBox(),QDoubleSpinBox()
+        for field in (self.to_minimum,self.to_maximum):field.setRange(-43200,100000);field.setDecimals(3)
+        self.to_maximum.setValue(50);self.to_no_maximum=QCheckBox('変化後は上限なし')
+        self.target_selector=QComboBox();self.target_state=QComboBox()
+        for title,key in [('今日の記録にある','opened_today'),('今日の記録にない','not_opened_today'),('記録回数の範囲','count_range')]:self.target_state.addItem(title,key)
+        self.business_expected=QComboBox();self.business_expected.addItem('営業日',True);self.business_expected.addItem('休日',False)
         for title, widget in [('話題名', self.rule_label), ('有効・無効', self.rule_enabled), ('発生方法', self.rule_trigger),
                               ('表情', self.expression), ('出現しやすさ', self.weight), ('少し優先する（0〜5）', self.priority), ('同じ話題の間隔', self.cooldown),
                               ('発生条件', self.kind), ('集計値', self.metric_selector), ('集計値の下限', self.metric_minimum), ('集計値の上限', self.metric_maximum), ('詳細条件JSON配列', self.details), ('開始時刻', self.start_time), ('終了時刻', self.end_time),
@@ -172,6 +184,11 @@ class DialogueEditor(QMainWindow):
                               ('', self.no_maximum), ('', self.first_only)]:
             widget.setAccessibleName(title or widget.text())
             form.addRow(title, widget)
+        for title,widget in [('継続時間',self.duration),('変化後の下限',self.to_minimum),('変化後の上限',self.to_maximum),
+                ('',self.to_no_maximum),('操作なし時間',self.idle_length),('発生後に話せる期間',self.event_window),
+                ('対象ファイル・フォルダー',self.target_selector),('記録の状態',self.target_state),('営業日・休日',self.business_expected)]:
+            widget.setAccessibleName(title or widget.text());form.addRow(title,widget)
+        form.addRow(label('対象ファイルと会社休日は設定の「休日・対象ファイル・話題の表示」で登録します。履歴記録がオフなら対象ファイルの条件は成立しません。変化後の発言は1回だけで、未表示のまま期間を過ぎると見送ります。','muted',True))
         form.addRow(label('時間帯は開始を含み終了を含みません。同時刻なら終日。曜日と時刻はPCのローカル設定です。予定の前後はOutlook接続時だけ候補になります。', 'muted', True))
         form.addRow(label('出現しやすさは同じ優先度の候補内で使います。「呼びかけ」と「予定のお知らせ」は個別の操作・通知に対応します。', 'muted', True))
         scroll.setWidget(fields)
@@ -190,6 +207,19 @@ class DialogueEditor(QMainWindow):
         self.details.textChanged.connect(self.update_rule)
         self.start_time.timeChanged.connect(self.update_rule)
         self.end_time.timeChanged.connect(self.update_rule)
+        for field in (self.duration,self.event_window,self.idle_length,self.to_minimum,self.to_maximum):field.valueChanged.connect(self.update_rule)
+        self.to_no_maximum.toggled.connect(self.update_rule)
+        for field in (self.target_selector,self.target_state,self.business_expected):field.currentIndexChanged.connect(self.update_rule)
+
+    def refresh_targets(self):
+        old_loading=self.loading;self.loading=True
+        row=self.rule_list.currentRow()
+        key=self.draft['rules'][row]['condition'].get('target_id','') if row>=0 else ''
+        self.target_selector.clear();self.target_selector.addItem('対象を登録・選択してください','')
+        for target in self.context_options.data['targets']:self.target_selector.addItem(target['label'],target['id'])
+        if key and self.target_selector.findData(key)<0:self.target_selector.addItem('未登録の対象：'+key,key)
+        self.target_selector.setCurrentIndex(max(0,self.target_selector.findData(key)))
+        self.loading=old_loading
 
     def build_options(self):
         scroll = QScrollArea()
@@ -344,7 +374,14 @@ class DialogueEditor(QMainWindow):
         self.metric_selector.setCurrentIndex(max(0, self.metric_selector.findData(c.get('metric', 'idle_minutes'))))
         self.metric_minimum.setValue(c.get('minimum', 0))
         self.metric_maximum.setValue(c.get('maximum') or 0)
-        if c['kind'] == 'metric_range': self.no_maximum.setChecked(c.get('maximum') is None)
+        if c['kind'] in ('metric_range','metric_sustained','metric_transition','watched_file'): self.no_maximum.setChecked(c.get('maximum') is None)
+        self.duration.setValue(c.get('duration_minutes',0));self.event_window.setValue(c.get('window_minutes',10))
+        self.idle_length.setValue(c.get('idle_minutes',30))
+        self.to_minimum.setValue(c.get('to_minimum',0));self.to_maximum.setValue(c.get('to_maximum',50) or 0)
+        self.to_no_maximum.setChecked(c.get('to_maximum',50) is None)
+        self.refresh_targets()
+        self.target_state.setCurrentIndex(max(0,self.target_state.findData(c.get('state','opened_today'))))
+        self.business_expected.setCurrentIndex(0 if c.get('expected',True) else 1)
         children = c.get('conditions', [{'kind': 'metric_range', 'metric': 'idle_minutes', 'minimum': 5, 'maximum': None}])
         self.details.setPlainText(children if isinstance(children, str) else json.dumps(children, ensure_ascii=False, indent=2))
         self.remove_rule_button.setEnabled(r['trigger'] == 'auto' and r['id'] != 'chat')
@@ -365,16 +402,27 @@ class DialogueEditor(QMainWindow):
         ranged = automatic and kind in ('session_range', 'before_meeting', 'after_meeting')
         self.minimum.setEnabled(ranged)
         self.maximum.setEnabled(ranged and (kind != 'session_range' or not self.no_maximum.isChecked()))
-        self.no_maximum.setEnabled(automatic and kind in ('session_range', 'metric_range'))
+        metric_kind=kind in ('metric_range','metric_sustained','metric_transition')
+        self.rule_form.labelForField(self.metric_minimum).setText('変化前の下限' if kind=='metric_transition' else '記録回数の下限' if kind=='watched_file' else '集計値の下限')
+        self.rule_form.labelForField(self.metric_maximum).setText('変化前の上限' if kind=='metric_transition' else '記録回数の上限' if kind=='watched_file' else '集計値の上限')
+        count_kind=kind=='watched_file' and self.target_state.currentData()=='count_range'
+        self.no_maximum.setEnabled(automatic and (kind=='session_range' or metric_kind or count_kind))
         self.metric_maximum.setEnabled(not self.no_maximum.isChecked())
         self.first_only.setEnabled(automatic and kind == 'session_range')
         for widget, visible in [(self.weight, automatic), (self.priority, automatic), (self.cooldown, automatic), (self.kind, automatic),
                 (self.start_time, automatic and kind == 'time_range'), (self.end_time, automatic and kind == 'time_range'),
                 (self.day_row, automatic and kind == 'weekday'), (self.minimum, ranged), (self.maximum, ranged),
-                (self.no_maximum, automatic and kind in ('session_range', 'metric_range')),
-                (self.metric_selector, automatic and kind == 'metric_range'), (self.metric_minimum, automatic and kind == 'metric_range'),
-                (self.metric_maximum, automatic and kind == 'metric_range'), (self.details, automatic and kind in ('all', 'any')), (self.first_only, automatic and kind == 'session_range')]:
+                (self.no_maximum, automatic and (kind=='session_range' or metric_kind or count_kind)),
+                (self.metric_selector, automatic and metric_kind), (self.metric_minimum, automatic and (metric_kind or count_kind)),
+                (self.metric_maximum, automatic and (metric_kind or count_kind)), (self.details, automatic and kind in ('all', 'any')), (self.first_only, automatic and kind == 'session_range'),
+                (self.duration,automatic and kind in ('metric_sustained','metric_transition')),
+                (self.to_minimum,automatic and kind=='metric_transition'),(self.to_maximum,automatic and kind=='metric_transition'),
+                (self.to_no_maximum,automatic and kind=='metric_transition'),(self.idle_length,automatic and kind=='idle_return'),
+                (self.event_window,automatic and kind in ('metric_transition','idle_return')),
+                (self.target_selector,automatic and kind=='watched_file'),(self.target_state,automatic and kind=='watched_file'),
+                (self.business_expected,automatic and kind=='business_day')]:
             self.rule_form.setRowVisible(widget, visible)
+        self.to_maximum.setEnabled(not self.to_no_maximum.isChecked())
 
     def update_rule(self, *_):
         row = self.rule_list.currentRow()
@@ -382,9 +430,14 @@ class DialogueEditor(QMainWindow):
             return
         r = self.draft['rules'][row]
         c = {'kind': self.kind.currentData()}
-        if c['kind'] == 'metric_range':
+        if c['kind'] in ('metric_range','metric_sustained','metric_transition'):
             c.update(metric=self.metric_selector.currentData(), minimum=self.metric_minimum.value(),
                      maximum=None if self.no_maximum.isChecked() else self.metric_maximum.value())
+            if c['kind'] in ('metric_sustained','metric_transition'):c['duration_minutes']=self.duration.value()
+            if c['kind']=='metric_transition':c.update(to_minimum=self.to_minimum.value(),to_maximum=None if self.to_no_maximum.isChecked() else self.to_maximum.value(),window_minutes=self.event_window.value())
+        elif c['kind']=='idle_return':c.update(idle_minutes=self.idle_length.value(),window_minutes=self.event_window.value())
+        elif c['kind']=='watched_file':c.update(target_id=self.target_selector.currentData() or '',state=self.target_state.currentData(),minimum=int(self.metric_minimum.value()),maximum=None if self.no_maximum.isChecked() else int(self.metric_maximum.value()))
+        elif c['kind']=='business_day':c['expected']=self.business_expected.currentData()
         elif c['kind'] in ('all', 'any'):
             text = self.details.toPlainText()
             try:

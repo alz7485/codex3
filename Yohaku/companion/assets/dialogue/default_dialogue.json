@@ -165,7 +165,7 @@
         "このあとの時間指定の予定はありません。"
       ],
       "activity_open": [
-        "履歴を開きました。\n日付を選んで、振り返ってみましょう。"
+        "今日のファイル起動履歴は、こちらです。"
       ],
       "settings_open": [
         "設定を開きますね。"
@@ -292,6 +292,46 @@
         "メモリ使用率は約{memory_percent}%。PCの作業机には、まだ余裕がありますね。",
         "メモリは約{memory_percent}%使用中。空きがあるのは、よいことです。",
         "いまのメモリ使用率は約{memory_percent}%。余白、こちらにもありました。"
+      ],
+      "cpu_recovered": [
+        "CPUは約{cpu_percent}%まで落ち着きました。ひと息つけそうですね。",
+        "CPUの忙しさが和らぎ、いまは約{cpu_percent}%です。"
+      ],
+      "memory_recovered": [
+        "メモリ使用率は約{memory_percent}%。空きに余裕が戻ってきましたね。",
+        "メモリは約{memory_percent}%まで下がりました。少し落ち着いたようです。"
+      ],
+      "idle_returned": [
+        "おかえりなさい。少し長めに席を離れていましたね。",
+        "また操作がありましたね。おかえりなさい。"
+      ],
+      "meetings_long": [
+        "今日の会議は重複を除いて約{daily_meeting_minutes}分です。休める時間も大切に。",
+        "今日は会議が約{daily_meeting_minutes}分あります。合間にひと呼吸どうぞ。"
+      ],
+      "meetings_consecutive": [
+        "現在または次のまとまりで、会議が{consecutive_meetings}件続いています。飲み物の準備はいかがですか。",
+        "会議が{consecutive_meetings}件まとまっていますね。合間に少し肩を休めましょう。"
+      ],
+      "meeting_short_break": [
+        "次の会議前に取れる休憩は約{next_meeting_gap_minutes}分です。少しでもひと息どうぞ。",
+        "会議が続き、次の予定までの休憩は約{next_meeting_gap_minutes}分です。無理のないペースで。"
+      ],
+      "battery_low": [
+        "バッテリーは残り約{battery_percent}%で、電源にはつながっていません。充電できる場所はありますか。",
+        "バッテリー残量は約{battery_percent}%です。作業を保存して、電源の確認をどうぞ。"
+      ],
+      "power_connected": [
+        "電源につながりました。バッテリーの心配が少し減りますね。",
+        "電源につながりました。PCにも、補給の時間は必要ですね。"
+      ],
+      "target_unopened": [
+        "「{target_name}」は、今日の記録にはまだありません。必要な作業があるか確認してみますか。",
+        "登録した「{target_name}」は、今日の履歴では見つかっていません。記録できなかった場合もあります。"
+      ],
+      "target_reopened": [
+        "「{target_name}」に一致する記録が、今日は{target_open_count}回あります。よく使う資料なのですね。",
+        "登録した「{target_name}」は、今日{target_open_count}回の記録があります。作業の区切りに、保存の確認もどうぞ。"
       ]
     },
     "冷静な案内役": {
@@ -436,7 +476,7 @@
         "このあとの時間指定の予定はありません。"
       ],
       "activity_open": [
-        "ファイル履歴を表示しました。\nカレンダーから日付を選んでください。"
+        "今日記録したファイルは、以下のとおりです。"
       ],
       "settings_open": [
         "設定画面を表示します。"
@@ -563,6 +603,46 @@
         "メモリ使用率は約{memory_percent}%です。空き容量に余裕があります。",
         "PC全体のメモリを約{memory_percent}%使用中です。使用率は低めです。",
         "メモリ使用率は約{memory_percent}%で、空きには余裕があります。"
+      ],
+      "cpu_recovered": [
+        "CPU使用率は約{cpu_percent}%まで低下しました。高負荷からの回復を確認しました。",
+        "CPUの平均使用率は約{cpu_percent}%です。高負荷の状態から落ち着いています。"
+      ],
+      "memory_recovered": [
+        "メモリ使用率は約{memory_percent}%まで低下しました。空きの回復を確認しました。",
+        "メモリ使用率は約{memory_percent}%です。高使用率の状態から低下しています。"
+      ],
+      "idle_returned": [
+        "操作の再開を確認しました。おかえりなさい。",
+        "長めの操作なし時間のあと、入力がありました。おかえりなさい。"
+      ],
+      "meetings_long": [
+        "今日の会議時間は、重複を除いて約{daily_meeting_minutes}分です。休憩時間の確保をおすすめします。",
+        "今日の会議は合計約{daily_meeting_minutes}分です。重複時間は差し引いています。"
+      ],
+      "meetings_consecutive": [
+        "現在または次のまとまりで、会議が{consecutive_meetings}件続いています。合間の時間を確認してください。",
+        "連続する会議は{consecutive_meetings}件です。必要な資料や飲み物を先に準備できます。"
+      ],
+      "meeting_short_break": [
+        "次の会議前に取れる休憩は約{next_meeting_gap_minutes}分です。会議が続く予定です。",
+        "会議が連続しています。次の会議前の空き時間は約{next_meeting_gap_minutes}分です。"
+      ],
+      "battery_low": [
+        "バッテリー残量は約{battery_percent}%で、AC電源は未接続です。保存と電源の確認をおすすめします。",
+        "バッテリー残量は約{battery_percent}%です。AC電源につながっていません。"
+      ],
+      "power_connected": [
+        "AC電源の接続を確認しました。",
+        "AC電源が未接続から接続状態になりました。"
+      ],
+      "target_unopened": [
+        "登録した「{target_name}」に一致する今日の記録はありません。未記録の場合もあるため、必要なら確認してください。",
+        "「{target_name}」は今日のファイル履歴では見つかりません。実際の未使用を断定する情報ではありません。"
+      ],
+      "target_reopened": [
+        "登録した「{target_name}」に一致する記録は、今日{target_open_count}回です。",
+        "今日の履歴では「{target_name}」の記録が{target_open_count}回あります。"
       ]
     },
     "元気な応援係": {
@@ -707,7 +787,7 @@
         "このあとの時間指定の予定はないようです。"
       ],
       "activity_open": [
-        "履歴を開きました！\n日付を選んで確認しましょう。"
+        "今日のファイル起動履歴はこちらです！"
       ],
       "settings_open": [
         "設定を開きます！"
@@ -834,6 +914,46 @@
         "メモリ使用率は約{memory_percent}%です。まだ余裕がありますね！",
         "メモリは約{memory_percent}%使用中です。作業場所に余白があると、少し安心しますね。",
         "いまのメモリ使用率は約{memory_percent}%。空きには余裕があるようです！"
+      ],
+      "cpu_recovered": [
+        "CPUは約{cpu_percent}%まで落ち着きました。ひと息つけそうですね。",
+        "CPUの忙しさが和らぎ、いまは約{cpu_percent}%です。"
+      ],
+      "memory_recovered": [
+        "メモリ使用率は約{memory_percent}%。空きに余裕が戻ってきましたね。",
+        "メモリは約{memory_percent}%まで下がりました。少し落ち着いたようです。"
+      ],
+      "idle_returned": [
+        "おかえりなさい！少し長めに席を離れていましたね。",
+        "また操作がありましたね。おかえりなさい！"
+      ],
+      "meetings_long": [
+        "今日の会議は重複を除いて約{daily_meeting_minutes}分です。休める時間も大切に。",
+        "今日は会議が約{daily_meeting_minutes}分あります。合間にひと呼吸どうぞ！"
+      ],
+      "meetings_consecutive": [
+        "現在または次のまとまりで、会議が{consecutive_meetings}件続いています。飲み物の準備はいかがですか。",
+        "会議が{consecutive_meetings}件まとまっていますね。合間に少し肩を休めましょう。"
+      ],
+      "meeting_short_break": [
+        "次の会議前に取れる休憩は約{next_meeting_gap_minutes}分です。少しでもひと息どうぞ！",
+        "会議が続き、次の予定までの休憩は約{next_meeting_gap_minutes}分です。無理のないペースで。"
+      ],
+      "battery_low": [
+        "バッテリーは残り約{battery_percent}%で、電源にはつながっていません。充電できる場所はありますか。",
+        "バッテリー残量は約{battery_percent}%です。作業を保存して、電源の確認をどうぞ！"
+      ],
+      "power_connected": [
+        "電源につながりました。バッテリーの心配が少し減りますね。",
+        "電源の接続を確認しました。作業の続きも、落ち着いてどうぞ！"
+      ],
+      "target_unopened": [
+        "「{target_name}」は、今日の記録にはまだありません。必要な作業があるか確認してみますか。",
+        "登録した「{target_name}」は、今日の履歴では見つかっていません。記録できなかった場合もあります。"
+      ],
+      "target_reopened": [
+        "「{target_name}」に一致する記録が、今日は{target_open_count}回あります。よく使う資料なのですね。",
+        "登録した「{target_name}」は、今日{target_open_count}回の記録があります。作業の区切りに、保存の確認もどうぞ！"
       ]
     },
     "のんびりした同僚": {
@@ -978,7 +1098,7 @@
         "このあとの時間指定の予定はないみたいです。"
       ],
       "activity_open": [
-        "履歴を開いたよ。\n見たい日を選んでみてね。"
+        "今日開いたファイルの記録は、こんな感じだよ。"
       ],
       "settings_open": [
         "設定を開くね。"
@@ -1105,6 +1225,46 @@
         "メモリ使用率は約{memory_percent}%。まだ余白があるね。お茶を置く場所もありそう。",
         "メモリは約{memory_percent}%使用中だよ。空きには余裕があるみたい。",
         "いまのメモリ使用率は約{memory_percent}%。PCの中も、ゆったりしてるね。"
+      ],
+      "cpu_recovered": [
+        "CPUは約{cpu_percent}%まで落ち着きました。ひと息つけそうだね。",
+        "CPUの忙しさが和らぎ、いまは約{cpu_percent}%です。"
+      ],
+      "memory_recovered": [
+        "メモリ使用率は約{memory_percent}%。空きに余裕が戻ってきましたね。",
+        "メモリは約{memory_percent}%まで下がりました。少し落ち着いたようです。"
+      ],
+      "idle_returned": [
+        "おかえり。しばらくPCから離れてたみたいだね。お茶でもどう？",
+        "また操作があったね。おかえり。続きはゆっくりどうぞ。"
+      ],
+      "meetings_long": [
+        "今日の会議は重複を除いて約{daily_meeting_minutes}分です。休める時間も大切に。",
+        "今日は会議が約{daily_meeting_minutes}分あります。合間にひと呼吸どう？"
+      ],
+      "meetings_consecutive": [
+        "現在または次のまとまりで、会議が{consecutive_meetings}件続いています。飲み物の準備はいかがですか。",
+        "会議が{consecutive_meetings}件まとまっていますね。合間に少し肩を休めましょう。"
+      ],
+      "meeting_short_break": [
+        "次の会議前に取れる休憩は約{next_meeting_gap_minutes}分です。少しでもひと息どう？",
+        "会議が続き、次の予定までの休憩は約{next_meeting_gap_minutes}分です。無理のないペースで。"
+      ],
+      "battery_low": [
+        "バッテリーは残り約{battery_percent}%で、電源にはつながっていません。充電できる場所はありますか。",
+        "バッテリー残量は約{battery_percent}%です。作業を保存して、電源の確認をどう？"
+      ],
+      "power_connected": [
+        "電源につながりました。バッテリーの心配が少し減りますね。",
+        "電源の接続を確認しました。作業の続きも、落ち着いてどう？"
+      ],
+      "target_unopened": [
+        "「{target_name}」は、今日の記録にはまだありません。必要な作業があるか確認してみますか。",
+        "登録した「{target_name}」は、今日の履歴では見つかっていません。記録できなかった場合もあります。"
+      ],
+      "target_reopened": [
+        "「{target_name}」に一致する記録が、今日は{target_open_count}回あります。よく使う資料なのだね。",
+        "登録した「{target_name}」は、今日{target_open_count}回の記録があります。作業の区切りに、保存の確認もどう？"
       ]
     }
   },
@@ -1632,14 +1792,8 @@
         "kind": "all",
         "conditions": [
           {
-            "kind": "weekday",
-            "days": [
-              0,
-              1,
-              2,
-              3,
-              4
-            ]
+            "kind": "business_day",
+            "expected": true
           },
           {
             "kind": "metric_range",
@@ -1662,14 +1816,8 @@
         "kind": "all",
         "conditions": [
           {
-            "kind": "weekday",
-            "days": [
-              0,
-              1,
-              2,
-              3,
-              4
-            ]
+            "kind": "business_day",
+            "expected": true
           },
           {
             "kind": "metric_range",
@@ -1692,14 +1840,8 @@
         "kind": "all",
         "conditions": [
           {
-            "kind": "weekday",
-            "days": [
-              0,
-              1,
-              2,
-              3,
-              4
-            ]
+            "kind": "business_day",
+            "expected": true
           },
           {
             "kind": "metric_range",
@@ -1722,14 +1864,8 @@
         "kind": "all",
         "conditions": [
           {
-            "kind": "weekday",
-            "days": [
-              0,
-              1,
-              2,
-              3,
-              4
-            ]
+            "kind": "business_day",
+            "expected": true
           },
           {
             "kind": "metric_range",
@@ -1891,10 +2027,11 @@
       "enabled": true,
       "trigger": "auto",
       "condition": {
-        "kind": "metric_range",
+        "kind": "metric_sustained",
         "metric": "cpu_percent",
         "minimum": 80,
-        "maximum": 100
+        "maximum": 100,
+        "duration_minutes": 3
       },
       "expression": "think",
       "weight": 2,
@@ -1921,10 +2058,11 @@
       "enabled": true,
       "trigger": "auto",
       "condition": {
-        "kind": "metric_range",
+        "kind": "metric_sustained",
         "metric": "memory_percent",
         "minimum": 85,
-        "maximum": 100
+        "maximum": 100,
+        "duration_minutes": 5
       },
       "expression": "think",
       "weight": 2,
@@ -1944,6 +2082,191 @@
       "expression": "relaxed",
       "weight": 1,
       "cooldown_minutes": 120
+    },
+    {
+      "id": "cpu_recovered",
+      "label": "CPUの負荷が落ち着いた",
+      "enabled": true,
+      "trigger": "auto",
+      "condition": {
+        "kind": "metric_transition",
+        "metric": "cpu_percent",
+        "minimum": 80,
+        "maximum": 100,
+        "to_minimum": 0,
+        "to_maximum": 50,
+        "duration_minutes": 3,
+        "window_minutes": 10
+      },
+      "expression": "relaxed",
+      "weight": 1,
+      "cooldown_minutes": 60
+    },
+    {
+      "id": "memory_recovered",
+      "label": "メモリに余裕が戻った",
+      "enabled": true,
+      "trigger": "auto",
+      "condition": {
+        "kind": "metric_transition",
+        "metric": "memory_percent",
+        "minimum": 85,
+        "maximum": 100,
+        "to_minimum": 0,
+        "to_maximum": 70,
+        "duration_minutes": 5,
+        "window_minutes": 10
+      },
+      "expression": "relaxed",
+      "weight": 1,
+      "cooldown_minutes": 60
+    },
+    {
+      "id": "idle_returned",
+      "label": "操作なしから戻った",
+      "enabled": true,
+      "trigger": "auto",
+      "condition": {
+        "kind": "idle_return",
+        "idle_minutes": 30,
+        "window_minutes": 10
+      },
+      "expression": "greet",
+      "weight": 1,
+      "cooldown_minutes": 60
+    },
+    {
+      "id": "meetings_long",
+      "label": "今日の会議時間が長い",
+      "enabled": true,
+      "trigger": "auto",
+      "condition": {
+        "kind": "metric_range",
+        "metric": "daily_meeting_minutes",
+        "minimum": 240,
+        "maximum": null
+      },
+      "expression": "concern",
+      "weight": 1,
+      "cooldown_minutes": 60
+    },
+    {
+      "id": "meetings_consecutive",
+      "label": "会議が続いている",
+      "enabled": true,
+      "trigger": "auto",
+      "condition": {
+        "kind": "metric_range",
+        "metric": "consecutive_meetings",
+        "minimum": 3,
+        "maximum": null
+      },
+      "expression": "think",
+      "weight": 1,
+      "cooldown_minutes": 60
+    },
+    {
+      "id": "meeting_short_break",
+      "label": "会議前の休憩が短い",
+      "enabled": true,
+      "trigger": "auto",
+      "condition": {
+        "kind": "all",
+        "conditions": [
+          {
+            "kind": "metric_range",
+            "metric": "consecutive_meetings",
+            "minimum": 2,
+            "maximum": null
+          },
+          {
+            "kind": "metric_range",
+            "metric": "next_meeting_gap_minutes",
+            "minimum": 0,
+            "maximum": 9
+          }
+        ]
+      },
+      "expression": "concern",
+      "weight": 2,
+      "cooldown_minutes": 60
+    },
+    {
+      "id": "battery_low",
+      "label": "バッテリーが少ない",
+      "enabled": true,
+      "trigger": "auto",
+      "condition": {
+        "kind": "all",
+        "conditions": [
+          {
+            "kind": "metric_range",
+            "metric": "battery_percent",
+            "minimum": 0,
+            "maximum": 20
+          },
+          {
+            "kind": "metric_range",
+            "metric": "ac_connected",
+            "minimum": 0,
+            "maximum": 0
+          }
+        ]
+      },
+      "expression": "notice",
+      "weight": 2,
+      "cooldown_minutes": 60
+    },
+    {
+      "id": "power_connected",
+      "label": "電源を接続した",
+      "enabled": true,
+      "trigger": "auto",
+      "condition": {
+        "kind": "metric_transition",
+        "metric": "ac_connected",
+        "minimum": 0,
+        "maximum": 0,
+        "to_minimum": 1,
+        "to_maximum": 1,
+        "duration_minutes": 0,
+        "window_minutes": 10
+      },
+      "expression": "happy",
+      "weight": 1,
+      "cooldown_minutes": 60
+    },
+    {
+      "id": "target_unopened",
+      "label": "対象が今日の履歴にない",
+      "enabled": false,
+      "trigger": "auto",
+      "condition": {
+        "kind": "watched_file",
+        "target_id": "",
+        "state": "not_opened_today",
+        "minimum": 0,
+        "maximum": null
+      },
+      "expression": "think",
+      "weight": 1,
+      "cooldown_minutes": 60
+    },
+    {
+      "id": "target_reopened",
+      "label": "対象を何度も開いている",
+      "enabled": false,
+      "trigger": "auto",
+      "condition": {
+        "kind": "watched_file",
+        "target_id": "",
+        "state": "count_range",
+        "minimum": 3,
+        "maximum": null
+      },
+      "expression": "curious",
+      "weight": 1,
+      "cooldown_minutes": 60
     }
   ],
   "options": {
@@ -1969,5 +2292,7 @@
   "click_reactions_version": 1,
   "anonymous_mail_version": 1,
   "naming_version": 1,
-  "resource_context_version": 1
+  "resource_context_version": 1,
+  "advanced_context_version": 1,
+  "conversation_flow_version": 1
 }

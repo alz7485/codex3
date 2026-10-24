@@ -14,6 +14,8 @@ KINDS = {
     'monthly_day': '毎月・日付を指定',
     'month_end_weekday': '月末の最終平日',
     'monthly_weekday_before': '毎月○日までの最終平日',
+    'month_end_business_day':'月末の最終営業日（祝日・会社休日を除く）',
+    'monthly_business_day_before':'毎月○日までの最終営業日',
 }
 WEEKDAYS = ('月', '火', '水', '木', '金', '土', '日')
 WINDOW_SECONDS = 600
@@ -55,7 +57,7 @@ def validate(document):
                 or condition['kind'] not in KINDS):
             raise ReminderError('通知条件を選んでください。')
         kind = condition['kind']
-        if kind in ('monthly_day', 'monthly_weekday_before'):
+        if kind in ('monthly_day', 'monthly_weekday_before','monthly_business_day_before'):
             if type(condition.get('day')) is not int or not 1 <= condition['day'] <= 31:
                 raise ReminderError('毎月の日付は1〜31日で指定してください。')
         if kind == 'weekly':
@@ -66,18 +68,26 @@ def validate(document):
     return deepcopy(document)
 
 
-def monthly_date(year, month, condition):
+def monthly_date(year, month, condition, business_calendar=None):
     """Clamp an absent day to month end, then move backwards over weekends."""
     last = calendar.monthrange(year, month)[1]
     kind = condition['kind']
-    target = date(year, month, last if kind == 'month_end_weekday' else min(condition['day'], last))
+    target = date(year, month, last if kind in ('month_end_weekday','month_end_business_day') else min(condition['day'], last))
+    if kind in ('month_end_business_day','monthly_business_day_before'):
+        if business_calendar is None:
+            from .business_calendar import BusinessCalendar
+            business_calendar=BusinessCalendar()
+        for _ in range(370):
+            if business_calendar.is_business_day(target): return target
+            target-=timedelta(days=1)
+        return None
     if kind in ('month_end_weekday', 'monthly_weekday_before'):
         while target.weekday() >= 5:
             target -= timedelta(days=1)
     return target
 
 
-def matches_date(day, condition):
+def matches_date(day, condition, business_calendar=None):
     kind = condition['kind']
     if kind == 'daily':
         return True
@@ -85,26 +95,29 @@ def matches_date(day, condition):
         return day.weekday() in condition['weekdays']
     # With a cutoff of the 1st, the last weekday may be in the previous month.
     candidates = [(day.year, day.month)]
-    if kind == 'monthly_weekday_before':
+    if kind in ('month_end_business_day','monthly_business_day_before'):
+        month=day.year*12+day.month-1
+        candidates=[(n//12,n%12+1) for n in range(month,month+14)]
+    if kind in ('monthly_weekday_before','monthly_business_day_before'):
         candidates.append((day.year + (day.month == 12), day.month % 12 + 1))
-    return any(day == monthly_date(year, month, condition) for year, month in candidates)
+    return any(day == monthly_date(year, month, condition, business_calendar) for year, month in candidates)
 
 
-def due_time(rule, now):
-    if not rule['enabled'] or not matches_date(now.date(), rule['condition']):
+def due_time(rule, now, business_calendar=None):
+    if not rule['enabled'] or not matches_date(now.date(), rule['condition'],business_calendar):
         return None
     hour, minute = map(int, rule['time'].split(':'))
     due = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
     return due if 0 <= (now - due).total_seconds() < WINDOW_SECONDS else None
 
 
-def next_occurrence(rule, now):
+def next_occurrence(rule, now, business_calendar=None):
     """The next calendar occurrence, independent of delivery/quiet-hour state."""
     hour, minute = map(int, rule['time'].split(':'))
     for offset in range(370):
         candidate = now + timedelta(days=offset)
         candidate = candidate.replace(hour=hour, minute=minute, second=0, microsecond=0)
-        if candidate >= now and matches_date(candidate.date(), rule['condition']):
+        if candidate >= now and matches_date(candidate.date(), rule['condition'],business_calendar):
             return candidate
     return None
 

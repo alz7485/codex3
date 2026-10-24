@@ -26,6 +26,22 @@ class _MemoryStatus(ctypes.Structure):
                    'total_virtual', 'available_virtual', 'available_extended')]]
 
 
+def system_power_metrics():
+    values={'battery_percent':None,'ac_connected':None,'battery_charging':None}
+    if sys.platform!='win32': return values
+    class PowerStatus(ctypes.Structure):
+        _fields_=[('ac',ctypes.c_ubyte),('flags',ctypes.c_ubyte),('percent',ctypes.c_ubyte),
+                  ('reserved',ctypes.c_ubyte),('life',ctypes.c_uint32),('full',ctypes.c_uint32)]
+    status=PowerStatus()
+    read=ctypes.windll.kernel32.GetSystemPowerStatus
+    read.argtypes=[ctypes.POINTER(PowerStatus)]; read.restype=wintypes.BOOL
+    if not read(ctypes.byref(status)) or status.flags==255 or status.flags&128: return values
+    if status.percent<=100: values['battery_percent']=status.percent
+    if status.ac in (0,1): values['ac_connected']=status.ac
+    values['battery_charging']=int(bool(status.flags&8))
+    return values
+
+
 def system_cpu_times():
     """Cumulative Windows idle/kernel/user times; kernel already includes idle."""
     if sys.platform != 'win32':

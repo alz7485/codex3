@@ -61,12 +61,12 @@ def main(export_gif=False):
         text(x, 186, caption, 17, True)
         painter.drawPixmap(x, 210, bubbles[i].grab())
         painter.drawPixmap(x + 228, 216 + bubbles[i].height(), mascot.grab())
-    text(65, 815, '04  ファイル起動履歴を見る → 専用の画面へ', 20, True)
+    text(65, 815, '04  履歴の吹き出し → 管理画面を開く', 20, True)
     painter.drawPixmap(65, 840, history.grab())
     text(1060, 905, 'ファイル履歴', 21, True)
     text(1060, 949, 'カレンダーで日付を選択。', 14)
     text(1060, 980, 'ファイル名と保存先を一覧で。', 14)
-    text(1060, 1035, '吹き出しの5択から開きます。', 13)
+    text(1060, 1035, '履歴の管理ボタンから開きます。', 13)
     text(1060, 1066, '記録の設定も、この画面から。', 13)
     text(65, 1445, '実装画面によるプレビュー / 予定とファイル履歴は合成データです。Windows実機では未検証です。', 13, color='#65786a')
     painter.end()
@@ -87,7 +87,7 @@ def main(export_gif=False):
     if export_gif and shutil.which('ffmpeg'):
         with tempfile.TemporaryDirectory(prefix='yohaku-speech-') as tmp:
             bubble = bubbles[0]
-            for index in range(90):
+            for index in range(110):
                 if index < 25:
                     bubble.open_choices('お呼びですか？', 'つづり')
                     caption = '右クリックで呼び出し＋5択。'
@@ -97,9 +97,12 @@ def main(export_gif=False):
                 elif index < 70:
                     bubble.content('calendar', 'つづり', 'このあとの予定はこちらです。\n\n14:00–14:30  [未承諾] 予定あり\n15:00–15:30  予定あり')
                     caption = '予定も、同じ吹き出しで。'
+                elif index < 95:
+                    bubble.show_file_history('今日のファイル起動履歴は、こちらです。', [(name,path) for name,path,*_ in rows])
+                    caption = '履歴も吹き出しから。ファイル名を押すと開きます。'
                 else:
                     bubble.hide()
-                    caption = '履歴だけ、専用の画面が開きます。'
+                    caption = '管理画面を開くと、検索や日付選択が使えます。'
                 mascot.frame_index = 1 if index % 45 in (40, 41) else (2 if index < 50 else 0)
                 app.processEvents()
                 canvas = QPixmap(960, 820)
@@ -108,10 +111,10 @@ def main(export_gif=False):
                 painter.setRenderHint(QPainter.RenderHint.Antialiasing)
                 text(40, 46, f'Yohaku  /  v{VERSION}', 12, True)
                 text(40, 95, caption, 25, True)
-                if index < 70:
+                if index < 95:
                     painter.drawPixmap(580, 163, bubble.grab())
                 painter.drawPixmap(805, 169 + bubble.height(), mascot.grab())
-                if index >= 70:
+                if index >= 95:
                     text(40, 170, 'ファイル履歴の専用ウィンドウ', 16, True)
                     painter.drawPixmap(40, 190, history.grab().scaled(510, 320, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
                 else:

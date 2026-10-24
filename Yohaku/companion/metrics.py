@@ -12,4 +12,9 @@ METRICS = {
     'unread_mail_count': 'Outlook受信トレイの未読メール数',
     'cpu_percent': 'CPU使用率（直近約1分の平均・%）',
     'memory_percent': 'メモリ使用率（PC全体・%）',
+    'battery_percent': 'バッテリー残量（%）', 'ac_connected': 'AC接続（1=接続、0=未接続）',
+    'battery_charging': 'バッテリー充電中（1=はい）',
+    'daily_meeting_minutes': '今日の会議の合計時間（分・重複を除く）',
+    'consecutive_meetings': '現在または次の連続会議の件数',
+    'next_meeting_gap_minutes': '次の会議前に取れる休憩（分）',
 }

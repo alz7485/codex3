@@ -13,7 +13,7 @@ from companion.core import CHARACTERS, PHRASES, Event, Notice, Settings
 from companion.activity import FileObservation
 from companion.dialogue import voice_for
 from companion.ui import Controller, Panel, Resident, blend_frames, character_frames, character_pixmap, create_application
-from PySide6.QtCore import QEvent, QPoint, QPointF, QRect, QDate, Qt
+from PySide6.QtCore import QEvent, QPoint, QPointF, QRect, QDate, Qt, QUrl
 from PySide6.QtGui import QColor, QMouseEvent, QPixmap
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QPushButton, QTableView
@@ -708,7 +708,7 @@ class UserInterfaceTests(unittest.TestCase):
     def test_app_has_brand_name_version_and_windows_icon(self):
         c = self.controller
         self.assertEqual(self.app.applicationDisplayName(), "Yohaku")
-        self.assertEqual(self.app.applicationVersion(), "0.15.0")
+        self.assertEqual(self.app.applicationVersion(), "0.16.0")
         self.assertFalse(c.brand_icon.isNull())
         self.assertEqual(c.panel.windowIcon().cacheKey(), c.brand_icon.cacheKey())
         c.panel.character_buttons["B"].click()
@@ -742,9 +742,11 @@ class UserInterfaceTests(unittest.TestCase):
             self.assertFalse(c.history_window.isVisible())
             c.open_choices()
             c.interaction.buttons["activity"].click()
+            self.assertFalse(c.history_window.isVisible())
+            c.bubble.detail_action.click()
             self.assertTrue(c.history_window.isVisible())
             self.assertIn("記録オフ", c.history_window.status.text())
-            self.assertNotIn("記録オフ", c.bubble.text.text())
+            self.assertFalse(c.bubble.isVisible())
             c.resident.clicked.emit()
             first = c.interaction.text.text()
             c.resident.clicked.emit()
@@ -781,7 +783,7 @@ class UserInterfaceTests(unittest.TestCase):
             c.activity_received(generation, [document], "")
             self.assertEqual(c.activity_history.for_day(now.astimezone().date(), now)[0][0], "予算.xlsx")
             c.open_choices()
-            c.select_content("activity")
+            c.select_content("activity_manager")
             self.assertEqual(c.history_window.table.topLevelItem(0).text(1), "予算.xlsx")
             self.assertEqual(c.history_window.table.topLevelItem(0).text(2), "C:\\work\\予算.xlsx")
             self.assertNotIn("予算.xlsx", c.bubble.text.text())
@@ -809,7 +811,7 @@ class UserInterfaceTests(unittest.TestCase):
             c.activity_history.append([FileObservation("C:\\today.xlsx", "今日.xlsx", "Excel", now),
                                        FileObservation("C:\\yesterday.xlsx", "昨日.xlsx", "Excel", previous)], now)
             c.open_choices()
-            c.select_content("activity")
+            c.select_content("activity_manager")
             self.assertTrue(c.history_window.calendar.isVisible())
             self.assertEqual(c.history_window.table.topLevelItem(0).text(1), "今日.xlsx")
             c.history_window.calendar.setSelectedDate(c.history_window.calendar.selectedDate().addDays(-1))
@@ -827,13 +829,13 @@ class UserInterfaceTests(unittest.TestCase):
     def test_screen_sharing_hides_dedicated_history_and_usual_bubble(self):
         c = self.controller
         c.open_choices()
-        c.select_content("activity")
+        c.select_content("activity_manager")
         self.assertTrue(c.history_window.isVisible())
         c.share()
         try:
             self.assertFalse(c.bubble.isVisible())
             self.assertFalse(c.history_window.isVisible())
-            c.select_content("activity")
+            c.select_content("activity_manager")
             self.assertFalse(c.history_window.isVisible())
         finally:
             c.share()
@@ -951,7 +953,8 @@ class UserInterfaceTests(unittest.TestCase):
             self.assertTrue(c.bubble.isVisible())
             self.assertEqual(c.bubble.kind, 'calendar')
             self.assertEqual(c.bubble.current, 'calendar')
-            self.assertFalse(c.bubble.interactive)
+            self.assertTrue(c.bubble.interactive)
+            self.assertEqual(c.bubble.detail_action.text(), 'Outlookの予定を開く')
             self.assertFalse(c.bubble.choice_row.isVisible())
             QTest.mouseClick(c.bubble.text, Qt.MouseButton.LeftButton, pos=QPoint(8, 8))
             self.assertFalse(c.bubble.isVisible())
@@ -959,6 +962,9 @@ class UserInterfaceTests(unittest.TestCase):
                 window.hide()
                 c.open_choices()
                 c.bubble.buttons[action].click()
+                if action=='activity':
+                    self.assertFalse(window.isVisible())
+                    c.bubble.detail_action.click()
                 self.assertTrue(window.isVisible())
                 self.assertFalse(c.bubble.isVisible())
                 self.assertFalse(c.bubble.choice_row.isVisible())
@@ -1102,6 +1108,94 @@ class UserInterfaceTests(unittest.TestCase):
         finally:
             c.context_busy = old[1]
             c.panel.update_setting('context_enabled', old[0])
+
+    def test_advanced_context_data_requires_logging_and_complete_fresh_calendar(self):
+        c=self.controller
+        old=(c.settings.file_logging,c.connected,c.connected_at,c.daily_events,c.events)
+        now=datetime.now().astimezone()
+        try:
+            c.settings.file_logging=False;c.connected=True;c.connected_at=now;c.daily_events=None
+            c.events=[Event('meeting',now,now+timedelta(hours=1))]
+            c.refresh_context_metrics(now)
+            self.assertNotIn('_target_counts',c.engine.context)
+            self.assertNotIn('daily_meeting_minutes',c.engine.context)
+            c.daily_events=1;c.refresh_context_metrics(now)
+            self.assertEqual(c.engine.context['daily_meeting_minutes'],60)
+            c.refresh_context_metrics(now+timedelta(minutes=5))
+            self.assertNotIn('daily_meeting_minutes',c.engine.context)
+        finally:
+            c.settings.file_logging,c.connected,c.connected_at,c.daily_events,c.events=old
+
+    def test_topic_tray_controls_and_context_window_follow_visibility(self):
+        c=self.controller;old_category=c.engine.last_category;old_pref=dict(c.engine.topic_preferences.data['topics'])
+        try:
+            c.engine.last_category='chat';c.refresh_topic_menu();self.assertTrue(c.topic_menu.isEnabled())
+            c.change_topic_preference('mute');self.assertEqual(c.engine.topic_preferences.preference('chat')['muted_date'],datetime.now().astimezone().date().isoformat())
+            c.change_topic_preference('reduce');self.assertTrue(c.engine.topic_preferences.preference('chat')['reduced'])
+            c.change_topic_preference('reset');self.assertEqual(c.engine.topic_preferences.preference('chat'),{'muted_date':'','reduced':False})
+            c.show_context_options();self.assertTrue(c.context_editor.isVisible())
+            with patch('companion.ui.QSystemTrayIcon.isSystemTrayAvailable',return_value=True):c.hide_character()
+            self.assertFalse(c.context_editor.isVisible())
+            c.user_hidden=False;c.apply_visibility()
+        finally:
+            c.engine.last_category=old_category;c.engine.topic_preferences.save({'schema_version':1,'topics':old_pref})
+            if c.context_editor:c.context_editor.hide()
+            c.user_hidden=False;c.apply_visibility()
+
+    def test_history_bubble_links_today_files_then_opens_management(self):
+        c=self.controller;now=datetime.now().astimezone()
+        c.activity_history.clear()
+        try:
+            c.activity_history.append([FileObservation('C:/work/a.xlsx','a.xlsx','Excel',now),
+                FileObservation('C:/work/a.xlsx','a.xlsx','Excel',now-timedelta(seconds=10)),
+                FileObservation('C:/other/<&>.docx','<&>.docx','Word',now-timedelta(seconds=20)),
+                FileObservation('C:/old.xlsx','yesterday.xlsx','Excel',now-timedelta(days=1))],now)
+            c.select_content('activity');self.app.processEvents()
+            self.assertFalse(c.history_window.isVisible());self.assertEqual(c.bubble.file_links.count(),2)
+            self.assertEqual(c.bubble.file_links.item(1).text(),'<&>.docx')
+            item=c.bubble.file_links.item(0)
+            with patch('companion.ui.QDesktopServices.openUrl',return_value=True) as open_url:
+                QTest.mouseClick(c.bubble.file_links.viewport(),Qt.MouseButton.LeftButton,pos=c.bubble.file_links.visualItemRect(item).center())
+                self.assertEqual(open_url.call_args.args[0],QUrl.fromLocalFile('C:/work/a.xlsx'))
+            self.assertTrue(c.bubble.isVisible())
+            QTest.mouseClick(c.bubble.detail_action,Qt.MouseButton.LeftButton)
+            self.assertTrue(c.history_window.isVisible());self.assertFalse(c.bubble.isVisible())
+        finally:c.activity_history.clear();c.bubble.hide();c.history_window.hide()
+
+    def test_history_bubble_empty_error_and_link_failure_keep_management_available(self):
+        c=self.controller;c.activity_history.clear()
+        with patch.object(c.activity_history,'for_day',side_effect=OSError('locked')):c.select_content('activity')
+        self.assertIn('読み込めません',c.bubble.text.text());self.assertTrue(c.bubble.detail_action.isVisible())
+        c.bubble.show_file_history('今日の記録です。',[('moved.xlsx','C:/moved.xlsx')])
+        with patch('companion.ui.QDesktopServices.openUrl',return_value=False):c.open_history_file('C:/moved.xlsx')
+        self.assertIn('開けません',c.bubble.text.text());self.assertTrue(c.bubble.detail_action.isVisible());c.bubble.hide()
+
+    def test_history_bubble_bounds_large_lists_and_does_not_leak_rows_to_other_messages(self):
+        c=self.controller;now=datetime.now().astimezone();c.activity_history.clear()
+        try:
+            c.activity_history.append([FileObservation(f'C:/work/{i}.xlsx',f'{i}.xlsx','Excel',now-timedelta(seconds=i)) for i in range(60)],now)
+            c.select_content('activity');self.app.processEvents()
+            self.assertEqual(c.bubble.file_links.count(),50);self.assertIn('直近50',c.bubble.text.text())
+            self.assertGreater(c.bubble.file_links.verticalScrollBar().maximum(),0)
+            c.bubble.display(Notice('','通常の本文'))
+            self.assertFalse(c.bubble.file_links.isVisible());self.assertEqual(c.bubble.file_links.count(),0)
+            self.assertFalse(c.bubble.detail_action.isVisible())
+        finally:c.activity_history.clear();c.bubble.hide()
+
+    def test_calendar_button_navigation_succeeds_or_keeps_error_in_bubble(self):
+        c=self.controller
+        thread=lambda target,daemon: type('InlineWorker',(),{'start':staticmethod(target)})()
+        try:
+            c.select_content('calendar')
+            with patch('companion.ui.threading.Thread',side_effect=thread),patch('companion.outlook.show_calendar') as navigate:
+                QTest.mouseClick(c.bubble.detail_action,Qt.MouseButton.LeftButton);navigate.assert_called_once()
+            self.assertFalse(c.bubble.isVisible())
+            c.select_content('calendar')
+            with patch('companion.ui.threading.Thread',side_effect=thread),patch('companion.outlook.show_calendar',side_effect=RuntimeError('Outlookを開けません')):
+                c.bubble.detail_action.click()
+            self.assertTrue(c.bubble.isVisible());self.assertIn('Outlookを開けません',c.bubble.text.text())
+            self.assertTrue(c.bubble.detail_action.isEnabled())
+        finally:c.bubble.hide();c.outlook_open_busy=False
 
     def test_context_disable_and_stale_result_do_not_restore_aggregate_data(self):
         c=self.controller

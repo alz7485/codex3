@@ -12,6 +12,25 @@ APPOINTMENT = '{00062002-0000-0000-C000-000000000046}'
 MEETING = '{6ED8DA90-450B-101B-98DA-00AA003F1305}'
 
 
+def show_calendar():
+    """Explicit user navigation only. Never save, respond to or add an item."""
+    if sys.platform!='win32':raise RuntimeError('Outlookの予定表はWindowsで開けます。')
+    import pythoncom
+    import win32com.client
+    pythoncom.CoInitialize()
+    try:
+        try:app=win32com.client.GetActiveObject('Outlook.Application')
+        except Exception:app=win32com.client.Dispatch('Outlook.Application')
+        folder=app.GetNamespace('MAPI').GetDefaultFolder(9)
+        explorer=app.ActiveExplorer()
+        if explorer is None:explorer=folder.GetExplorer()
+        else:explorer.CurrentFolder=folder
+        explorer.Display();explorer.Activate()
+    except Exception:
+        raise RuntimeError('Outlookの予定表を開けませんでした。従来版Outlookの起動・設定をご確認ください。') from None
+    finally:pythoncom.CoUninitialize()
+
+
 class CalendarEvents(list):
     def __init__(self, values, complete=True, warnings=()):
         super().__init__(values)
