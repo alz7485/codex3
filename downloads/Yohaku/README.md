@@ -1,4 +1,4 @@
-# Yohaku v0.18.0
+# Yohaku v0.18.1
 
 <img src="../../Yohaku/companion/assets/app/yohaku.png" width="112" alt="Yohakuのアイコン">
 
@@ -6,13 +6,14 @@
 
 | ダウンロード | サイズ | 検証 |
 |---|---|---|
-| [ZIP 1/2](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.18.0-source-part1-of-2.zip) | 12.74 MB | [SHA-256](Yohaku-v0.18.0-source-part1-of-2.zip.sha256) |
-| [ZIP 2/2](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.18.0-source-part2-of-2.zip) | 12.75 MB | [SHA-256](Yohaku-v0.18.0-source-part2-of-2.zip.sha256) |
+| [ZIP 1/2](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.18.1-source-part1-of-2.zip) | 12.76 MB | [SHA-256](Yohaku-v0.18.1-source-part1-of-2.zip.sha256) |
+| [ZIP 2/2](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.18.1-source-part2-of-2.zip) | 12.76 MB | [SHA-256](Yohaku-v0.18.1-source-part2-of-2.zip.sha256) |
 
 **両方のZIPを同じ場所へ展開し、Yohakuフォルダーを統合してください。** 共通のREADME・マニフェスト等は同一内容なので、上書き確認は許可します。片方だけでは必要な素材・コードが揃いません。
 
 それぞれ普通のZIPで、片方ずつテキスト化・復元できます。連結専用のバイナリ分割ではなく、画像やコードの途中では切っていません。実行・onedirビルドに必要な素材、4キャラ、アイコン、設定初期値、直接コマンドを含みます。ビルド済みEXEは含みません。
 
+- v0.18.1：倒置法の使い手の180件を改稿。倒置・短い断句・改行の間を使うオリジナルの語り口を強めました。寡黙な先輩の32件には、括弧書きの少しお茶目な心の声を追加。旧既定の文章だけを更新し、編集済み文章・順序・削除を保持します。
 - v0.18.0：性格に「馴れ馴れしい関西弁」「寡黙な先輩」「倒置法の使い手」を追加し、計7種類へ。各181件、543件のオリジナルのセリフを追加しました。4キャラのどれにも組み合わせられ、設定と会話編集から選べます。旧4性格の文章・条件・キャラの初期の性格は引き継ぎます。
 - v0.17.0：呼び出しの「用事はない」を削除し、本文・余白クリックで閉じます。「通知を設定する」を非表示の直前に追加。吹き出し内の日付・時刻・内容とOK／キャンセルで、一度きりの通知を登録します。今日を初期日付にし、日付欄のクリックでカレンダーを表示。再起動後も保持し、一度表示したら再通知しません。
 - 履歴と予定の対話：今日の履歴を縦並びのファイルリンクで表示し、管理ボタンから全履歴のUIへ移動。予定のボタンでは従来版Outlookの予定表を開きます。
@@ -27,7 +28,7 @@
 - キャラ選択は先頭のアルファベットを外し、キャラクター名だけを表示します。
 - 自分で登録する通知：月末の最終平日、毎月○日までの最終平日、毎日・曜日指定・毎月の指定日を設定。時刻・メッセージをJSONに保存し、登録UIで編集・次回対象日の確認ができます。平日は月〜金（祝日は含む）。指定時刻から10分以内に1回、再起動でも重複を防ぎ、同時刻の登録は順に表示します。
 - 全履歴検索：保存済みの過去3か月・最大15,000件のファイル名と保存先を検索。日付の選択や日別2,000件の表示上限にかかわらず検索し、結果に日時を表示。検索を消すと日付別に戻り、ダブルクリックで開けます。
-- 新着は「メールが届きました。」だけを表示し、送信者名・アドレス・件名・本文は取得しません。最初は即通知し、直後3秒以内の連続受信は同じ通知にまとめます。新着件数も出しません。
+- 新着は性格ごとの口調でメールの到着だけを表示し、送信者名・アドレス・件名・本文は取得しません。最初は即通知し、直後3秒以内の連続受信は同じ通知にまとめます。新着件数も出しません。
 - 同じ段階の反応は初期30秒空け、タスクバー吸着、歩き出しの向き確認・前傾・停止後の正面復帰、独立した表情・通知プレビュー、標準・控えめ・通知だけのプリセットを追加。
 - 歩行8コマの中心・足元をそろえ、タスクバー直上まで配置できるよう下限を下げました。正面への補間でも向きを保持。猫の目は琥珀色の虹彩と縦長の瞳孔へ少し調整。
 - 呼び出し中は再右クリックで閉じ、本文・余白クリックでキャラを残して吹き出しを閉じます。連打の反応は確認するまで左クリックで上書きせず、新着等の通知後も未確認の反応へ戻ります。
@@ -58,15 +59,15 @@ py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements-build.txt
 .\.venv\Scripts\python.exe -m PyInstaller --noconfirm --clean Yohaku.spec
 .\.venv\Scripts\python.exe scripts\collect_licenses.py dist\Yohaku
-.\.venv\Scripts\python.exe -c "import shutil; shutil.make_archive('Yohaku-v0.18.0-windows-x64-onedir', 'zip', 'dist', 'Yohaku')"
+.\.venv\Scripts\python.exe -c "import shutil; shutil.make_archive('Yohaku-v0.18.1-windows-x64-onedir', 'zip', 'dist', 'Yohaku')"
 ```
 
 Python 3.12の場合は、1行目を `py -3.12 -m venv .venv` に置き換えます。
 
-出力は `dist\Yohaku\Yohaku.exe` と `Yohaku-v0.18.0-windows-x64-onedir.zip`。
+出力は `dist\Yohaku\Yohaku.exe` と `Yohaku-v0.18.1-windows-x64-onedir.zip`。
 EXEだけを取り出さず、onedir ZIP全体を展開して配布してください。
 GitHubの「Actions」→「Build Yohaku Windows onedir」→「Run workflow」でも作成できます。
 
 [詳しい手順とソース](../../Yohaku/README.md) · [取得範囲](../../Yohaku/docs/CONTEXT_NOTIFICATIONS.md) · [アプリ名とアイコン](../../Yohaku/docs/BRAND.md)
 
-263テスト通過（Linux / Qt offscreen・合成データ・COMモック）。Windows実機、実Outlook・Office、Windows EXEのビルド・実行は未検証です。
+272テスト通過（Linux / Qt offscreen・合成データ・COMモック）。Windows実機、実Outlook・Office、Windows EXEのビルド・実行は未検証です。

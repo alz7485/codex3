@@ -11,7 +11,7 @@ from companion.ui import InteractionBubble,Mascot,create_application
 
 def main():
     app=create_application();document=defaults()
-    board=QPixmap(1120,650);board.fill(QColor('#e7ede6'));p=QPainter(board);widgets=[]
+    board=QPixmap(1120,700);board.fill(QColor('#e7ede6'));p=QPainter(board);widgets=[]
     def text(x,y,value,size=14,bold=False):
         font=QFont(app.font());font.setPixelSize(size);font.setBold(bold)
         p.setFont(font);p.setPen(QColor('#344f3f'));p.drawText(x,y,value)
@@ -25,8 +25,8 @@ def main():
             bubble=InteractionBubble();bubble.display(Notice('',document['phrases'][voice][key][0]))
             app.processEvents();p.drawPixmap(x,y+12,bubble.grab());widgets.append(bubble)
         mascot=Mascot(72,character='A');mascot.frame_index=24;mascot.show();app.processEvents()
-        p.drawPixmap(x+235,535,mascot.grab());widgets.append(mascot)
-    text(40,626,'実装ウィジェットによるセリフの表示例 / 追加543件、合計1,267件 / Windows実機では未検証',12)
+        p.drawPixmap(x+235,570,mascot.grab());widgets.append(mascot)
+    text(40,676,'実装ウィジェットによるセリフの表示例 / 7性格、合計1,267件 / Windows実機では未検証',12)
     p.end();board.save(str(Path(__file__).parent/'docs/personality-examples.png'))
     for widget in widgets:widget.hide()
     print('Rendered personality-examples.png')

@@ -15,6 +15,7 @@ import math
 AUTO_PERSONALITY = "キャラクターに合わせる"
 INTERVALS = (10, 20, 30, 60, 90, 120)  # Legacy UI/import compatibility.
 DEFAULT_PATH = Path(__file__).parent / 'assets/dialogue/default_dialogue.json'
+PERSONALITY_WORDING_PATH = DEFAULT_PATH.with_name('personality_wording_v1.json')
 KINDS = {'always': 'いつでも', 'time_range': '時間帯', 'weekday': '曜日',
          'session_range': '起動からの経過', 'before_meeting': '予定の前', 'after_meeting': '予定のあと', 'metric_range': 'PC・ファイル・予定の集計値', 'all': 'すべての条件（AND）', 'any': 'いずれかの条件（OR）',
          'metric_sustained':'集計値が一定時間続く', 'metric_transition':'集計値の変化・回復',
@@ -175,7 +176,7 @@ def upgrade(document):
 def upgrade_personalities(document):
     """Add missing voice banks once, matching only the user's existing topics."""
     if document.get('personality_expansion_version') == 1:
-        return document
+        return upgrade_personality_wording(document)
     phrases, rules = document.get('phrases'), document.get('rules')
     if (not isinstance(phrases, dict) or not isinstance(rules, list)
             or not all(isinstance(phrases.get(voice), dict) for voice in ORIGINAL_VOICE_NAMES)
@@ -198,6 +199,26 @@ def upgrade_personalities(document):
                 bank[key] = deepcopy(fallback[key])
         result['phrases'][voice] = bank
     result['personality_expansion_version'] = 1
+    return upgrade_personality_wording(result)
+
+
+def upgrade_personality_wording(document):
+    """Replace exact bundled v0.18 lines once; retain edits, order and removals."""
+    if document.get('personality_wording_version') == 1 or not isinstance(document.get('phrases'), dict):
+        return document
+    result = deepcopy(document)
+    changes = json.loads(PERSONALITY_WORDING_PATH.read_text(encoding='utf-8'))
+    for voice, topics in changes['voices'].items():
+        bank = result['phrases'].get(voice)
+        if not isinstance(bank, dict):
+            continue
+        for topic, rows in topics.items():
+            lines = bank.get(topic)
+            if not isinstance(lines, list):
+                continue
+            replacements = {row['before']: row['after'] for row in rows}
+            bank[topic] = [replacements.get(line, line) if isinstance(line, str) else line for line in lines]
+    result['personality_wording_version'] = 1
     return result
 
 
