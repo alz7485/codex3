@@ -1,16 +1,20 @@
-# AcadStadio 1.19.2
+# AcadStadio 1.19.3
 
 Excel / CSVの入力表と作図ブロックから、AutoCAD用SCRを作成するWindows向けアプリです。アプリ名をCADFlow Studioから **AcadStadio** に変更しました。
 
-**[ZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.19.2.zip)** / [SHA256](AcadStadio_v1.19.2.zip.sha256)
+**[ZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.19.3.zip)** / [SHA256](AcadStadio_v1.19.3.zip.sha256)
 
 公開日: 2026-10-25（JST）。Pythonソース版です。EXE自体は含みません。
 
-![AcadStadio](Main_UI_v1.19.2.png)
+「ブロック化」ボタンをブロック編集・IF/REPEAT内・構成ツリーから外し、コマンドを直接追加する画面に整理しました。既存のBLOCK呼び出しとJSONは利用できます。
+
+![ブロック編集](Block_Editor_v1.19.3.png)
+
+![AcadStadio](Main_UI_v1.19.3.png)
 
 ## 起動
 
-ZIPを展開し、`AcadStadio_v1.19.2` フォルダで実行します。Python 3.11以降が必要です。
+ZIPを展開し、`AcadStadio_v1.19.3` フォルダで実行します。Python 3.11以降が必要です。
 
 ```powershell
 py -3 -m pip install -r requirements.txt
@@ -35,6 +39,6 @@ py -3 -m venv .venv
 
 フォルダ管理・検索・ブロック一覧内の操作ボタン、複数入力表、設定プリセット、CAD初期設定、ユーザーコマンド登録、作図後のシステム設定復元を保持しています。CADFLOWRESTORE等の既存CADコマンド名は互換性のため維持しています。
 
-基本処理175件・実Tk GUI156件、計331件が合格。旧保存先・復元データ・環境変数の互換性、展開後のスモーク、ZIPのCRCと全ファイルSHA256を確認しています。Windows EXEのビルド・実行とAutoCAD実機は未検証です。
+今回GUI156件を再検証して合格。前版の基本処理175件・実Tk GUI156件、計331件の記録も同梱。旧保存先・復元データ・環境変数の互換性、展開後のスモーク、ZIPのCRCと全ファイルSHA256を確認しています。Windows EXEのビルド・実行とAutoCAD実機は未検証です。
 
 [旧版と以前の操作ガイド](../CADFlowStudio/)
