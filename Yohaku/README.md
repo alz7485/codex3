@@ -70,6 +70,8 @@ Windowsデスクトップの隅で、予定と短いひとことをそっと知�
 
 ## まず画面を見る
 
+プレビュー画像・GIFはGitHubで閲覧できます。軽量版のソースZIPには含めず、アプリ実行用の画像だけを同梱しています。
+
 - [自分で通知を登録](https://raw.githubusercontent.com/alz7485/codex3/main/Yohaku/docs/registered-notifications.png)
 - [プリセットと独立プレビュー](https://raw.githubusercontent.com/alz7485/codex3/main/Yohaku/docs/comfort-preview.png)
 - [全履歴の検索](https://raw.githubusercontent.com/alz7485/codex3/main/Yohaku/docs/history-search.png)
@@ -79,7 +81,7 @@ Windowsデスクトップの隅で、予定と短いひとことをそっと知�
 - `docs/design-preview.png`：常駐キャラ・通知・操作画面のデザイン
 - `docs/panel.png`：今日のようす
 - `docs/settings.png`：キャラと通知
-- `docs/character-switching.png`：採用4種と切り替え画面
+- `docs/character-switching.png`：採用3体と切り替え画面
 - `docs/DESIGN.md`：デザイン仕様
 - `docs/animation-preview.gif`：クリックからメッセージ・予定・履歴を選ぶ動作プレビュー
 - `docs/interaction-preview.png`：選択式吹き出しの画面（予定・履歴は合成データ）
