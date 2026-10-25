@@ -1,14 +1,16 @@
-# AcadStadio 1.20.6 — フランジ平断面サンプル試用版7
+# AcadStadio 1.20.7 — 段付きフランジ試用版8
 
-**[試用版7 ZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.20.6_FlangePlanSectionTrial7.zip)** ／ [SHA256](AcadStadio_v1.20.6_FlangePlanSectionTrial7.zip.sha256)
+**[試用版8 ZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.20.7_SteppedFlangeTrial8.zip)** ／ [SHA256](AcadStadio_v1.20.7_SteppedFlangeTrial8.zip.sha256)
 
-標準サンプルをフランジの平面図＋断面図（A-A）の2面へ変更しました。初期表示は寸法表の1行目で、2・3行目にも別寸法を用意しています。
+画像の構成に合わせて、左に断面図（A-A）・右に平面図を並べた段付きフランジを標準サンプルにしました。中心穴と取付穴は、いずれもねじのない通し穴です。
 
-- 平面図に外周・中心穴・等配ボルト穴・PCD・中心線を表示。
-- 断面図は中心穴と左右のボルト穴を通る全断面。材料部分にだけ45度のハッチングを表示。
-- 外径・中心穴径・板厚の寸法、切断方向の矢印、PCD・穴数・穴径を表示。
-- 入力表のOD・ID・PCD・R・N・Tの変更を両図に反映。JSON・CSV・Excel・生成SCRも更新。
-- サンプルは追加のLINファイルなしで作図できます。
+- 平面図に外周・段の外周・中心穴・等配の取付穴・PCD・中心線を表示。
+- 断面図に板厚と段差を表示。上下の取付穴と中心穴を通る切断面です。
+- 本体と段の境界に不要な継ぎ目を描かず、一体の部品として作図。
+- 断面の材料部分だけに45度のハッチングを表示し、本体と段で位相を統一。
+- 外径・段の外径・中心穴径・板厚・全厚（板厚＋段の高さ）の寸法を表示。
+- 入力表の寸法変更に両図が連動。JSON・CSV・Excel・生成SCRも更新。
+- 初期表示は1行目。寸法違いの3行を同梱し、追加のLINファイルなしで作図できます。
 
 Trial6で整理した操作画面も継続しています。
 
@@ -20,7 +22,7 @@ Trial6で整理した操作画面も継続しています。
 - DWGを読込画面へドラッグ＆ドロップ可能（Windows）。1ファイルを受け付け、そのまま読み取りを開始。
 - LINファイル指定欄を廃止。線種はCAD側に存在する同名の線種を使用。
 
-![メイン画面](Main_UI_Trial7.png)
+![メイン画面](Main_UI_Trial8.png)
 
 ## 起動
 
@@ -44,11 +46,13 @@ py -3 src/main.py
 |PCD|ボルト穴の中心円直径|
 |R|ボルト穴の半径（穴径は2×R）|
 |N|ボルト穴数（同梱例は4・6・8）|
-|T|板厚|
+|T|本体の板厚|
+|HUB_D|段の外径|
+|H|段の高さ（全厚はT＋H）|
 
 「入力表」で編集し、「作図設定」の対象行で切り替えます。初期選択は1行目だけです。「全行」なら3部品をまとめて作図します。
 図の間隔は共通設定 `VIEW_GAP`、断面ハッチングの間隔は `HATCH_PITCH` で調整できます。
-サンプルは中心穴と左右のボルト穴を通る、偶数穴の平板フランジです。寸法は `ID/2 < PCD/2 - R`、`PCD/2 + R < OD/2`、`T > 0` を満たす値にします。形状が成立しない値の自動補正はありません。
+サンプルは中心穴と上下の取付穴を通る、偶数穴の段付きフランジです。寸法は `0 < ID < HUB_D < PCD - 2×R`、`PCD + 2×R < OD`、`R > 0`、`T > 0`、`H > 0` を満たす値にします。Nは正の偶数です。形状が成立しない値の自動補正はありません。
 ハッチングと破線は通常の線分として生成し、CADの線種定義を追加しません。
 CAD初期設定はサンプルでONです。既存図面の同名レイヤーを使う場合はOFFにできます。
 
@@ -77,15 +81,15 @@ py -3 -m venv .venv
 .\.venv\Scripts\python.exe -m PyInstaller --clean --noconfirm AcadStadio.spec
 ```
 
-出力は `dist/AcadStadio/AcadStadio.exe`。フォルダ全体を配布してください。同梱の EXE_BUILD_ONEDIR.md（ZIP内） に詳細があります。
+出力は `dist/AcadStadio/AcadStadio.exe`。フォルダ全体を配布してください。同梱の EXE_BUILD_ONEDIR.md（ZIP内 EXE_BUILD_ONEDIR.md） に詳細があります。
 このZIPはソース版で、EXEは含みません。
 
 検証結果は VALIDATION（ZIP内 docs/VALIDATION.md） に記録しています。Windows上のExplorerからの実ドロップ・AutoCAD実DWG読取・Windows EXEは未検証です。
 
 380件のテストに合格。Windows / AutoCADでの実行は未検証です。
 
-![平断面サンプル](Flange_Plan_Section_Trial7.png)
+![段付きフランジの平断面](Stepped_Flange_Trial8.png)
 
-![入力表](Input_Table_Trial7.png)
+![入力表](Input_Table_Trial8.png)
 
-![SCR別窓](SCR_Window_Trial7.png)
+![SCR別窓](SCR_Window_Trial8.png)
