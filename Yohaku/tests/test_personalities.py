@@ -204,10 +204,10 @@ class PersonalityInterfaceTests(unittest.TestCase):
             self.assertEqual(settings.personality,voice)
             self.assertEqual(panel.personality_badge.text(),voice)
             self.assertEqual(panel.hero_quote.text(),self.store.data['phrases'][voice]['chat'][0])
-            panel.update_setting('character','F')
+            panel.update_setting('character','E')
             self.assertEqual(settings.personality,voice)
         selector.setCurrentText(AUTO_PERSONALITY)
-        self.assertEqual(panel.personality_badge.text(),self.store.data['profiles']['F']['voice'])
+        self.assertEqual(panel.personality_badge.text(),self.store.data['profiles']['E']['voice'])
 
     def test_editor_saves_each_new_voice_and_uses_it_for_character_profile(self):
         from companion.dialogue_editor import DialogueEditor

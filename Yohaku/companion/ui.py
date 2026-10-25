@@ -23,8 +23,7 @@ from .core import CHARACTERS, Engine, Notice, PHRASES, Settings, data_directory,
 from .activity import FileHistory, FileTracker, opened_file_snapshot
 from .motion import Motion
 from .dialogue import AUTO_PERSONALITY, BUBBLE_MS, PROFILES, DialogueError, DialogueStore, voice_for
-from .characters import ATLAS_CHARACTERS, profile_for
-from .character_assets import atlas_frames
+from .characters import profile_for
 from .outlook import read_calendar
 from .metadata import APP_DISPLAY_NAME, VERSION
 from .context import ResourceSampler, UsageLedger, input_idle_seconds, desktop_file_count, office_file_count, work_metrics, system_power_metrics
@@ -185,21 +184,15 @@ def box(parent=None, margins=0, spacing=10):
     return layout
 
 
-@lru_cache(maxsize=7)
+@lru_cache(maxsize=3)
 def character_pixmap(character):
-    if character in ATLAS_CHARACTERS:
-        return character_frames(character)[24]
-    path = Path(__file__).parent / "assets" / "characters" / f"{character.lower()}.png"
-    pixmap = QPixmap(str(path))
-    if pixmap.isNull():
-        raise RuntimeError(f"キャラクター画像を読み込めません: {path.name}")
-    return pixmap
+    # Reuse the front artwork for thumbnails and the static pose as well.
+    # Separate large still-image PNGs are no longer needed in the bundle.
+    return character_frames(character)[24]
 
 
-@lru_cache(maxsize=7)
+@lru_cache(maxsize=3)
 def character_frames(character):
-    if character in ATLAS_CHARACTERS:
-        return atlas_frames(character)
     path = Path(__file__).parent / "assets" / "characters" / f"{character.lower()}_motion.png"
     sheet = QPixmap(str(path))
     if sheet.isNull():
@@ -237,13 +230,13 @@ def character_frames(character):
     # columns normal/blink/
     # troubled/angry. Keep a shared canvas and the existing neutral baseline
     # so switching between a walk and a front pose does not change size.
-    front_name = 'f_front.png' if character == 'F' else 'front_reactions.png'
+    front_name = 'front_reactions.png'
     front = QPixmap(str(path.parent / front_name))
     if front.isNull():
         raise RuntimeError(f'正面向き画像を読み込めません: {front_name}')
     left, top, w, h = {'A': (35, 25, 270, 282), 'B': (40, 315, 270, 294),
-                       'E': (45, 620, 264, 300), 'F': (15, 94, 513, 560)}[character]
-    stride = 543 if character == 'F' else 300
+                       'E': (45, 620, 264, 300)}[character]
+    stride = 300
     target = QSize(bounds.width(), content[0].height())
     front_frames = []
     for column in range(4):
@@ -534,7 +527,7 @@ class Panel(QMainWindow):
             choice.clicked.connect(lambda checked=False, k=key: self.update_setting("character", k))
             self.character_group.addButton(choice)
             self.character_buttons[key] = choice
-            row.addWidget(choice, index // 4, index % 4)
+            row.addWidget(choice, index // 3, index % 3)
         chooser.addLayout(row)
         self.profile_description = label(self.profile(self.settings.character)[1], "muted", True)
         chooser.addWidget(self.profile_description)
@@ -559,7 +552,7 @@ class Panel(QMainWindow):
         self.snap_spin.valueChanged.connect(lambda value: self.update_setting('snap_distance', value))
         chooser.addWidget(self.snap_spin)
         chooser.addWidget(button('表情・通知のプレビュー', self.preview_requested.emit))
-        chooser.addWidget(label("吹き出しを操作中は立ち止まります。静かな時間・おやすみ中は動きません。", "muted", True))
+        chooser.addWidget(label("静かな時間や別の設定画面を開いている間も歩きます。呼び出し・吹き出しの操作・連打への反応中と、おやすみ中は止まります。", "muted", True))
         layout.addWidget(card)
         card = QFrame(objectName="card")
         form = box(card, 18, 11)
@@ -668,7 +661,7 @@ class Panel(QMainWindow):
         card = QFrame(objectName="card")
         quiet = box(card, 18, 9)
         quiet.addWidget(label("静かな時間", "section"))
-        quiet.addWidget(label("この時間帯は、予定通知も雑談もおやすみします。", "muted", True))
+        quiet.addWidget(label("この時間帯は、予定通知も雑談もおやすみします。キャラの歩行・表情は続きます。", "muted", True))
         row = QHBoxLayout()
         for index, key in enumerate(("quiet_start", "quiet_end")):
             edit = QTimeEdit(QTime.fromString(getattr(self.settings, key), "HH:mm"))
@@ -790,6 +783,14 @@ class Resident(Mascot):
             elif self.rect().contains(event.position().toPoint()):
                 self.clicked.emit()
         event.accept()
+
+    def hideEvent(self, event):
+        # Hiding while the button is down may prevent delivery of its release.
+        # Do not carry that press into the next visible session.
+        self.press_position = self.press_origin = None
+        self.dragging = False
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        super().hideEvent(event)
 
 
 class Bubble(QFrame):
@@ -1778,7 +1779,7 @@ class Controller(QObject):
         floor = max(area.top() + 8, area.bottom() + 1 - self.resident.height())
         self.motion_y = snapped_y(self.motion_y, floor, self.settings.snap_to_taskbar, self.settings.snap_distance)
         self.position()
-        self.motion.wait = max(1.0, self.motion.wait)
+        self.motion.start_soon()
         self.motion.distance = self.motion.speed = 0
         self.motion.walking = False
         self.last_motion_time = time.monotonic()
@@ -1827,10 +1828,11 @@ class Controller(QObject):
 
     def update_animation_policy(self):
         now = datetime.now().astimezone()
-        enabled = self.settings.animation and not self.hidden and not self.user_hidden and not is_quiet(now, self.settings)
+        enabled = self.settings.animation and not self.hidden and not self.user_hidden
         enabled = enabled and not (self.engine.paused_until and now < self.engine.paused_until)
         if enabled:
             if not self.animation_timer.isActive():
+                self.motion.start_soon()
                 self.last_motion_time = time.monotonic()
                 self.animation_timer.start()
         else:
@@ -1850,7 +1852,9 @@ class Controller(QObject):
             self.resident.update()
 
     def animate(self):
-        if is_quiet(datetime.now().astimezone(), self.settings):
+        now_wall = datetime.now().astimezone()
+        if (not self.settings.animation or self.hidden or self.user_hidden
+                or self.engine.paused_until and now_wall < self.engine.paused_until):
             self.update_animation_policy()
             return
         now = time.monotonic()
@@ -1863,7 +1867,7 @@ class Controller(QObject):
         hovered = self.resident.underMouse()
         if hovered:
             point = QCursor.pos()
-            if point != self.hover_point:
+            if self.hover_point is None or (point - self.hover_point).manhattanLength() >= 3:
                 self.hover_point = point
                 self.hover_until = now + 0.2
         else:
@@ -1871,7 +1875,7 @@ class Controller(QObject):
         # Give a moving pointer time to click, without pinning the character
         # forever beneath an untouched pointer. This transient position is not logged.
         hover_pause = hovered and now < self.hover_until
-        blocked = self.pending_reaction is not None or (self.bubble.isVisible() and self.bubble.interactive) or self.panel.isVisible() or self.history_window.isVisible() or (self.editor is not None and self.editor.isVisible()) or (self.reminder_editor is not None and self.reminder_editor.isVisible()) or (self.context_editor is not None and self.context_editor.isVisible()) or hover_pause
+        blocked = self.pending_reaction is not None or (self.bubble.isVisible() and self.bubble.interactive) or hover_pause
         self.motion_x = self.motion.advance(dt, self.motion_x if self.motion_x is not None else upper,
                                           lower, upper, self.settings.walking and not blocked)
         frame = self.motion.frame()

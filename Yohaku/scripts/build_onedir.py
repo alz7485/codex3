@@ -15,7 +15,7 @@ import zipfile
 PROJECT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT))
 from companion.metadata import VERSION
-from companion.characters import CHARACTERS, LEGACY_CHARACTERS, ATLAS_CHARACTERS
+from companion.characters import CHARACTERS
 from scripts.check_source import SourceCheckError, verify_source
 
 
@@ -23,17 +23,13 @@ def required_files(project=PROJECT):
     paths = [project / "Yohaku.spec", project / "MANIFEST_SHA256.json", project / "scripts/check_source.py", project / "packaging/windows_version_info.txt",
              project / "companion/assets/app/yohaku.ico", project / "companion/assets/app/yohaku.png",
              project / "companion/assets/characters/motion_layout.json",
-             project / "companion/assets/characters/atlas_layout.json",
              project / "companion/assets/characters/front_reactions.png",
-             project / "companion/assets/characters/f_front.png",
              project / "companion/assets/dialogue/default_dialogue.json",
              project / "companion/assets/dialogue/personality_wording_v1.json",
              project / "companion/assets/dialogue/debtor_wording_v1.json",
              project / "companion/assets/dialogue/debtor_style_v1.json",
              project / "companion/assets/dialogue/gambler_wording_v1.json"]
-    paths += [project / f"companion/assets/characters/{key}{suffix}.png"
-              for key in LEGACY_CHARACTERS.lower() for suffix in ("", "_motion")]
-    paths += [project / f"companion/assets/characters/{key.lower()}_atlas.png" for key in ATLAS_CHARACTERS]
+    paths += [project / f"companion/assets/characters/{key.lower()}_motion.png" for key in CHARACTERS]
     return paths
 
 

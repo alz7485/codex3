@@ -5,9 +5,9 @@ from pathlib import Path
 
 from PySide6.QtCore import QRectF, Qt
 from PySide6.QtGui import QColor, QFont, QPainter, QPixmap
-from companion.characters import CHARACTERS, NEW_PROFILES
+from companion.characters import CHARACTERS
 from companion.core import Notice, Settings
-from companion.dialogue import DialogueStore
+from companion.dialogue import DialogueStore, defaults
 from companion.metadata import VERSION
 from companion.ui import InteractionBubble, Mascot, Panel, create_application
 import tempfile
@@ -25,9 +25,9 @@ def main():
         painter.setFont(font); painter.setPen(QColor('#344f3f')); painter.drawText(x, y, value)
 
     text(36, 36, f'Yohaku / v{VERSION}', 13, True)
-    text(36, 80, '新しい相棒、3体。', 30, True)
-    text(36, 114, 'なぎ＝関西弁 / しずく＝寡黙な先輩 / すみ＝孤高のギャンブラー', 17)
-    for column, (key, profile) in enumerate(NEW_PROFILES.items()):
+    text(36, 80, '3体の相棒。7つの話し方。', 30, True)
+    text(36, 114, 'つづり・ビット・ペンギー / 全7性格のセリフはそのまま', 17)
+    for column, (key, profile) in enumerate(defaults()['profiles'].items()):
         left = 25 + column * 470
         painter.setPen(Qt.PenStyle.NoPen); painter.setBrush(QColor('#f9fbf6'))
         painter.drawRoundedRect(QRectF(left, 140, 450, 465), 18, 18)
@@ -42,9 +42,9 @@ def main():
             text(x + 27, 500, caption, 13)
         text(left + 22, 550, '28コマ / まばたき・表情・歩行8コマ', 15)
         text(left + 22, 580, '足元と中央をそろえて表示', 14)
-    text(36, 650, '設定では既存4体も含めた7体から選択。見た目と性格は別々に変更できます。', 17)
+    text(36, 650, '静かな時間・設定画面を開いている間も歩行。吹き出しの操作中は立ち止まります。', 17)
     for index, (key, name) in enumerate(CHARACTERS.items()):
-        x = 40 + index * 198
+        x = 150 + index * 470
         mascot = Mascot(72, character=key); mascot.frame_index = 24; mascot.show()
         app.processEvents(); painter.drawPixmap(x + 30, 674, mascot.grab()); widgets.append(mascot)
         text(x + 40, 776, name, 15, True)
@@ -53,7 +53,7 @@ def main():
     destination = Path(__file__).parent/'docs'
     board.save(str(destination/'new-characters.png'))
     with tempfile.TemporaryDirectory() as temporary:
-        panel = Panel(Settings(character='N'), DialogueStore(Path(temporary)/'dialogue.json'))
+        panel = Panel(Settings(character='A'), DialogueStore(Path(temporary)/'dialogue.json'))
         panel.set_page(1); panel.show(); app.processEvents()
         panel.grab().save(str(destination/'settings.png')); panel.hide()
     for widget in widgets:

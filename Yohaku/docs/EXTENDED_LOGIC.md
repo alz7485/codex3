@@ -23,7 +23,7 @@
 
 「集計値の割合（%）」を選び、分子・分母・分母の最低計測量・割合の下限と上限を入力します。分子と分母は同じ単位で、分子が全体の一部になる組み合わせを選びます。
 
-![割合条件の編集画面](ratio-condition.png)
+![割合条件の編集画面](https://raw.githubusercontent.com/alz7485/codex3/main/Yohaku/docs/ratio-condition.png)
 
 ```json
 {

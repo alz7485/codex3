@@ -46,12 +46,12 @@ def main_bounds(image):
 
 def main():
     result = {}
-    for key in 'abef':
+    for key in 'abe':
         sheet = QImage(str(ROOT / f'{key}_motion.png'))
         width, height = sheet.width() // 6, sheet.height() // 4
         result[key] = [main_bounds(sheet.copy((i % 6) * width, (i // 6) * height, width, height)) for i in range(24)]
     (ROOT / 'motion_layout.json').write_text(json.dumps(result, indent=2) + '\n')
-    print('Mapped 96 sprite cells; PNGs unchanged.')
+    print('Mapped 72 sprite cells; PNGs unchanged.')
 
 
 if __name__ == '__main__':

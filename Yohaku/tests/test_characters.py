@@ -1,4 +1,4 @@
-"""Approved characters, legacy conversation preservation and editor integration."""
+"""Three active characters, all voices and lossless legacy-data compatibility."""
 from copy import deepcopy
 import json
 import os
@@ -7,15 +7,23 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from companion.characters import CHARACTERS, LEGACY_CHARACTERS, NEW_PROFILES
+from companion.characters import CHARACTERS
 from companion.core import Settings, save_json
-from companion.dialogue import (AUTO_PERSONALITY, MAX_BYTES, DialogueError, DialogueStore,
-                               defaults, document_size, read_document, validate, voice_for)
+from companion.dialogue import (AUTO_PERSONALITY, MAX_BYTES, VOICE_NAMES, DialogueError,
+                               DialogueStore, defaults, document_size, read_document, validate)
 from companion.dialogue_editor import DialogueEditor
-from companion.ui import Panel, character_frames, create_application
+from companion.ui import character_frames, character_pixmap, create_application
+from scripts.package_source import source_files
 
 
-class AddedCharacterTests(unittest.TestCase):
+def legacy_document():
+    document = defaults()
+    for key, voice in zip('FNSH', ('のんびりした同僚', '馴れ馴れしい関西弁', '寡黙な先輩', '孤高のギャンブラー')):
+        document['profiles'][key] = dict(voice=voice, description='前の版で編集した説明', tagline='残しておく一言')
+    return document
+
+
+class LightweightCharacterTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.app = create_application()
@@ -25,100 +33,73 @@ class AddedCharacterTests(unittest.TestCase):
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
 
-    def test_approved_species_names_and_recommended_voices(self):
-        expected = {'N': ('なぎ', '馴れ馴れしい関西弁'),
-                    'S': ('しずく', '寡黙な先輩'), 'H': ('すみ', '孤高のギャンブラー')}
-        self.assertEqual(len(CHARACTERS), 7)
-        for key, (name, voice) in expected.items():
-            self.assertEqual(CHARACTERS[key], name)
-            settings = Settings(character=key)
-            self.assertEqual(voice_for(settings), voice)
-            save_json(self.root/'settings.json', vars(settings))
-            self.assertEqual(Settings.load(self.root/'settings.json').character, key)
-            settings.personality = '冷静な案内役'
-            self.assertEqual(voice_for(settings), '冷静な案内役')
+    def test_three_characters_retain_all_seven_voice_banks(self):
+        self.assertEqual(CHARACTERS, {'A': 'つづり', 'B': 'ビット', 'E': 'ペンギー'})
+        document = defaults()
+        self.assertEqual(set(document['profiles']), set('ABE'))
+        self.assertEqual(len(VOICE_NAMES), 7)
+        self.assertEqual(set(document['phrases']), set(VOICE_NAMES))
+        for bank in document['phrases'].values():
+            self.assertEqual(sum(map(len, bank.values())), 217)
 
-    def test_old_four_profiles_gain_three_without_rewriting_custom_words_or_source(self):
-        old = defaults()
-        old['profiles'] = {key: old['profiles'][key] for key in LEGACY_CHARACTERS}
+    def test_retired_character_settings_fall_back_and_keep_each_explicit_voice(self):
+        for retired in 'FNSH':
+            for voice in (AUTO_PERSONALITY, *VOICE_NAMES):
+                save_json(self.root/'settings.json', vars(Settings(character=retired, personality=voice)))
+                loaded = Settings.load(self.root/'settings.json')
+                self.assertEqual(loaded.character, 'A')
+                self.assertEqual(loaded.personality, voice)
+
+    def test_legacy_profiles_and_custom_lines_survive_read_save_and_backup(self):
+        old = legacy_document()
         old['profiles']['A'].update(voice='寡黙な先輩', description='自分の説明', tagline='自分の一言')
         old['phrases']['馴れ馴れしい関西弁']['chat'] = ['編集した関西弁やで。']
         path = self.root/'dialogue.json'
         path.write_text(json.dumps(old, ensure_ascii=False), encoding='utf-8')
-        raw = path.read_bytes()
-        store = DialogueStore(path)
+        raw = path.read_bytes(); store = DialogueStore(path)
         self.assertFalse(store.error)
         self.assertEqual(path.read_bytes(), raw)
-        for key in LEGACY_CHARACTERS:
-            self.assertEqual(store.data['profiles'][key], old['profiles'][key])
-        for key in ('phrases', 'rules', 'options'):
-            self.assertEqual(store.data[key], old[key])
-        self.assertEqual({key: store.data['profiles'][key] for key in NEW_PROFILES}, NEW_PROFILES)
+        self.assertEqual(store.data, old)
         store.save(store.data)
         self.assertEqual(path.with_suffix('.json.bak').read_bytes(), raw)
-        self.assertEqual(read_document(path), store.data)
-
-    def test_existing_new_profile_edits_are_preserved_and_unknown_ids_rejected(self):
-        document = defaults()
-        document['profiles']['H'].update(voice='馴れ馴れしい関西弁', tagline='ここは自分の言葉。')
-        path = self.root/'dialogue.json'
-        path.write_text(json.dumps(document, ensure_ascii=False), encoding='utf-8')
-        self.assertEqual(read_document(path), document)
-        document['profiles']['unknown'] = deepcopy(document['profiles']['A'])
+        self.assertEqual(read_document(path), old)
+        invalid = deepcopy(old); invalid['profiles']['unknown'] = deepcopy(old['profiles']['A'])
         with self.assertRaises(DialogueError):
-            validate(document)
+            validate(invalid)
 
-    def test_full_legacy_document_uses_new_characters_without_data_loss(self):
-        document = defaults()
-        document['profiles'] = {key: document['profiles'][key] for key in LEGACY_CHARACTERS}
-        # Unknown metadata is preserved for user tooling, and counts toward the cap.
-        document['custom_padding'] = ''
-        document['custom_padding'] = 'x' * (MAX_BYTES - document_size(document))
+    def test_full_legacy_document_remains_valid_without_expansion(self):
+        document = legacy_document(); document['padding'] = ''
+        document['padding'] = 'x' * (MAX_BYTES - document_size(document))
         path = self.root/'dialogue.json'
         path.write_text(json.dumps(document, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
-        raw = path.read_bytes()
-        self.assertEqual(len(raw), MAX_BYTES)
+        raw = path.read_bytes(); self.assertEqual(len(raw), MAX_BYTES)
         store = DialogueStore(path)
-        self.assertFalse(store.error)
-        self.assertEqual(store.data, document)
-        for key, profile in NEW_PROFILES.items():
-            settings = Settings(character=key, personality=AUTO_PERSONALITY)
-            self.assertEqual(voice_for(settings, store.data), profile['voice'])
-            panel = Panel(settings, store)
-            try:
-                self.assertEqual(panel.profile(key), tuple(profile.values()))
-            finally:
-                panel.hide(); panel.deleteLater()
-        store.save(store.data)
-        self.assertEqual(path.read_bytes(), raw)
+        self.assertFalse(store.error); self.assertEqual(store.data, document)
+        store.save(store.data); self.assertEqual(path.read_bytes(), raw)
 
-    def test_editor_targets_each_new_profile_and_preserves_other_profiles(self):
-        store = DialogueStore(self.root/'dialogue.json')
+    def test_editor_lists_only_active_characters_and_keeps_retired_metadata(self):
+        store = DialogueStore(self.root/'dialogue.json'); store.data = legacy_document()
         editor = DialogueEditor(store)
         try:
+            self.assertEqual([editor.profile_key.itemText(i) for i in range(editor.profile_key.count())], list(CHARACTERS.values()))
+            self.assertEqual([editor.voice.itemText(i) for i in range(editor.voice.count())], list(VOICE_NAMES))
             old = deepcopy(store.data['profiles'])
-            for key in NEW_PROFILES:
-                editor.profile_key.setCurrentIndex(tuple(CHARACTERS).index(key))
-                self.assertEqual(editor.profile_voice.currentText(), NEW_PROFILES[key]['voice'])
-                editor.description.setText('編集した説明：' + CHARACTERS[key])
-                self.assertEqual(editor.draft['profiles'][key]['description'], '編集した説明：' + CHARACTERS[key])
-            for key in LEGACY_CHARACTERS:
+            for index, key in enumerate(CHARACTERS):
+                editor.profile_key.setCurrentIndex(index)
+                editor.description.setText('説明：' + CHARACTERS[key])
+                self.assertEqual(editor.draft['profiles'][key]['description'], '説明：' + CHARACTERS[key])
+            for key in 'FNSH':
                 self.assertEqual(editor.draft['profiles'][key], old[key])
-            store.save(editor.draft)
-            self.assertEqual(read_document(store.path), editor.draft)
+            store.save(editor.draft); self.assertEqual(read_document(store.path), editor.draft)
         finally:
             editor.dirty = False; editor.hide(); editor.deleteLater()
 
-    def test_every_new_animation_frame_is_transparent_nonempty_and_unique_walk_cycle(self):
-        for key in NEW_PROFILES:
-            frames = character_frames(key)
+    def test_runtime_artwork_has_only_three_sheets_and_shared_fronts(self):
+        project = Path(__file__).resolve().parents[1]
+        actual = {p.name for p in (project/'companion/assets/characters').iterdir() if p.is_file()}
+        self.assertEqual(actual, {'a_motion.png', 'b_motion.png', 'e_motion.png', 'front_reactions.png', 'motion_layout.json'})
+        for character in CHARACTERS:
+            frames = character_frames(character)
             self.assertEqual(len(frames), 28)
-            self.assertEqual(len({(frame.width(), frame.height()) for frame in frames}), 1)
-            for index, frame in enumerate(frames):
-                image = frame.toImage()
-                self.assertTrue(image.hasAlphaChannel())
-                self.assertEqual(image.pixelColor(0, 0).alpha(), 0)
-                self.assertTrue(any(image.pixelColor(x, y).alpha() > 128
-                                    for x in range(0, image.width(), 5)
-                                    for y in range(0, image.height(), 5)), (key, index))
-            self.assertEqual(len({bytes(frame.toImage().constBits()) for frame in frames[16:24]}), 8)
+            self.assertEqual(character_pixmap(character).toImage(), frames[24].toImage())
+        self.assertFalse(any(p.relative_to(project).parts[0] == 'docs' and p.suffix in ('.png', '.gif') for p in source_files(project)))

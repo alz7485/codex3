@@ -71,14 +71,14 @@ def main():
     board.save(str(destination / "design-preview.png"))
     panel.set_page(1)
     app.processEvents()
-    # Present the actual selector beside all seven runtime assets.
+    # Present the actual selector beside all three runtime assets.
     sheet = QPixmap(1480, 1030)
     sheet.fill(QColor("#e5ebe4"))
     painter = QPainter(sheet)
     painter.setRenderHint(QPainter.RenderHint.Antialiasing)
     text(44, 48, f"Yohaku   /   v{VERSION}", 12, "#677c6b", True)
     text(44, 99, "今日はいっしょに、誰と働く？", 30, "#2c4536", True)
-    text(44, 133, "7種類のキャラクターを設定から切り替え。見た目と性格は、それぞれ選べます。", 15)
+    text(44, 133, "3種類のキャラクターを設定から切り替え。7種の性格は、別に選べます。", 15)
     painter.drawPixmap(44, 171, panel.grab())
     for i, (key, name) in enumerate(CHARACTERS.items()):
         x = 1004 + (i % 2) * 218

@@ -27,6 +27,10 @@ def source_files(project):
             continue
         if not path.is_file() or path.is_symlink() or path.name in PRIVATE_NAMES or path.name.startswith(".env."):
             continue
+        # Documentation previews are published on GitHub. Runtime artwork in
+        # companion/assets remains included; source ZIPs need no large demo GIFs.
+        if relative.parts[0] == 'docs' and path.suffix.lower() in {'.png', '.gif', '.jpg', '.jpeg', '.webp', '.mp4'}:
+            continue
         if path.name == "MANIFEST_SHA256.json" or path.suffix in {".pyc", ".sqlite3", ".sqlite", ".db", ".log", ".zip", ".pem", ".key"}:
             continue
         if path.name.endswith((".sqlite3-journal", ".sqlite3-wal", ".sqlite3-shm")):
