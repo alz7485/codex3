@@ -161,6 +161,7 @@ class ComfortInterfaceTests(unittest.TestCase):
     def test_stationary_hover_resumes_walking_but_new_pointer_motion_and_press_pause_it(self):
         from PySide6.QtCore import QPoint
         c = self.c
+        c.settings.animation = True
         c.settings.walking = True
         c.motion.wait = 0
         c.motion_x = 200.0

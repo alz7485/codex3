@@ -8,7 +8,7 @@ import re
 import shutil
 
 from .motion import EXPRESSION_FRAMES
-from .characters import CHARACTERS, LEGACY_CHARACTERS, NEW_PROFILES, profile_for
+from .characters import CHARACTERS, RECOGNIZED_PROFILE_KEYS, profile_for
 from .metrics import METRICS
 from .advanced_context import condition_key, TEMPORAL_KINDS, EVENT_KINDS
 import math
@@ -95,8 +95,8 @@ def validate(document):
     phrases = document.get('phrases')
     _require(isinstance(phrases, dict) and set(phrases) == set(VOICE_NAMES), f'{len(VOICE_NAMES)}種の性格のセリフを指定してください。')
     profiles = document.get('profiles')
-    _require(isinstance(profiles, dict) and set(LEGACY_CHARACTERS) <= set(profiles)
-             and set(profiles) <= set(CHARACTERS), '既存4体と対応するキャラクターの設定が必要です。')
+    _require(isinstance(profiles, dict) and set(CHARACTERS) <= set(profiles)
+             and set(profiles) <= set(RECOGNIZED_PROFILE_KEYS), 'つづり・ビット・ペンギーのキャラ設定が必要です。')
     for key, profile in profiles.items():
         _require(isinstance(profile, dict) and profile.get('voice') in VOICE_NAMES, f'{key}の性格が不正です。')
         _require(_text(profile.get('description'), 300) and _text(profile.get('tagline'), 1000), f'{key}の説明と代表的な一言を入力してください。')
@@ -189,7 +189,6 @@ def upgrade(document):
              '発生ルールの形式が不正です。')
     document = upgrade_voice_names(document)
     document = upgrade_display_timing(document)
-    document = upgrade_character_profiles(document)
     if document['schema_version'] == 2:
         return upgrade_personalities(upgrade_advanced(upgrade_resources(upgrade_names(upgrade_comfort(upgrade_click_reactions(upgrade_mail(document)))))))
     result = deepcopy(document)
@@ -209,18 +208,6 @@ def upgrade(document):
                     if isinstance(bank, dict) and voice in base['phrases']:
                         bank[rule['id']] = deepcopy(base['phrases'][voice][rule['id']])
     return upgrade_personalities(upgrade_advanced(upgrade_resources(upgrade_names(upgrade_comfort(upgrade_click_reactions(upgrade_mail(result)))))))
-
-
-def upgrade_character_profiles(document):
-    """Add only missing character profiles, without touching existing edits."""
-    if not isinstance(document.get('profiles'), dict):
-        return document
-    if all(key in document['profiles'] for key in NEW_PROFILES):
-        return document
-    result = deepcopy(document)
-    for key, profile in NEW_PROFILES.items():
-        result['profiles'].setdefault(key, deepcopy(profile))
-    return result if document_size(result) <= MAX_BYTES else document
 
 
 def upgrade_display_timing(document):

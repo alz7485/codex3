@@ -13,20 +13,18 @@ def check_bundle():
     from .dialogue import defaults
     from .ui import InteractionBubble, Mascot, create_application
     from .core import Notice
-    from .characters import CHARACTERS, LEGACY_CHARACTERS, ATLAS_CHARACTERS
+    from .characters import CHARACTERS
 
     app = create_application()
     assets = Path(__file__).parent / 'assets'
-    images = ['app/yohaku.png', 'app/yohaku.ico', 'characters/front_reactions.png', 'characters/f_front.png']
-    images += [f'characters/{key.lower()}{suffix}.png' for key in LEGACY_CHARACTERS for suffix in ('', '_motion')]
-    images += [f'characters/{key.lower()}_atlas.png' for key in ATLAS_CHARACTERS]
+    images = ['app/yohaku.png', 'app/yohaku.ico', 'characters/front_reactions.png']
+    images += [f'characters/{key.lower()}_motion.png' for key in CHARACTERS]
     for name in images:
         if QPixmap(str(assets/name)).isNull():
             raise ValueError('Bundled image cannot be decoded')
     for name in ('default_dialogue', 'personality_wording_v1', 'debtor_wording_v1', 'debtor_style_v1', 'gambler_wording_v1'):
         json.loads((assets/'dialogue'/f'{name}.json').read_text(encoding='utf-8'))
     json.loads((assets/'characters/motion_layout.json').read_text(encoding='utf-8'))
-    json.loads((assets/'characters/atlas_layout.json').read_text(encoding='utf-8'))
     document = defaults()
     rendered = 0
     for character in CHARACTERS:

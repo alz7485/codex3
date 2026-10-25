@@ -10,6 +10,19 @@ from scripts.package_source import create_archive, create_split_archives
 
 
 class DistributionTests(unittest.TestCase):
+    def test_source_zip_keeps_runtime_artwork_but_omits_web_documentation_media(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)/'project'; root.mkdir()
+            entries = {'main.py': b'code', 'docs/guide.md': b'guide',
+                       'docs/preview.gif': b'large demo', 'docs/screenshot.PNG': b'web only',
+                       'companion/assets/characters/a_motion.png': b'runtime art'}
+            for name, data in entries.items():
+                path = root/name; path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(data)
+            output = Path(temporary)/'source.zip'; create_archive(root, output)
+            with zipfile.ZipFile(output) as archive:
+                manifest = json.loads(archive.read('Yohaku/MANIFEST_SHA256.json'))
+            self.assertEqual(set(manifest), {'main.py', 'docs/guide.md', 'companion/assets/characters/a_motion.png'})
+
     def test_two_standalone_zips_restore_all_files_and_exclude_runtime_data(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp) / 'source'
@@ -42,9 +55,8 @@ class DistributionTests(unittest.TestCase):
     def test_onedir_inputs_include_all_characters_and_windows_resources(self):
         paths = required_files()
         self.assertTrue(all(path.is_file() for path in paths))
-        self.assertEqual(len([p for p in paths if p.name.endswith("_motion.png")]), 4)
-        self.assertEqual(len([p for p in paths if p.name.endswith("_atlas.png")]), 3)
-        self.assertIn('atlas_layout.json', [p.name for p in paths])
+        self.assertEqual(len([p for p in paths if p.name.endswith("_motion.png")]), 3)
+        self.assertFalse(any(p.name.endswith('_atlas.png') or p.name.startswith('f_') for p in paths))
         self.assertIn("yohaku.ico", [p.name for p in paths])
         self.assertIn("Yohaku.spec", [p.name for p in paths])
 

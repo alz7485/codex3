@@ -43,7 +43,7 @@ class ConversationTests(unittest.TestCase):
             calls.append(self.engine.phrase('call'))
         self.assertEqual(len(set(calls)), len(CHARACTERS))
         self.settings.personality = '冷静な案内役'
-        self.settings.character = 'F'
+        self.settings.character = 'E'
         self.assertIn(self.engine.phrase('call'), PHRASES['冷静な案内役']['call'])
 
     def test_time_weekday_and_session_context_are_eligible_only_when_relevant(self):

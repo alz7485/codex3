@@ -15,7 +15,7 @@
 | 連打への反応 | 押しすぎだ。<br>こちらはスロットのレバーではない。 |
 | 新着メール | 届いた……新しいメール。<br>受信トレイに、次の一枚。 |
 
-![追加性格の実装画面](personality-examples.png)
+![追加性格の実装画面](https://raw.githubusercontent.com/alz7485/codex3/main/Yohaku/docs/personality-examples.png)
 
 ## 対応する範囲
 

@@ -701,11 +701,11 @@ class UserInterfaceTests(unittest.TestCase):
         c = self.controller
         c.share()
         try:
-            c.panel.character_buttons["F"].click()
+            c.panel.character_buttons["E"].click()
             self.assertFalse(c.resident.isVisible())
             self.assertFalse(c.bubble.isVisible())
             self.assertTrue(c.hidden)
-            self.assertEqual(c.resident.character, "F")
+            self.assertEqual(c.resident.character, "E")
         finally:
             c.share()
             c.panel.character_buttons["A"].click()
@@ -721,7 +721,7 @@ class UserInterfaceTests(unittest.TestCase):
     def test_app_has_brand_name_version_and_windows_icon(self):
         c = self.controller
         self.assertEqual(self.app.applicationDisplayName(), "Yohaku")
-        self.assertEqual(self.app.applicationVersion(), "0.22.0")
+        self.assertEqual(self.app.applicationVersion(), "0.23.0")
         self.assertFalse(c.brand_icon.isNull())
         self.assertEqual(c.panel.windowIcon().cacheKey(), c.brand_icon.cacheKey())
         c.panel.character_buttons["B"].click()
