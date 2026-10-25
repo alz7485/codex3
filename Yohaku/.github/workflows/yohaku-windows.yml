@@ -29,8 +29,7 @@ jobs:
       - name: Find Yohaku source
         shell: pwsh
         run: |
-          $project = if (Test-Path "$env:GITHUB_WORKSPACE\Yohaku\Yohaku.spec") { "$env:GITHUB_WORKSPACE\Yohaku" } else { "$env:GITHUB_WORKSPACE" }
-          if (-not (Test-Path "$project\Yohaku.spec")) { throw "Yohaku.spec was not found." }
+          $project = if (Test-Path "$env:GITHUB_WORKSPACE\Yohaku\MANIFEST_SHA256.json") { "$env:GITHUB_WORKSPACE\Yohaku" } else { "$env:GITHUB_WORKSPACE" }
           "YOHAKU_PROJECT=$project" >> $env:GITHUB_ENV
       - name: Verify merged source
         working-directory: ${{ env.YOHAKU_PROJECT }}
