@@ -1,0 +1,22 @@
+﻿# Yohaku v0.23.0 onedirビルド用セット
+
+このZIPだけを新しいフォルダーへ展開してください。分割ZIPの統合やtestsフォルダーの追加は不要です。
+つづり・ビット・ペンギーの3体、全7性格を含みます。
+
+Windows 11、64bit Python 3.11または3.12を使用します。
+Yohaku.spec・main.py・ONEDIR_COMMAND.txtが並ぶYohakuフォルダーでPowerShellを開き、次の5行を順番に実行してください。バッチファイルや仮想環境の有効化は不要です。
+
+```powershell
+py -3.11 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements-build.txt
+.\.venv\Scripts\python.exe -m PyInstaller --noconfirm --clean Yohaku.spec
+.\.venv\Scripts\python.exe scripts\collect_licenses.py dist\Yohaku
+.\.venv\Scripts\python.exe -c "import shutil; shutil.make_archive('Yohaku-v0.23.0-windows-x64-onedir', 'zip', 'dist', 'Yohaku')"
+```
+
+Python 3.12の場合は1行目を `py -3.12 -m venv .venv` に変更します。
+出力は `dist\Yohaku\Yohaku.exe` と `Yohaku-v0.23.0-windows-x64-onedir.zip` です。
+`dist\Yohaku` フォルダー全体を配布してください。EXEと同じ場所の_internalフォルダーも必要です。
+
+このセットの検査マニフェストには実際に同梱するファイルだけを登録しています。testsフォルダーはビルドにも実行にも不要です。通常のソース版と混ぜず、このセットを単独で展開してください。
+単体で配布するYohaku.specもZIP内のものと同一です。単体specだけではビルドできないため、初回はZIPを使用してください。

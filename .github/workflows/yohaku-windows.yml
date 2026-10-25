@@ -7,6 +7,8 @@ on:
     paths:
       - 'Yohaku/**'
       - '.github/workflows/yohaku-windows.yml'
+      - 'downloads/Yohaku/*onedir-build.zip'
+      - 'downloads/Yohaku/Yohaku.spec'
 
 permissions:
   contents: read
@@ -65,6 +67,37 @@ jobs:
           $expected = python -c "from companion.metadata import VERSION; print(VERSION)"
           if (-not $result.success -or $result.version -ne $expected) { throw 'Bundle report failed or version mismatched.' }
           $result | ConvertTo-Json
+      - name: Build the downloadable kit without tests
+        shell: pwsh
+        env:
+          QT_QPA_PLATFORM: offscreen
+          PYTHONUTF8: '1'
+          LOCALAPPDATA: ${{ runner.temp }}/Yohaku-kit-check
+        run: |
+          $version = python -c "import sys; sys.path.insert(0, r'$env:YOHAKU_PROJECT'); from companion.metadata import VERSION; print(VERSION)"
+          $kitArchive = Join-Path $env:GITHUB_WORKSPACE "downloads/Yohaku/Yohaku-v$version-onedir-build.zip"
+          $destination = Join-Path $env:RUNNER_TEMP 'Yohaku-download-kit'
+          Expand-Archive -LiteralPath $kitArchive -DestinationPath $destination
+          $kit = Join-Path $destination 'Yohaku'
+          if (Test-Path (Join-Path $kit 'tests')) { throw 'The build kit must not require or include tests.' }
+          $standalone = Join-Path $env:GITHUB_WORKSPACE 'downloads/Yohaku/Yohaku.spec'
+          if ((Get-FileHash $standalone).Hash -ne (Get-FileHash (Join-Path $kit 'Yohaku.spec')).Hash) { throw 'Standalone spec differs from kit.' }
+          Push-Location $kit
+          try {
+            python scripts/check_source.py
+            if ($LASTEXITCODE -ne 0) { throw 'Kit integrity check failed.' }
+            python -m PyInstaller --noconfirm --clean Yohaku.spec
+            if ($LASTEXITCODE -ne 0) { throw 'Kit onedir build failed.' }
+            python scripts/collect_licenses.py dist/Yohaku
+            if ($LASTEXITCODE -ne 0) { throw 'Kit license collection failed.' }
+            $report = Join-Path $env:RUNNER_TEMP 'Yohaku-kit-smoke.json'
+            $app = Start-Process -FilePath '.\dist\Yohaku\Yohaku.exe' -ArgumentList @('--self-check', ('"{0}"' -f $report)) -PassThru
+            if (-not $app.WaitForExit(60000)) { Stop-Process -Id $app.Id -Force; throw 'Kit smoke timed out.' }
+            if ($app.ExitCode -ne 0) { throw 'Kit EXE check failed.' }
+            $result = Get-Content -Raw -Encoding UTF8 $report | ConvertFrom-Json
+            if (-not $result.success -or $result.version -ne $version) { throw 'Kit smoke report failed.' }
+            $result | ConvertTo-Json
+          } finally { Pop-Location }
       - name: Package two source ZIPs
         working-directory: ${{ env.YOHAKU_PROJECT }}
         run: python scripts/package_source.py
@@ -75,5 +108,6 @@ jobs:
           path: |
             ${{ env.YOHAKU_PROJECT }}/release/*
             ${{ runner.temp }}/Yohaku-bundle-smoke.json
+            ${{ runner.temp }}/Yohaku-kit-smoke.json
           if-no-files-found: error
           retention-days: 30
