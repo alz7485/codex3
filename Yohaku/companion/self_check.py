@@ -21,7 +21,7 @@ def check_bundle():
     for name in images:
         if QPixmap(str(assets/name)).isNull():
             raise ValueError('Bundled image cannot be decoded')
-    for name in ('default_dialogue', 'personality_wording_v1', 'debtor_wording_v1', 'debtor_style_v1'):
+    for name in ('default_dialogue', 'personality_wording_v1', 'debtor_wording_v1', 'debtor_style_v1', 'gambler_wording_v1'):
         json.loads((assets/'dialogue'/f'{name}.json').read_text(encoding='utf-8'))
     json.loads((assets/'characters/motion_layout.json').read_text(encoding='utf-8'))
     document = defaults()

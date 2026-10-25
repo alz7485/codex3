@@ -30,51 +30,51 @@ class PersonalityTests(unittest.TestCase):
 
     def test_debtor_style_updates_stock_preserving_custom_text_order_and_source_file(self):
         document=defaults();document.pop('debtor_style_version')
-        document['phrases']['孤高の債務者']['call']=['独自の呼びかけ','呼んだな。\n聞こう……用件を。']
+        document['phrases']['孤高のギャンブラー']['call']=['独自の呼びかけ','呼んだな。\n聞こう……用件を。']
         self.path.write_text(json.dumps(document,ensure_ascii=False));raw=self.path.read_bytes()
         store=DialogueStore(self.path)
         self.assertFalse(store.error);self.assertEqual(self.path.read_bytes(),raw)
-        self.assertEqual(store.data['phrases']['孤高の債務者']['call'],['独自の呼びかけ','聞かせてほしい……いまの用件。'])
+        self.assertEqual(store.data['phrases']['孤高のギャンブラー']['call'],['独自の呼びかけ','聞かせてほしい……いまの用件。'])
         store.save(store.data)
         self.assertEqual(read_document(self.path),store.data)
         self.assertEqual(self.path.with_suffix('.json.bak').read_bytes(),raw)
 
     def test_debtor_style_marker_preserves_later_edit_and_custom_topic_is_not_rewritten(self):
         document=defaults()
-        document['phrases']['孤高の債務者']['call']=['呼んだな。\n聞こう……用件を。']
+        document['phrases']['孤高のギャンブラー']['call']=['呼んだな。\n聞こう……用件を。']
         self.assertEqual(upgrade(document),document)
         document.pop('debtor_style_version')
         custom=deepcopy(next(r for r in document['rules'] if r['id']=='chat'));custom.update(id='my_style',label='独自の話題')
         document['rules'].append(custom)
         for bank in document['phrases'].values():bank['my_style']=['呼んだな。\n聞こう……用件を。']
         result=validate(upgrade(document))
-        self.assertEqual(result['phrases']['孤高の債務者']['my_style'],['呼んだな。\n聞こう……用件を。'])
+        self.assertEqual(result['phrases']['孤高のギャンブラー']['my_style'],['呼んだな。\n聞こう……用件を。'])
         self.assertEqual(result['rules'],document['rules'])
 
     def test_legacy_debtor_name_migrates_settings_profile_and_edited_bank(self):
         document=defaults()
-        document['phrases']['倒置法の使い手']=document['phrases'].pop('孤高の債務者')
+        document['phrases']['倒置法の使い手']=document['phrases'].pop('孤高のギャンブラー')
         document['phrases']['倒置法の使い手']['chat']=['自分で編集した語り']
         document['profiles']['A']['voice']='倒置法の使い手'
         self.path.write_text(json.dumps(document,ensure_ascii=False));raw=self.path.read_bytes()
         store=DialogueStore(self.path)
         self.assertFalse(store.error);self.assertEqual(self.path.read_bytes(),raw)
         self.assertNotIn('倒置法の使い手',store.data['phrases'])
-        self.assertEqual(store.data['phrases']['孤高の債務者']['chat'],['自分で編集した語り'])
-        self.assertEqual(voice_for(Settings(),store.data),'孤高の債務者')
+        self.assertEqual(store.data['phrases']['孤高のギャンブラー']['chat'],['自分で編集した語り'])
+        self.assertEqual(voice_for(Settings(),store.data),'孤高のギャンブラー')
         settings_path=self.path.with_name('settings.json')
         save_json(settings_path,{'personality':'倒置法の使い手'})
-        self.assertEqual(Settings.load(settings_path).personality,'孤高の債務者')
+        self.assertEqual(Settings.load(settings_path).personality,'孤高のギャンブラー')
 
     def test_debtor_wording_updates_exact_stock_only_and_preserves_custom_lines(self):
         document=defaults();document.pop('debtor_voice_version')
-        bank=document['phrases']['孤高の債務者']
+        bank=document['phrases']['孤高のギャンブラー']
         bank['smalltalk']=['待っていられる……呼ばれるまでの、静かな時間も。','独自のひとこと']
         bank['chat']=['ここで待っている。\n戻るのは、そのペースでいい……こちらへは。','独自の本文']
         result=validate(upgrade(document))
-        self.assertIn('返済',result['phrases']['孤高の債務者']['chat'][0])
-        self.assertEqual(result['phrases']['孤高の債務者']['chat'][1],'独自の本文')
-        self.assertEqual(result['phrases']['孤高の債務者']['smalltalk'],bank['smalltalk'])
+        self.assertIn('返済',result['phrases']['孤高のギャンブラー']['chat'][0])
+        self.assertEqual(result['phrases']['孤高のギャンブラー']['chat'][1],'独自の本文')
+        self.assertEqual(result['phrases']['孤高のギャンブラー']['smalltalk'],bank['smalltalk'])
 
     def test_all_seven_voices_cover_every_topic_with_independent_original_phrases(self):
         document=defaults();ids={r['id'] for r in document['rules']}

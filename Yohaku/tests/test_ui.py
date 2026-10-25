@@ -171,7 +171,11 @@ class UserInterfaceTests(unittest.TestCase):
         self.assertFalse(c.bubble.timer.isActive())
         c.bubble.display(Notice('', '会議が近づいています。', True, 'notice', 'calendar'))
         c.bubble.timer.start(1)
-        QTest.qWait(30)
+        # Both the expiry and the queued return need a GUI event turn. Windows
+        # timer granularity can exceed a fixed 30ms wait on a shared runner.
+        deadline = time.monotonic() + 1
+        while c.bubble.notice is not reaction and time.monotonic() < deadline:
+            QTest.qWait(10)
         self.assertIs(c.bubble.notice, reaction)
         self.assertTrue(c.bubble.isVisible())
         self.assertFalse(c.bubble.timer.isActive())
@@ -717,7 +721,7 @@ class UserInterfaceTests(unittest.TestCase):
     def test_app_has_brand_name_version_and_windows_icon(self):
         c = self.controller
         self.assertEqual(self.app.applicationDisplayName(), "Yohaku")
-        self.assertEqual(self.app.applicationVersion(), "0.20.0")
+        self.assertEqual(self.app.applicationVersion(), "0.21.0")
         self.assertFalse(c.brand_icon.isNull())
         self.assertEqual(c.panel.windowIcon().cacheKey(), c.brand_icon.cacheKey())
         c.panel.character_buttons["B"].click()

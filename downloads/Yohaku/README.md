@@ -1,13 +1,15 @@
-# Yohaku v0.20.0
+# Yohaku v0.21.0
 
 仕事に、ひと呼吸。予定とファイル履歴を知らせるデスクトップの小さな同僚です。
 
 | ダウンロード | サイズ | 検証 |
 |---|---|---|
-| [ZIP 1/2](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.20.0-source-part1-of-2.zip) | 12.86 MB | [SHA-256](Yohaku-v0.20.0-source-part1-of-2.zip.sha256) |
-| [ZIP 2/2](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.20.0-source-part2-of-2.zip) | 12.86 MB | [SHA-256](Yohaku-v0.20.0-source-part2-of-2.zip.sha256) |
+| [ZIP 1/2](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.21.0-source-part1-of-2.zip) | 12.87 MB | [SHA-256](Yohaku-v0.21.0-source-part1-of-2.zip.sha256) |
+| [ZIP 2/2](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.21.0-source-part2-of-2.zip) | 12.87 MB | [SHA-256](Yohaku-v0.21.0-source-part2-of-2.zip.sha256) |
 
 **両方のZIPを同じ場所へ展開し、Yohakuフォルダーを統合してください。** 共通のREADME・マニフェスト・コマンドは同一内容です。片方ずつテキスト化・復元できる普通のZIPです。バイナリの分割連結は不要です。
+
+v0.21.0では「孤高のギャンブラー」へ改名し、全76話題・217文を更新しました。一人で盤面を読み、勝ち筋と引き際を大切にする人物像です。勝負・心理戦・読み・運の比喩を加え、体言止めと倒置法は維持します。旧名の設定と編集済みセリフを引き継ぎます。[性格とセリフの例](../../Yohaku/docs/GAMBLER.md)
 
 v0.20.0は完成候補として、ビルド前のファイル整合性検査と、設定・履歴を残す導入・更新手順を追加しました。Windowsでのテストとonedirビルド、EXEで4キャラと吹き出しを描画する自動確認も用意しています。[導入・更新・困ったとき](../../Yohaku/docs/INSTALL_UPDATE.md)
 
@@ -21,7 +23,7 @@ v0.19.1では、吹き出しの通知時刻をHH:mm全体で入力・貼り付�
 - 今日の残りの予定数・時間・最大同時件数・次の予定の長さを、取得済みの新しい完全な予定表から算出します。
 - 操作再開と近い予定、文書数とメモリ、予定前の電源、定時前の片づけ、金曜の引き継ぎも通常会話の候補になります。
 - 旧設定の編集内容を保ち、新しい話題だけを一度追加。既に200件なら上限を超えて増やしません。追加で2MiBを超えるときも追加を見送り、既存設定を使用します。
-- 先輩の心の声は「…」だけの返事で表示。孤高の債務者は体言止め・倒置法を軸にします。
+- 先輩の心の声は「…」だけの返事で表示。孤高のギャンブラーは体言止め・倒置法を軸にします。
 - 単発通知、吹き出しのファイル履歴と予定、Outlook予定表へのボタン、3か月の全履歴検索なども同梱します。
 - ディスクの空き容量は扱いません。会話はローカルの定型文で、追加の外部送信・文書内容の収集はありません。
 
@@ -37,10 +39,10 @@ py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements-build.txt
 .\.venv\Scripts\python.exe -m PyInstaller --noconfirm --clean Yohaku.spec
 .\.venv\Scripts\python.exe scripts\collect_licenses.py dist\Yohaku
-.\.venv\Scripts\python.exe -c "import shutil; shutil.make_archive('Yohaku-v0.20.0-windows-x64-onedir', 'zip', 'dist', 'Yohaku')"
+.\.venv\Scripts\python.exe -c "import shutil; shutil.make_archive('Yohaku-v0.21.0-windows-x64-onedir', 'zip', 'dist', 'Yohaku')"
 ```
 
 Python 3.12では1行目を `py -3.12 -m venv .venv` に変更します。
-出力は `dist\Yohaku\Yohaku.exe` と `Yohaku-v0.20.0-windows-x64-onedir.zip`。EXEだけを取り出さず、onedir全体を配布してください。ここで配布する2つのZIPはソースで、ビルド済みEXEを含みません。
+出力は `dist\Yohaku\Yohaku.exe` と `Yohaku-v0.21.0-windows-x64-onedir.zip`。EXEだけを取り出さず、onedir全体を配布してください。ここで配布する2つのZIPはソースで、ビルド済みEXEを含みません。
 
-318件のテストをLinux / Qt offscreen・合成データ・COMモックで確認しています。Windows向けの自動テスト・EXEビルド・描画確認は[Actions](https://github.com/alz7485/codex3/actions/workflows/yohaku-windows.yml)を参照してください。社内PCでの実Outlook・Office・DPI・トレイ・長時間常駐は別途確認が必要です。
+324件のテストをLinux / Qt offscreen・合成データ・COMモックで確認しています。Windows向けの自動テスト・EXEビルド・描画確認は[Actions](https://github.com/alz7485/codex3/actions/workflows/yohaku-windows.yml)を参照してください。社内PCでの実Outlook・Office・DPI・トレイ・長時間常駐は別途確認が必要です。

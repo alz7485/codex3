@@ -73,7 +73,7 @@ class AuditInputRegressionTests(unittest.TestCase):
         for bank in document['phrases'].values():
             for key in EXTENDED_RULE_IDS:
                 bank.pop(key)
-        document['phrases']['孤高の債務者']['chat'][0] = 'KEEP_CUSTOM_EDIT'
+        document['phrases']['孤高のギャンブラー']['chat'][0] = 'KEEP_CUSTOM_EDIT'
         document['rules'][2]['enabled'] = False
         target = MAX_BYTES - 512
         for bank in document['phrases'].values():
