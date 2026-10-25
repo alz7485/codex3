@@ -15,6 +15,7 @@ import math
 AUTO_PERSONALITY = "キャラクターに合わせる"
 LEGACY_DEBTOR_VOICE = '倒置法の使い手'
 DEBTOR_VOICE = '孤高の債務者'
+GAMBLER_VOICE = '孤高のギャンブラー'
 INTERVALS = (10, 20, 30, 60, 90, 120)  # Legacy UI/import compatibility.
 DEFAULT_PATH = Path(__file__).parent / 'assets/dialogue/default_dialogue.json'
 PERSONALITY_WORDING_PATH = DEFAULT_PATH.with_name('personality_wording_v1.json')
@@ -59,7 +60,11 @@ def _text(value, limit=1000):
 def document_text(document):
     """Keep readable JSON unless indentation would exceed the read limit."""
     text = json.dumps(document, ensure_ascii=False, indent=2) + '\n'
-    return text if len(text.encode('utf-8')) <= MAX_BYTES else json.dumps(document, ensure_ascii=False)
+    return text if len(text.encode('utf-8')) <= MAX_BYTES else json.dumps(document, ensure_ascii=False, separators=(',', ':'))
+
+
+def document_size(document):
+    return len(json.dumps(document, ensure_ascii=False, separators=(',', ':')).encode('utf-8'))
 
 
 def validate(document):
@@ -119,7 +124,7 @@ def validate(document):
         _require(isinstance(bank, dict) and set(bank) == set(ids), f'{voice}: すべての話題のセリフが必要です。')
         for key, lines in bank.items():
             _require(isinstance(lines, list) and 1 <= len(lines) <= 200 and all(_text(line) for line in lines), f'{voice} / {key}: セリフは1〜200件、1件1〜1000文字にしてください。')
-    _require(len(json.dumps(document, ensure_ascii=False).encode('utf-8')) <= MAX_BYTES, 'JSONは2MB以内にしてください。')
+    _require(document_size(document) <= MAX_BYTES, 'JSONは2MB以内にしてください。')
     return deepcopy(document)
 
 
@@ -211,25 +216,27 @@ def upgrade_display_timing(document):
     if result['options'].get('bubble_seconds') == 60:
         result['options']['bubble_seconds'] = 20
     result['display_timing_version'] = 1
-    if len(json.dumps(result, ensure_ascii=False).encode('utf-8')) > MAX_BYTES:
+    if document_size(result) > MAX_BYTES:
         result.pop('display_timing_version')
     return result
 
 
 def canonical_voice(voice):
-    return DEBTOR_VOICE if voice == LEGACY_DEBTOR_VOICE else voice
+    return GAMBLER_VOICE if voice in (LEGACY_DEBTOR_VOICE, DEBTOR_VOICE) else voice
 
 
 def upgrade_voice_names(document):
     result = deepcopy(document)
     phrases = result.get('phrases')
-    if isinstance(phrases, dict) and LEGACY_DEBTOR_VOICE in phrases and DEBTOR_VOICE not in phrases:
+    if isinstance(phrases, dict):
+        names = [name for name in (LEGACY_DEBTOR_VOICE, DEBTOR_VOICE, GAMBLER_VOICE) if name in phrases]
+        _require(len(names) <= 1, '同じ性格の新旧名称が重複しています。セリフを保管し、性格名を一つに整理してください。')
         result['phrases'] = {canonical_voice(key): value for key, value in phrases.items()}
     profiles = result.get('profiles')
     if isinstance(profiles, dict):
         for profile in profiles.values():
-            if isinstance(profile, dict) and profile.get('voice') == LEGACY_DEBTOR_VOICE:
-                profile['voice'] = DEBTOR_VOICE
+            if isinstance(profile, dict):
+                profile['voice'] = canonical_voice(profile.get('voice'))
     return result
 
 
@@ -303,7 +310,7 @@ def upgrade_debtor_wording(document):
     if document.get('debtor_voice_version') == 1 or not isinstance(document.get('phrases'), dict):
         return upgrade_debtor_style(document)
     result = deepcopy(document)
-    bank = result['phrases'].get(DEBTOR_VOICE)
+    bank = result['phrases'].get(GAMBLER_VOICE)
     changes = json.loads(DEFAULT_PATH.with_name('debtor_wording_v1.json').read_text(encoding='utf-8'))
     if isinstance(bank, dict):
         for topic, rows in changes.items():
@@ -319,7 +326,7 @@ def upgrade_debtor_style(document):
     if document.get('debtor_style_version') == 1 or not isinstance(document.get('phrases'), dict):
         return upgrade_extended_context(document)
     result = deepcopy(document)
-    bank = result['phrases'].get(DEBTOR_VOICE)
+    bank = result['phrases'].get(GAMBLER_VOICE)
     changes = json.loads(DEFAULT_PATH.with_name('debtor_style_v1.json').read_text(encoding='utf-8'))
     if isinstance(bank, dict):
         for topic, rows in changes.items():
@@ -332,7 +339,7 @@ def upgrade_debtor_style(document):
 
 def upgrade_extended_context(document):
     if document.get('extended_context_version') == 1:
-        return document
+        return upgrade_gambler_wording(document)
     result=deepcopy(document)
     if isinstance(result.get('rules'),list) and isinstance(result.get('phrases'),dict):
         base=json.loads(DEFAULT_PATH.read_text(encoding='utf-8'))
@@ -344,11 +351,32 @@ def upgrade_extended_context(document):
             for voice,bank in result['phrases'].items():
                 if isinstance(bank,dict) and voice in base['phrases']:bank[key]=deepcopy(base['phrases'][voice][key])
     result['extended_context_version']=1
-    if len(json.dumps(result, ensure_ascii=False).encode('utf-8')) > MAX_BYTES:
+    if document_size(result) > MAX_BYTES:
         # Optional stock topics must never displace a valid, edited document.
         result = deepcopy(document)
         result['extended_context_version'] = 1
-        if len(json.dumps(result, ensure_ascii=False).encode('utf-8')) > MAX_BYTES:
+        if document_size(result) > MAX_BYTES:
+            return upgrade_gambler_wording(document)
+    return upgrade_gambler_wording(result)
+
+
+def upgrade_gambler_wording(document):
+    """Replace bundled lines once; keep custom words, order and deleted topics."""
+    if document.get('gambler_voice_version') == 1 or not isinstance(document.get('phrases'), dict):
+        return document
+    result = deepcopy(document)
+    bank = result['phrases'].get(GAMBLER_VOICE)
+    changes = json.loads(DEFAULT_PATH.with_name('gambler_wording_v1.json').read_text(encoding='utf-8'))
+    if isinstance(bank, dict):
+        for topic, rows in changes.items():
+            if isinstance(bank.get(topic), list):
+                replacements = {row['before']: row['after'] for row in rows}
+                bank[topic] = [replacements.get(line, line) if isinstance(line, str) else line for line in bank[topic]]
+    result['gambler_voice_version'] = 1
+    if document_size(result) > MAX_BYTES:
+        result = deepcopy(document)
+        result['gambler_voice_version'] = 1
+        if document_size(result) > MAX_BYTES:
             return document
     return result
 
@@ -545,7 +573,7 @@ def defaults():
 
 # Voice identifiers stay stable so existing personality overrides keep working.
 ORIGINAL_VOICE_NAMES = ('控えめな皮肉屋', '冷静な案内役', '元気な応援係', 'のんびりした同僚')
-ADDED_VOICE_NAMES = ('馴れ馴れしい関西弁', '寡黙な先輩', DEBTOR_VOICE)
+ADDED_VOICE_NAMES = ('馴れ馴れしい関西弁', '寡黙な先輩', GAMBLER_VOICE)
 VOICE_NAMES = (*ORIGINAL_VOICE_NAMES, *ADDED_VOICE_NAMES)
 _DEFAULT = defaults()
 PHRASES = _DEFAULT['phrases']

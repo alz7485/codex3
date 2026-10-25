@@ -15,13 +15,18 @@ from companion.dialogue import (DialogueError, DialogueStore, PERSONALITY_WORDIN
 
 def v018_document():
     document=defaults();document.pop('personality_wording_version');document.pop('senior_silence_version');document.pop('debtor_style_version')
+    document.pop('gambler_voice_version')
+    gambler=json.loads(PERSONALITY_WORDING_PATH.with_name('gambler_wording_v1.json').read_text())
+    for topic,rows in gambler.items():
+        previous={row['after']:row['before'] for row in rows}
+        document['phrases']['孤高のギャンブラー'][topic]=[previous.get(line,line) for line in document['phrases']['孤高のギャンブラー'][topic]]
     style=json.loads(PERSONALITY_WORDING_PATH.with_name('debtor_style_v1.json').read_text())
     for topic,rows in style.items():
         before={row['after']:row['before'] for row in rows}
-        document['phrases']['孤高の債務者'][topic]=[before.get(line,line) for line in document['phrases']['孤高の債務者'][topic]]
+        document['phrases']['孤高のギャンブラー'][topic]=[before.get(line,line) for line in document['phrases']['孤高のギャンブラー'][topic]]
     changes=json.loads(PERSONALITY_WORDING_PATH.read_text())
     for voice,topics in changes['voices'].items():
-        voice='孤高の債務者' if voice=='倒置法の使い手' else voice
+        voice='孤高のギャンブラー' if voice=='倒置法の使い手' else voice
         for topic,rows in topics.items():
             before={row['after']:row['before'] for row in rows}
             if voice=='寡黙な先輩':
@@ -38,7 +43,7 @@ class PersonalityWordingTests(unittest.TestCase):
     def test_bundled_versioned_changes_upgrade_previous_default_without_changing_other_voices(self):
         old=v018_document();original=deepcopy(old)
         self.assertEqual(old['phrases']['寡黙な先輩']['call'][0],'呼んだか。')
-        self.assertEqual(old['phrases']['孤高の債務者']['chat'][0],'小さくていい……次の一歩は。')
+        self.assertEqual(old['phrases']['孤高のギャンブラー']['chat'][0],'小さくていい……次の一歩は。')
         updated=validate(upgrade(old))
         self.assertEqual(updated,defaults());self.assertEqual(old,original)
         for field in ('options','profiles','rules'):self.assertEqual(updated[field],old[field])
@@ -48,14 +53,14 @@ class PersonalityWordingTests(unittest.TestCase):
     def test_mixed_stock_custom_reordered_and_deleted_lines_keep_their_order_and_length(self):
         old=v018_document()
         old['phrases']['寡黙な先輩']['call']=['独自の返事','ここにいる。','呼んだか。']
-        old['phrases']['孤高の債務者']['chat']=['独自の語り。','小さくていい……次の一歩は。']
+        old['phrases']['孤高のギャンブラー']['chat']=['独自の語り。','小さくていい……次の一歩は。']
         old['options']['interval_minutes']=17
         old['rules'][2]['enabled']=False
         updated=validate(upgrade(old))
         self.assertEqual(updated['phrases']['寡黙な先輩']['call'],[
             '独自の返事','ここにいる。','…\n（呼ばれると、少しうれしい。）'])
-        self.assertEqual(updated['phrases']['孤高の債務者']['chat'],[
-            '独自の語り。',defaults()['phrases']['孤高の債務者']['chat'][0]])
+        self.assertEqual(updated['phrases']['孤高のギャンブラー']['chat'],[
+            '独自の語り。',defaults()['phrases']['孤高のギャンブラー']['chat'][0]])
         self.assertEqual(updated['rules'],old['rules']);self.assertEqual(updated['options'],old['options'])
 
     def test_custom_topic_with_stock_like_text_and_deleted_topic_are_not_rewritten_or_restored(self):
@@ -86,7 +91,7 @@ class PersonalityWordingTests(unittest.TestCase):
     def test_revision_marker_preserves_user_removal_of_thoughts_and_reversion_to_old_wording(self):
         document=defaults()
         document['phrases']['寡黙な先輩']['call'][0]='呼んだか。'
-        document['phrases']['孤高の債務者']['chat'][0]='小さくていい……次の一歩は。'
+        document['phrases']['孤高のギャンブラー']['chat'][0]='小さくていい……次の一歩は。'
         self.path.write_text(json.dumps(document,ensure_ascii=False))
         self.assertEqual(read_document(self.path),document)
         self.assertEqual(upgrade(upgrade(document)),document)
@@ -146,7 +151,7 @@ class PersonalityWordingInterfaceTests(unittest.TestCase):
         from companion.core import Notice
         bubble=InteractionBubble();self.addCleanup(bubble.hide)
         bank=defaults()['phrases']
-        for voice,topic in (('寡黙な先輩','call'),('孤高の債務者','chat'),('孤高の債務者','cpu_high')):
+        for voice,topic in (('寡黙な先輩','call'),('孤高のギャンブラー','chat'),('孤高のギャンブラー','cpu_high')):
             text=bank[voice][topic][0]
             bubble.display(Notice('',text));self.app.processEvents()
             self.assertEqual(bubble.text.text(),text)

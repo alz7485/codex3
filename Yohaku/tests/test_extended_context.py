@@ -82,14 +82,14 @@ class ExtendedContextTests(unittest.TestCase):
         return document
 
     def test_upgrade_adds_twelve_topics_once_and_preserves_existing_edits_and_source(self):
-        document=self.legacy();document['phrases']['孤高の債務者']['chat']=['独自の語り。']
+        document=self.legacy();document['phrases']['孤高のギャンブラー']['chat']=['独自の語り。']
         document['options']['interval_minutes']=23;document['rules'][2]['enabled']=False
         self.path.write_text(json.dumps(document,ensure_ascii=False));raw=self.path.read_bytes()
         store=DialogueStore(self.path)
         self.assertFalse(store.error);self.assertEqual(self.path.read_bytes(),raw)
         self.assertEqual(store.data['rules'][:len(document['rules'])],document['rules'])
         self.assertEqual(store.data['options'],document['options'])
-        self.assertEqual(store.data['phrases']['孤高の債務者']['chat'],['独自の語り。'])
+        self.assertEqual(store.data['phrases']['孤高のギャンブラー']['chat'],['独自の語り。'])
         self.assertEqual(len(store.data['rules']),76)
         store.save(store.data);self.assertEqual(self.path.with_suffix('.json.bak').read_bytes(),raw)
         self.assertEqual(read_document(self.path),store.data)
