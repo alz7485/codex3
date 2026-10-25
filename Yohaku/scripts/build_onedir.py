@@ -15,10 +15,11 @@ import zipfile
 PROJECT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT))
 from companion.metadata import VERSION
+from scripts.check_source import SourceCheckError, verify_source
 
 
 def required_files(project=PROJECT):
-    paths = [project / "Yohaku.spec", project / "packaging/windows_version_info.txt",
+    paths = [project / "Yohaku.spec", project / "MANIFEST_SHA256.json", project / "scripts/check_source.py", project / "packaging/windows_version_info.txt",
              project / "companion/assets/app/yohaku.ico", project / "companion/assets/app/yohaku.png",
              project / "companion/assets/characters/motion_layout.json",
              project / "companion/assets/characters/front_reactions.png",
@@ -41,6 +42,10 @@ def main():
     missing = [str(path.relative_to(PROJECT)) for path in required_files() if not path.is_file()]
     if missing:
         parser.error("Missing build inputs: " + ", ".join(missing))
+    try:
+        verify_source(PROJECT)
+    except SourceCheckError as error:
+        parser.error(str(error))
     if args.check:
         print(f"Yohaku {VERSION}: icon, version resource and all 4 characters / animations are present.")
         return

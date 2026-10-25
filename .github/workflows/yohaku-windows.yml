@@ -2,9 +2,18 @@ name: Build Yohaku Windows onedir
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'Yohaku/**'
+      - '.github/workflows/yohaku-windows.yml'
 
 permissions:
   contents: read
+
+concurrency:
+  group: yohaku-windows-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   windows-onedir:
@@ -23,6 +32,11 @@ jobs:
           $project = if (Test-Path "$env:GITHUB_WORKSPACE\Yohaku\Yohaku.spec") { "$env:GITHUB_WORKSPACE\Yohaku" } else { "$env:GITHUB_WORKSPACE" }
           if (-not (Test-Path "$project\Yohaku.spec")) { throw "Yohaku.spec was not found." }
           "YOHAKU_PROJECT=$project" >> $env:GITHUB_ENV
+      - name: Verify merged source
+        working-directory: ${{ env.YOHAKU_PROJECT }}
+        env:
+          PYTHONUTF8: '1'
+        run: python scripts/check_source.py
       - name: Install build dependencies
         working-directory: ${{ env.YOHAKU_PROJECT }}
         run: python -m pip install -r requirements-build.txt
@@ -30,17 +44,36 @@ jobs:
         working-directory: ${{ env.YOHAKU_PROJECT }}
         env:
           QT_QPA_PLATFORM: offscreen
+          PYTHONUTF8: '1'
+          PYTHONDONTWRITEBYTECODE: '1'
+          LOCALAPPDATA: ${{ runner.temp }}/Yohaku-tests
         run: python -m unittest discover -s tests -v
       - name: Build Windows onedir ZIP
         working-directory: ${{ env.YOHAKU_PROJECT }}
         run: python scripts/build_onedir.py --skip-install
-      - name: Package complete source ZIP
+      - name: Check packaged EXE without user data or Outlook
+        working-directory: ${{ env.YOHAKU_PROJECT }}
+        shell: pwsh
+        env:
+          QT_QPA_PLATFORM: offscreen
+          LOCALAPPDATA: ${{ runner.temp }}/Yohaku-bundle
+        run: |
+          $report = Join-Path $env:RUNNER_TEMP 'Yohaku-bundle-smoke.json'
+          $app = Start-Process -FilePath '.\dist\Yohaku\Yohaku.exe' -ArgumentList @('--self-check', ('"{0}"' -f $report)) -Wait -PassThru
+          if ($app.ExitCode -ne 0) { throw "Bundle check exited with $($app.ExitCode)." }
+          $result = Get-Content -Raw -Encoding UTF8 $report | ConvertFrom-Json
+          $expected = python -c "from companion.metadata import VERSION; print(VERSION)"
+          if (-not $result.success -or $result.version -ne $expected) { throw 'Bundle report failed or version mismatched.' }
+          $result | ConvertTo-Json
+      - name: Package two source ZIPs
         working-directory: ${{ env.YOHAKU_PROJECT }}
         run: python scripts/package_source.py
       - name: Upload ZIPs and checksums
         uses: actions/upload-artifact@v4
         with:
           name: Yohaku-Windows-onedir-and-source
-          path: ${{ env.YOHAKU_PROJECT }}/release/*
+          path: |
+            ${{ env.YOHAKU_PROJECT }}/release/*
+            ${{ runner.temp }}/Yohaku-bundle-smoke.json
           if-no-files-found: error
           retention-days: 30

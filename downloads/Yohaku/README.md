@@ -1,13 +1,15 @@
-# Yohaku v0.19.2
+# Yohaku v0.20.0
 
 仕事に、ひと呼吸。予定とファイル履歴を知らせるデスクトップの小さな同僚です。
 
 | ダウンロード | サイズ | 検証 |
 |---|---|---|
-| [ZIP 1/2](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.19.2-source-part1-of-2.zip) | 12.86 MB | [SHA-256](Yohaku-v0.19.2-source-part1-of-2.zip.sha256) |
-| [ZIP 2/2](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.19.2-source-part2-of-2.zip) | 12.86 MB | [SHA-256](Yohaku-v0.19.2-source-part2-of-2.zip.sha256) |
+| [ZIP 1/2](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.20.0-source-part1-of-2.zip) | 12.86 MB | [SHA-256](Yohaku-v0.20.0-source-part1-of-2.zip.sha256) |
+| [ZIP 2/2](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.20.0-source-part2-of-2.zip) | 12.86 MB | [SHA-256](Yohaku-v0.20.0-source-part2-of-2.zip.sha256) |
 
 **両方のZIPを同じ場所へ展開し、Yohakuフォルダーを統合してください。** 共通のREADME・マニフェスト・コマンドは同一内容です。片方ずつテキスト化・復元できる普通のZIPです。バイナリの分割連結は不要です。
+
+v0.20.0は完成候補として、ビルド前のファイル整合性検査と、設定・履歴を残す導入・更新手順を追加しました。Windowsでのテストとonedirビルド、EXEで4キャラと吹き出しを描画する自動確認も用意しています。[導入・更新・困ったとき](../../Yohaku/docs/INSTALL_UPDATE.md)
 
 v0.19.2では、通常メッセージ20秒・通知1分に変更しました。起動・クリック後はおおむね1秒以内に歩き始め、通常メッセージを出したまま、0.4〜1.2秒の短い休止で歩きます。選択肢や通知入力中、連打反応では停止します。[表示時間と歩行](../../Yohaku/docs/TIMING_MOTION.md)
 
@@ -35,10 +37,10 @@ py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements-build.txt
 .\.venv\Scripts\python.exe -m PyInstaller --noconfirm --clean Yohaku.spec
 .\.venv\Scripts\python.exe scripts\collect_licenses.py dist\Yohaku
-.\.venv\Scripts\python.exe -c "import shutil; shutil.make_archive('Yohaku-v0.19.2-windows-x64-onedir', 'zip', 'dist', 'Yohaku')"
+.\.venv\Scripts\python.exe -c "import shutil; shutil.make_archive('Yohaku-v0.20.0-windows-x64-onedir', 'zip', 'dist', 'Yohaku')"
 ```
 
 Python 3.12では1行目を `py -3.12 -m venv .venv` に変更します。
-出力は `dist\Yohaku\Yohaku.exe` と `Yohaku-v0.19.2-windows-x64-onedir.zip`。EXEだけを取り出さず、onedir全体を配布してください。ここで配布する2つのZIPはソースで、ビルド済みEXEを含みません。
+出力は `dist\Yohaku\Yohaku.exe` と `Yohaku-v0.20.0-windows-x64-onedir.zip`。EXEだけを取り出さず、onedir全体を配布してください。ここで配布する2つのZIPはソースで、ビルド済みEXEを含みません。
 
-309件のテストをLinux / Qt offscreen・合成データ・COMモックで確認しています。Windows実機、実Outlook・Office、Windows EXEのビルドと実行は未検証です。
+318件のテストをLinux / Qt offscreen・合成データ・COMモックで確認しています。Windows向けの自動テスト・EXEビルド・描画確認は[Actions](https://github.com/alz7485/codex3/actions/workflows/yohaku-windows.yml)を参照してください。社内PCでの実Outlook・Office・DPI・トレイ・長時間常駐は別途確認が必要です。
