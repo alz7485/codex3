@@ -14,14 +14,7 @@ from .departure import DEFAULT_MESSAGE, attendance_url, departure_body
 from .motion import ClickReactions
 from .reminders import ReminderStore, due_time
 from .one_shot import OneShotStore
-
-
-CHARACTERS = {
-    "A": "つづり",
-    "B": "ビット",
-    "E": "ペギー",
-    "F": "きなこ",
-}
+from .characters import CHARACTERS
 
 
 def data_directory() -> Path:

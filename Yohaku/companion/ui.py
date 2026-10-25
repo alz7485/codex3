@@ -14,7 +14,7 @@ import time
 from PySide6.QtCore import QDate, QEvent, QLocale, QLockFile, QObject, QPoint, QRect, QRectF, QSize, Qt, QTime, QTimer, QUrl, Signal
 from PySide6.QtGui import QAction, QColor, QCursor, QDesktopServices, QFont, QIcon, QPainter, QPainterPath, QPen, QPixmap, QTransform
 from PySide6.QtWidgets import (
-    QApplication, QButtonGroup, QCalendarWidget, QCheckBox, QComboBox, QFrame, QHeaderView, QHBoxLayout, QLabel, QMainWindow,
+    QApplication, QButtonGroup, QCalendarWidget, QCheckBox, QComboBox, QFrame, QGridLayout, QHeaderView, QHBoxLayout, QLabel, QMainWindow,
     QMenu, QMessageBox, QPushButton, QScrollArea, QSizePolicy, QStackedWidget, QSystemTrayIcon, QTimeEdit, QDateEdit,
     QToolButton, QSpinBox, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget, QWidgetAction, QLineEdit, QPlainTextEdit, QListWidget, QListWidgetItem,
 )
@@ -23,6 +23,8 @@ from .core import CHARACTERS, Engine, Notice, PHRASES, Settings, data_directory,
 from .activity import FileHistory, FileTracker, opened_file_snapshot
 from .motion import Motion
 from .dialogue import AUTO_PERSONALITY, BUBBLE_MS, PROFILES, DialogueError, DialogueStore, voice_for
+from .characters import ATLAS_CHARACTERS, profile_for
+from .character_assets import atlas_frames
 from .outlook import read_calendar
 from .metadata import APP_DISPLAY_NAME, VERSION
 from .context import ResourceSampler, UsageLedger, input_idle_seconds, desktop_file_count, office_file_count, work_metrics, system_power_metrics
@@ -183,8 +185,10 @@ def box(parent=None, margins=0, spacing=10):
     return layout
 
 
-@lru_cache(maxsize=4)
+@lru_cache(maxsize=7)
 def character_pixmap(character):
+    if character in ATLAS_CHARACTERS:
+        return character_frames(character)[24]
     path = Path(__file__).parent / "assets" / "characters" / f"{character.lower()}.png"
     pixmap = QPixmap(str(path))
     if pixmap.isNull():
@@ -192,8 +196,10 @@ def character_pixmap(character):
     return pixmap
 
 
-@lru_cache(maxsize=4)
+@lru_cache(maxsize=7)
 def character_frames(character):
+    if character in ATLAS_CHARACTERS:
+        return atlas_frames(character)
     path = Path(__file__).parent / "assets" / "characters" / f"{character.lower()}_motion.png"
     sheet = QPixmap(str(path))
     if sheet.isNull():
@@ -390,7 +396,7 @@ class Panel(QMainWindow):
     def profile(self, key):
         if self.dialogue is None:
             return PROFILES[key]
-        p = self.dialogue.data['profiles'][key]
+        p = profile_for(self.dialogue.data['profiles'], key)
         return p['voice'], p['description'], p['tagline']
 
     def voice(self):
@@ -507,12 +513,12 @@ class Panel(QMainWindow):
         chooser.addWidget(label('会話と動きのプリセット', 'section'))
         chooser.addWidget(self.preset_combo)
         chooser.addWidget(label('標準：10分ごと・歩行あり／控えめ：30分ごと・歩行なし／通知だけ：自動雑談と動きを停止。手動の一言は使えます。', 'muted', True))
-        row = QHBoxLayout()
+        row = QGridLayout()
         row.setSpacing(8)
         self.character_buttons = {}
         self.character_group = QButtonGroup(self)
         self.character_group.setExclusive(True)
-        for key, name in CHARACTERS.items():
+        for index, (key, name) in enumerate(CHARACTERS.items()):
             choice = QToolButton()
             choice.setObjectName("character")
             choice.setText(name)
@@ -528,7 +534,7 @@ class Panel(QMainWindow):
             choice.clicked.connect(lambda checked=False, k=key: self.update_setting("character", k))
             self.character_group.addButton(choice)
             self.character_buttons[key] = choice
-            row.addWidget(choice)
+            row.addWidget(choice, index // 4, index % 4)
         chooser.addLayout(row)
         self.profile_description = label(self.profile(self.settings.character)[1], "muted", True)
         chooser.addWidget(self.profile_description)

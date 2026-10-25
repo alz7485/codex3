@@ -45,7 +45,7 @@ class ClickReactionTests(unittest.TestCase):
 
     def test_each_character_uses_editable_reaction_lines_and_expression(self):
         with tempfile.TemporaryDirectory() as tmp:
-            for character in 'ABEF':
+            for character in 'ABEFNSH':
                 engine = Engine(Settings(character=character), Path(tmp) / 'history.json', choose=lambda items: items[0])
                 for i in range(3): self.assertIsNone(engine.click_reaction(i * .1))
                 concern = engine.click_reaction(.3)
