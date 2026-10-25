@@ -155,5 +155,5 @@
   "tests/test_resources.py": "f649f264dec5f79e00945644ed3be2a647f08d5149347cb2beae2f1318c7f18a",
   "tests/test_self_check.py": "5a0514d2895d9833fe05d68b226e68921943906d47ae9b6d0fbeeadf7b4bd3b0",
   "tests/test_source_check.py": "ab8cce35e3acb46d4470a6ebf504a01537e46f825c7bd3d286833d22f24308ce",
-  "tests/test_ui.py": "ac7b86e89fbdfb7179a6ec89a68f8554ddab56569aa9b9aaecb4a84d4b53d4dd"
+  "tests/test_ui.py": "1e25b87cb419b9ce60c05623e094883366b0c775fc5b2bf634ba13a201e51fb0"
 }
