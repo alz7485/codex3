@@ -41,7 +41,7 @@ class ConversationTests(unittest.TestCase):
             self.settings.character = key
             self.assertEqual(voice_for(self.settings), PROFILES[key][0])
             calls.append(self.engine.phrase('call'))
-        self.assertEqual(len(set(calls)), 4)
+        self.assertEqual(len(set(calls)), len(CHARACTERS))
         self.settings.personality = '冷静な案内役'
         self.settings.character = 'F'
         self.assertIn(self.engine.phrase('call'), PHRASES['冷静な案内役']['call'])

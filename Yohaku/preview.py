@@ -7,6 +7,7 @@ from PySide6.QtCore import QPoint, QRectF, Qt
 from PySide6.QtGui import QColor, QFont, QPainter, QPixmap
 from companion.core import CHARACTERS, Notice, Settings
 from companion.ui import Bubble, Mascot, Panel, create_application
+from companion.metadata import VERSION
 
 
 def main():
@@ -70,28 +71,28 @@ def main():
     board.save(str(destination / "design-preview.png"))
     panel.set_page(1)
     app.processEvents()
-    # Present the actual selector beside all four actual runtime assets.
+    # Present the actual selector beside all seven runtime assets.
     sheet = QPixmap(1480, 1030)
     sheet.fill(QColor("#e5ebe4"))
     painter = QPainter(sheet)
     painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-    text(44, 48, "Yohaku   /   v0.16.0", 12, "#677c6b", True)
+    text(44, 48, f"Yohaku   /   v{VERSION}", 12, "#677c6b", True)
     text(44, 99, "今日はいっしょに、誰と働く？", 30, "#2c4536", True)
-    text(44, 133, "4種類のキャラクターを設定から切り替え。見た目と性格は、それぞれ選べます。", 15)
+    text(44, 133, "7種類のキャラクターを設定から切り替え。見た目と性格は、それぞれ選べます。", 15)
     painter.drawPixmap(44, 171, panel.grab())
     for i, (key, name) in enumerate(CHARACTERS.items()):
         x = 1004 + (i % 2) * 218
-        y = 186 + (i // 2) * 320
+        y = 171 + (i // 2) * 176
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(QColor("#fafbf7"))
-        painter.drawRoundedRect(QRectF(x, y, 202, 288), 14, 14)
+        painter.drawRoundedRect(QRectF(x, y, 202, 164), 14, 14)
         text(x + 15, y + 33, name, 14, "#2c4536", True)
-        illustration = Mascot(174, character=key)
+        illustration = Mascot(96, character=key)
         illustration.show()
         app.processEvents()
-        painter.drawPixmap(x + 14, y + 52, illustration.grab())
+        painter.drawPixmap(x + 52, y + 39, illustration.grab())
         illustration.hide()
-        text(x + 15, y + 262, "表情と歩行 · 音声なし", 11, "#697b6c")
+        text(x + 15, y + 150, "表情と歩行 · 音声なし", 11, "#697b6c")
     text(1004, 877, "切り替えは、その場で反映。", 16, "#2c4536", True)
     text(1004, 908, "選んだキャラは次回も引き継ぎます。", 13)
     text(44, 983, "実装画面のプレビュー / Windows・従来版Outlookの実機検証は別途必要です。", 12, "#617566")

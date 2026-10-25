@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (QCheckBox, QComboBox, QFileDialog, QFormLayout, Q
 
 from .dialogue import DialogueError, KINDS, VOICE_NAMES, defaults, read_document, validate
 from .core import CHARACTERS
+from .characters import profile_for
 from .motion import EXPRESSION_FRAMES
 from .metrics import METRICS
 from .ui import box, button, label
@@ -503,7 +504,7 @@ class DialogueEditor(QMainWindow):
         if self.loading:
             return
         self.loading = True
-        profile = self.draft['profiles']['ABEF'[self.profile_key.currentIndex()]]
+        profile = profile_for(self.draft['profiles'], tuple(CHARACTERS)[self.profile_key.currentIndex()])
         self.profile_voice.setCurrentText(profile['voice'])
         self.description.setText(profile['description'])
         self.tagline.setPlainText(profile['tagline'])
@@ -511,7 +512,7 @@ class DialogueEditor(QMainWindow):
 
     def update_profile(self, *_):
         if not self.loading:
-            self.draft['profiles']['ABEF'[self.profile_key.currentIndex()]] = dict(voice=self.profile_voice.currentText(),
+            self.draft['profiles'][tuple(CHARACTERS)[self.profile_key.currentIndex()]] = dict(voice=self.profile_voice.currentText(),
                 description=self.description.text(), tagline=self.tagline.toPlainText())
             self.mark_dirty()
 

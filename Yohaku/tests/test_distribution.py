@@ -43,6 +43,8 @@ class DistributionTests(unittest.TestCase):
         paths = required_files()
         self.assertTrue(all(path.is_file() for path in paths))
         self.assertEqual(len([p for p in paths if p.name.endswith("_motion.png")]), 4)
+        self.assertEqual(len([p for p in paths if p.name.endswith("_atlas.png")]), 3)
+        self.assertIn('atlas_layout.json', [p.name for p in paths])
         self.assertIn("yohaku.ico", [p.name for p in paths])
         self.assertIn("Yohaku.spec", [p.name for p in paths])
 

@@ -48,7 +48,7 @@
 .\.venv\Scripts\python.exe scripts\check_source.py
 ```
 
-ビルドしたEXEの素材・4キャラの描画・吹き出しを確認する場合は、次を実行します。通常のアプリは起動せず、設定・履歴・Outlookに触れません。指定したJSONに結果だけを出します。
+ビルドしたEXEの素材・7体の描画・吹き出しを確認する場合は、次を実行します。通常のアプリは起動せず、設定・履歴・Outlookに触れません。指定したJSONに結果だけを出します。
 
 ```powershell
 .\dist\Yohaku\Yohaku.exe --self-check smoke-report.json

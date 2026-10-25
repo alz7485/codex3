@@ -10,6 +10,7 @@ from PySide6.QtGui import QColor, QFont, QPainter, QPixmap
 from companion.core import CHARACTERS
 from companion.dialogue import PROFILES
 from companion.motion import Motion
+from companion.metadata import VERSION
 from companion.ui import Mascot, create_application
 
 LABELS = ('通常', 'まばたき', '笑顔', 'お知らせ', '考え中', '眠そう', '得意げ', '気遣い',
@@ -33,11 +34,11 @@ def main():
         painter.setPen(QColor('#344f3f'))
         painter.drawText(x, y, value)
 
-    board = QPixmap(2000, 960)
+    board = QPixmap(2000, 200 + len(CHARACTERS) * 190)
     board.fill(QColor('#e7ede6'))
     painter = QPainter(board)
-    text(painter, 40, 45, 'Yohaku  /  v0.16.0', 14, True)
-    text(painter, 40, 95, '4つの性格。20の表情としぐさ。', 32, True)
+    text(painter, 40, 45, f'Yohaku  /  v{VERSION}', 14, True)
+    text(painter, 40, 95, f'{len(CHARACTERS)}体の相棒。20の表情としぐさ。', 32, True)
     for row, (key, name) in enumerate(CHARACTERS.items()):
         y = 150 + row * 190
         text(painter, 40, y, f'{name} / {PROFILES[key][0]}', 17, True)
@@ -49,7 +50,7 @@ def main():
             mascot.previous_frame = None
             painter.drawPixmap(x, y + 9, mascot.grab())
             text(painter, x + 4, y + 151, caption, 11)
-    text(painter, 40, 945, '実装ウィジェットの描画 / 各キャラに歩行8コマも同梱 / Windows実機の動作は未検証', 13)
+    text(painter, 40, board.height() - 15, '実装ウィジェットの描画 / 各キャラに歩行8コマも同梱 / Windows実機の動作は未検証', 13)
     painter.end()
     board.save(str(destination / 'expression-preview.png'))
     if shutil.which('ffmpeg'):
@@ -61,14 +62,14 @@ def main():
             mascot.setFixedSize(138, 160)
             mascot.bottom_padding = 0
         with tempfile.TemporaryDirectory(prefix='yohaku-motion-') as temporary:
-            xs = [0.0] * 4
+            xs = [0.0] * len(CHARACTERS)
             for frame in range(240):
-                canvas = QPixmap(1200, 640)
+                canvas = QPixmap(max(1200, len(CHARACTERS) * 294 + 24), 640)
                 canvas.fill(QColor('#e7ede6'))
                 p = QPainter(canvas)
-                text(p, 32, 38, 'Yohaku  /  v0.16.0', 13, True)
+                text(p, 32, 38, f'Yohaku  /  v{VERSION}', 13, True)
                 text(p, 32, 81, '小休止を挟んで、ちょこちょこ歩く。', 29, True)
-                text(p, 32, 112, '小休止2〜5秒・1回24〜56px / タスクバー直上を歩く / 下段は20種の表情', 14)
+                text(p, 32, 112, '小休止0.4〜1.2秒・1回24〜56px / タスクバー直上を歩く / 下段は20種の表情', 14)
                 for column, ((key, name), mascot, motion) in enumerate(zip(CHARACTERS.items(), mascots, motions)):
                     left = 24 + column * 294
                     text(p, left + 8, 160, name, 16, True)

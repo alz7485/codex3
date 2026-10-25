@@ -4,9 +4,11 @@
 
 **仕事に、ひと呼吸。** 予定とファイル履歴をそっと知らせる、デスクトップの小さな同僚です。
 
-[ソースZIP 1/2](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.21.0-source-part1-of-2.zip) · [ソースZIP 2/2](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.21.0-source-part2-of-2.zip)
+[ソースZIP 1/2](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.22.0-source-part1-of-2.zip) · [ソースZIP 2/2](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.22.0-source-part2-of-2.zip)
 
 **両方をダウンロードし、同じ場所へ展開してください。** それぞれ普通のZIPなので、片方ずつテキスト化できます。共通のREADME・マニフェスト等の上書き確認は許可してください。中身は同一です。
+
+v0.22.0では、なぎ（カピバラ／馴れ馴れしい関西弁）・しずく（ふくろう／寡黙な先輩）・すみ（ベスト姿のサギ／孤高のギャンブラー）を追加しました。既存4体と合わせた7体を2段のサムネイルから選べます。各キャラは正面・表情・歩行の28コマ。旧設定と編集済みのセリフを保ち、性格の個別指定も維持します。[新キャラの説明](docs/NEW_CHARACTERS.md) · [実装での表示例](docs/new-characters.png)
 
 v0.21.0では「孤高のギャンブラー」へ改名し、全76話題・217文を、勝負・心理戦・読み・運・引き際を軸にしたオリジナルの文章へ更新しました。体言止めと倒置法を保ち、旧名称と編集済みのセリフも引き継ぎます。[性格とセリフ](docs/GAMBLER.md)
 
@@ -58,9 +60,9 @@ Windowsデスクトップの隅で、予定と短いひとことをそっと知�
 - 「非表示にする」でキャラと吹き出しを隠します。通知領域のアイコンを左クリックすると表示／非表示を切り替えます。アイコンの右クリックで設定・終了などを選べます。
 - アニメーション・歩行・PC状態の集計・新着通知は設定から切り替えます。ファイル起動履歴は引き続き初期設定オフです。
 
-採用キャラは **つづり（ノート） / ビット（ロボット） / ペギー（ペンギン） / きなこ（お茶ねこ）** です。「キャラと通知」の先頭にあるサムネイルをクリックすると、常駐キャラ・操作画面・トレイアイコンが即時に切り替わります。選択は自動保存され、次回起動時にも引き継ぎます。初期設定はつづりです。性格は「キャラクターに合わせる」が初期値で、つづり＝気の利く皮肉屋、ビット＝几帳面な分析役、ペギー＝まじめな応援係、きなこ＝お茶好きののんびりした同僚です。設定で7種の性格から自由に選べます。追加の「馴れ馴れしい関西弁」「寡黙な先輩」「孤高のギャンブラー」も、4キャラのどれにも組み合わせられます。
+採用キャラは **つづり（ノート） / ビット（ロボット） / ペギー（ペンギン） / きなこ（お茶ねこ） / なぎ（カピバラ） / しずく（ふくろう） / すみ（サギ）** です。「キャラと通知」の先頭にあるサムネイルをクリックすると、常駐キャラ・操作画面・トレイアイコンが即時に切り替わります。選択は自動保存され、次回起動時にも引き継ぎます。初期設定はつづりです。性格は「キャラクターに合わせる」が初期値で、つづり＝気の利く皮肉屋、ビット＝几帳面な分析役、ペギー＝まじめな応援係、きなこ＝お茶好きののんびりした同僚です。設定で7種の性格から自由に選べます。なぎ＝馴れ馴れしい関西弁、しずく＝寡黙な先輩、すみ＝孤高のギャンブラーです。7種の性格を7体のどれにも組み合わせられます。
 
-見た目の切り替えではOutlookの接続状態・取得中の処理・表示中の通知・おやすみ・画面共有モード・重複通知の履歴を変更しません。旧版の設定も読み込めます。旧版から初めて更新した際は会話の間隔を10分へ移行し、その後は選んだ間隔を保持します。既存の性格の個別指定は保持します。「キャラクターに合わせる」で4キャラ固有の性格を使えます。キャラの指定がない、または不正な場合はAを使用します。
+見た目の切り替えではOutlookの接続状態・取得中の処理・表示中の通知・おやすみ・画面共有モード・重複通知の履歴を変更しません。旧版の設定も読み込めます。旧版から初めて更新した際は会話の間隔を10分へ移行し、その後は選んだ間隔を保持します。既存の性格の個別指定は保持します。「キャラクターに合わせる」で7体それぞれの性格を使えます。キャラの指定がない、または不正な場合はAを使用します。
 
 会社のデスクトップで目立ちすぎない小さなキャラクターです。AI API、音声、効果音、広告、利用状況の送信、自動アップデートはありません。キーの内容・クリック位置・入力文は記録しません。PC状態の集計ではWindowsの最終操作時刻から経過秒数を取得し、操作あり／なしの時間を推定します。アプリ自身に外部送信用のクライアントはありません。Outlook自体の同期動作はOutlookの設定に従います。
 
@@ -85,8 +87,9 @@ Windowsデスクトップの隅で、予定と短いひとことをそっと知�
 - `docs/click-menu.png`：右クリックの問いかけと5行の選択肢
 - `docs/notification-colors.png`：一言・予定・新着の色分け
 - `docs/CONTEXT_NOTIFICATIONS.md`：新しい会話条件と受信通知の取得範囲
-- `docs/motion-preview.gif`：4キャラの歩行・表情プレビュー
-- `docs/expression-preview.png`：4キャラの表情・しぐさ一覧
+- `docs/new-characters.png`：新しい3体と全7体の実装表示
+- `docs/motion-preview.gif`：従来4体の歩行・表情プレビュー
+- `docs/expression-preview.png`：従来4体の表情・しぐさ一覧
 - `docs/CONVERSATION.md`：キャラの性格と会話発生のルール
 - `docs/dialogue-editor.png`・`dialogue-rules.png`・`dialogue-options.png`：会話編集の実装画面
 - `docs/DIALOGUE_JSON.md`：JSONの形式・編集・復旧手順
@@ -218,19 +221,19 @@ py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements-build.txt
 .\.venv\Scripts\python.exe -m PyInstaller --noconfirm --clean Yohaku.spec
 .\.venv\Scripts\python.exe scripts\collect_licenses.py dist\Yohaku
-.\.venv\Scripts\python.exe -c "import shutil; shutil.make_archive('Yohaku-v0.21.0-windows-x64-onedir', 'zip', 'dist', 'Yohaku')"
+.\.venv\Scripts\python.exe -c "import shutil; shutil.make_archive('Yohaku-v0.22.0-windows-x64-onedir', 'zip', 'dist', 'Yohaku')"
 ```
 
 Python 3.12の場合は、1行目を `py -3.12 -m venv .venv` に変更します。
 
-3行目がonedirを作るコマンドです。`Yohaku.spec`にフォルダー形式、アイコン、4キャラとアニメーション素材、製品名・版を定義しています。出力は `dist\Yohaku\Yohaku.exe`。5行目で作るZIPは作業フォルダー直下の `Yohaku-v0.21.0-windows-x64-onedir.zip` です。
+3行目がonedirを作るコマンドです。`Yohaku.spec`にフォルダー形式、アイコン、7体とアニメーション素材、製品名・版を定義しています。出力は `dist\Yohaku\Yohaku.exe`。5行目で作るZIPは作業フォルダー直下の `Yohaku-v0.22.0-windows-x64-onedir.zip` です。
 
 | 同梱ファイル | 用途 |
 |---|---|
 | `ONEDIR_COMMAND.txt` | ターミナルへ貼り付ける直接コマンド |
 | `BuildWindows.cmd` | バッチが利用できる環境向けの補助入口 |
 | `scripts/build_onedir.py` | 仮想環境の準備、PyInstaller、素材の確認、配布ZIPの作成 |
-| `Yohaku.spec` | onedir用の定義。4キャラ・アニメーション・アプリアイコンを同梱 |
+| `Yohaku.spec` | onedir用の定義。7体・アニメーション・アプリアイコンを同梱 |
 | `packaging/windows_version_info.txt` | Yohakuの製品名とバージョン情報 |
 | `scripts/package_source.py` | 2つの独立したソースZIPとSHA-256の作成。ファイルを途中で切らず圧縮後の容量を均等化。ローカルの設定・履歴を除外 |
 | `.github/workflows/yohaku-windows.yml` | GitHub ActionsのWindowsビルド定義 |
@@ -241,7 +244,7 @@ Python 3.12の場合は、1行目を `py -3.12 -m venv .venv` に変更します
 py -3.11 scripts/build_onedir.py
 ```
 
-ビルドヘルパーの場合の出力は `dist\Yohaku\Yohaku.exe` と `release\Yohaku-v0.21.0-windows-x64-onedir.zip` です。**EXEだけを取り出さず、ZIPをすべて展開して実行してください。** DLL・Qt・画像は同じフォルダーの`_internal`に入ります。配布物には依存ソフトウェアのライセンス文書もコピーします。署名・社内パッケージ化は含みません。LinuxからWindows EXEを作ったものではありません。
+ビルドヘルパーの場合の出力は `dist\Yohaku\Yohaku.exe` と `release\Yohaku-v0.22.0-windows-x64-onedir.zip` です。**EXEだけを取り出さず、ZIPをすべて展開して実行してください。** DLL・Qt・画像は同じフォルダーの`_internal`に入ります。配布物には依存ソフトウェアのライセンス文書もコピーします。署名・社内パッケージ化は含みません。LinuxからWindows EXEを作ったものではありません。
 
 ビルド素材の確認だけなら `python scripts/build_onedir.py --check`、ビルド環境の準備だけなら `py -3.11 scripts/build_onedir.py --setup-only` を使います。Windows用ビルドはWindows上で実行してください。
 

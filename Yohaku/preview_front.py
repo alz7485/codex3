@@ -12,7 +12,7 @@ from companion.ui import Mascot, create_application
 
 def main():
     app = create_application()
-    board = QPixmap(1280, 1000)
+    board = QPixmap(1280, 220 + len(CHARACTERS) * 195)
     board.fill(QColor('#edf1ea'))
     p = QPainter(board)
 
@@ -47,7 +47,7 @@ def main():
             text(280, y + 152, concern, 15)
             text(280, y + 177, notice.text, 15)
             mascot.hide()
-    text(36, 986, '反応の本文をクリックして閉じるまで左クリックを停止 / 右クリックは使用可能 / 会話編集でセリフ・判定条件を変更', 14)
+    text(36, board.height() - 14, '反応の本文をクリックして閉じるまで左クリックを停止 / 右クリックは使用可能 / 会話編集でセリフ・判定条件を変更', 14)
     p.end()
     board.save(str(Path(__file__).parent / 'docs/front-reactions.png'))
     print('Rendered docs/front-reactions.png')

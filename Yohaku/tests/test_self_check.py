@@ -25,7 +25,7 @@ class BundleCheckTests(unittest.TestCase):
             self.assertEqual(process.returncode, 0, process.stderr.decode('utf-8', errors='replace'))
             result = json.loads(report.read_text(encoding='utf-8'))
             self.assertTrue(result['success'])
-            self.assertEqual(result['character_frames_rendered'], 16)
+            self.assertEqual(result['character_frames_rendered'], 28)
             self.assertEqual(result['topics'], 76)
             self.assertEqual(result['voices'], 7)
             self.assertFalse((root/'user-data').exists())

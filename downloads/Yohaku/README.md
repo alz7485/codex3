@@ -1,13 +1,15 @@
-# Yohaku v0.21.0
+# Yohaku v0.22.0
 
 仕事に、ひと呼吸。予定とファイル履歴を知らせるデスクトップの小さな同僚です。
 
 | ダウンロード | サイズ | 検証 |
 |---|---|---|
-| [ZIP 1/2](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.21.0-source-part1-of-2.zip) | 12.87 MB | [SHA-256](Yohaku-v0.21.0-source-part1-of-2.zip.sha256) |
-| [ZIP 2/2](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.21.0-source-part2-of-2.zip) | 12.87 MB | [SHA-256](Yohaku-v0.21.0-source-part2-of-2.zip.sha256) |
+| [ZIP 1/2](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.22.0-source-part1-of-2.zip) | 15.68 MB | [SHA-256](Yohaku-v0.22.0-source-part1-of-2.zip.sha256) |
+| [ZIP 2/2](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.22.0-source-part2-of-2.zip) | 15.68 MB | [SHA-256](Yohaku-v0.22.0-source-part2-of-2.zip.sha256) |
 
 **両方のZIPを同じ場所へ展開し、Yohakuフォルダーを統合してください。** 共通のREADME・マニフェスト・コマンドは同一内容です。片方ずつテキスト化・復元できる普通のZIPです。バイナリの分割連結は不要です。
+
+v0.22.0では、なぎ（カピバラ／関西弁）・しずく（ふくろう／寡黙な先輩）・すみ（ベスト姿のサギ／孤高のギャンブラー）を追加しました。既存4体と合わせた7体を2段から選べます。各28コマの表情・正面・歩行素材を同梱し、旧設定・編集済みセリフと性格の個別指定を保持します。[キャラの説明](../../Yohaku/docs/NEW_CHARACTERS.md) · [実装での表示例](../../Yohaku/docs/new-characters.png)
 
 v0.21.0では「孤高のギャンブラー」へ改名し、全76話題・217文を更新しました。一人で盤面を読み、勝ち筋と引き際を大切にする人物像です。勝負・心理戦・読み・運の比喩を加え、体言止めと倒置法は維持します。旧名の設定と編集済みセリフを引き継ぎます。[性格とセリフの例](../../Yohaku/docs/GAMBLER.md)
 
@@ -39,10 +41,10 @@ py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements-build.txt
 .\.venv\Scripts\python.exe -m PyInstaller --noconfirm --clean Yohaku.spec
 .\.venv\Scripts\python.exe scripts\collect_licenses.py dist\Yohaku
-.\.venv\Scripts\python.exe -c "import shutil; shutil.make_archive('Yohaku-v0.21.0-windows-x64-onedir', 'zip', 'dist', 'Yohaku')"
+.\.venv\Scripts\python.exe -c "import shutil; shutil.make_archive('Yohaku-v0.22.0-windows-x64-onedir', 'zip', 'dist', 'Yohaku')"
 ```
 
 Python 3.12では1行目を `py -3.12 -m venv .venv` に変更します。
-出力は `dist\Yohaku\Yohaku.exe` と `Yohaku-v0.21.0-windows-x64-onedir.zip`。EXEだけを取り出さず、onedir全体を配布してください。ここで配布する2つのZIPはソースで、ビルド済みEXEを含みません。
+出力は `dist\Yohaku\Yohaku.exe` と `Yohaku-v0.22.0-windows-x64-onedir.zip`。EXEだけを取り出さず、onedir全体を配布してください。ここで配布する2つのZIPはソースで、ビルド済みEXEを含みません。
 
-324件のテストをLinux / Qt offscreen・合成データ・COMモックで確認しています。Windows向けの自動テスト・EXEビルド・描画確認は[Actions](https://github.com/alz7485/codex3/actions/workflows/yohaku-windows.yml)を参照してください。社内PCでの実Outlook・Office・DPI・トレイ・長時間常駐は別途確認が必要です。
+330件のテストをLinux / Qt offscreen・合成データ・COMモックで確認しています。Windows向けの自動テスト・EXEビルド・描画確認は[Actions](https://github.com/alz7485/codex3/actions/workflows/yohaku-windows.yml)を参照してください。社内PCでの実Outlook・Office・DPI・トレイ・長時間常駐は別途確認が必要です。
