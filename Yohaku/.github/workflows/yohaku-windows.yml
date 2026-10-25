@@ -58,7 +58,8 @@ jobs:
           LOCALAPPDATA: ${{ runner.temp }}/Yohaku-bundle
         run: |
           $report = Join-Path $env:RUNNER_TEMP 'Yohaku-bundle-smoke.json'
-          $app = Start-Process -FilePath '.\dist\Yohaku\Yohaku.exe' -ArgumentList @('--self-check', ('"{0}"' -f $report)) -Wait -PassThru
+          $app = Start-Process -FilePath '.\dist\Yohaku\Yohaku.exe' -ArgumentList @('--self-check', ('"{0}"' -f $report)) -PassThru
+          if (-not $app.WaitForExit(60000)) { Stop-Process -Id $app.Id -Force; throw 'Bundle check timed out after 60 seconds.' }
           if ($app.ExitCode -ne 0) { throw "Bundle check exited with $($app.ExitCode)." }
           $result = Get-Content -Raw -Encoding UTF8 $report | ConvertFrom-Json
           $expected = python -c "from companion.metadata import VERSION; print(VERSION)"

@@ -1,10 +1,10 @@
 {
   ".gitattributes": "c5a9e0b2a90ddebcca2907ff8243b574e00ed5904019ecac7a4a98ec7d195cd9",
-  ".github/workflows/yohaku-windows.yml": "17d15607eecacd907e9b46d863e818ea6c44d4e5b252e52a7b5f41301cdff7ef",
+  ".github/workflows/yohaku-windows.yml": "c90d4e56fafe11370083743b2426100ce50836f87e57320017e1dbe7ef036d2c",
   ".gitignore": "8d92598795f915ab35484ae9c76ba0502a61ba0af4b20226c783cc6463275edb",
   "BuildWindows.cmd": "43a704402d02dae3a5db6c59b42ba3b28a09f150ce050fb3ef8e8175c424d37f",
   "ONEDIR_COMMAND.txt": "c0a511dc8a9c515df869c6053ba45042da072e3ca3501b10f838da4961f42f88",
-  "README.md": "8a4ff49fb2fac7ef58bd7cf00159dfafb389c70dd9bcde25cf299db67881c1eb",
+  "README.md": "aed78eca3afc1173b5d95a792f5e7df3c9efc6bdb8ebb57c29e745b14cf73be4",
   "SPLIT_README.txt": "069ba2e8e2e0fdee085c7121a40e7f9502783fa854179e9f79eaf7e69b4b02a0",
   "SetupAndRun.cmd": "866fc57eb211cc30c781795b39dc336f2db70dd56ec98eb3c1ec1bb6df0b69d0",
   "THIRD_PARTY_NOTICES.md": "3d053c95e541108e503374b06fc0efa81fb79961971621cf56bc2d8708eac2a5",
@@ -48,7 +48,7 @@
   "companion/reminder_editor.py": "f34557186553072bc07fc53f909d5b8c300a2f9d6f686da83cef55043d215490",
   "companion/reminders.py": "2f38bc450a81be7be24f3ad14d5ce79eaf99c1258f4cbd320474f0338dfb54e3",
   "companion/self_check.py": "b25166afa81a074e69ee8d00547ea3f509cce1ab64c927cf19ca3c02a51c9b91",
-  "companion/ui.py": "b6288df51d7b2c8d7cbc626315761c4512f3ddccb92ec7e0f2b023b87cca4b06",
+  "companion/ui.py": "116c2679716aae3f5280dd8c166408df87f83f662e45f29fa3bb8277fd51879b",
   "docs/ADVANCED_CONDITIONS.md": "6b1d11571101ef93b2ffd05bd0cc851136c1a95989c5ac810b8a1b727828da32",
   "docs/BRAND.md": "13872737c3c3ef3c45beba95429bda82fe8b1b75bb334dfb02b94516bc568310",
   "docs/CONTEXT_NOTIFICATIONS.md": "a7462d61c7efc48299e1ca210fe23b4102dbe050734acbe9eaf9ab59b737e655",
@@ -126,7 +126,7 @@
   "scripts/collect_licenses.py": "7363a8d7730b9efd85a64a16471388559af020793b46d61daeac6f55009148ea",
   "scripts/map_sprite_cells.py": "0512e228f53cf6b6e1b2ed9b3252f70855b6e7fa1397126258a12faa68d3262c",
   "scripts/package_source.py": "dd4ecfd9ffb835d23c52f31888a893ad8c575714c19e9df3b72aef116e34ac0c",
-  "tests/test_activity.py": "b3ee2c6d5686e4d16848227d5f55fb4ed29af5555de6a85dcbb031a3857ff576",
+  "tests/test_activity.py": "01b7f4ba9c260fb6e215c0b301e7c8d95d641e83a06d86521f1b08bc1dd3710a",
   "tests/test_advanced_context.py": "a00df842fd0dd70908a00cf75bf3f3181ca45ba0c6e73aae5b216dbffc1ba84e",
   "tests/test_advanced_editor.py": "858c106e4466e90e837be6180062756831444434d0211942a1a7f2cc583d1bc1",
   "tests/test_audit_fixes.py": "c7526e379a81f26a6395e5e698491f8e7f94c86f0bfc9d4ef5738db2d2651e6d",
@@ -152,5 +152,5 @@
   "tests/test_resources.py": "f649f264dec5f79e00945644ed3be2a647f08d5149347cb2beae2f1318c7f18a",
   "tests/test_self_check.py": "5a0514d2895d9833fe05d68b226e68921943906d47ae9b6d0fbeeadf7b4bd3b0",
   "tests/test_source_check.py": "ab8cce35e3acb46d4470a6ebf504a01537e46f825c7bd3d286833d22f24308ce",
-  "tests/test_ui.py": "6f801826707b8daddea0f5bf4efe3bbc504a44a46fe1790efebce68f520c1561"
+  "tests/test_ui.py": "0d76e6bed5980cde7a4f271ba14cc3b31ae10fab36ef2cc3827f9c443814b7e0"
 }

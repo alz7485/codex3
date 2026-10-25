@@ -2501,7 +2501,7 @@ class Controller(QObject):
         warnings = getattr(events, 'warnings', ())
         if warnings:
             self.panel.status_label.setText('●  Outlookと接続済み · 一部取得')
-        self.panel.calendar_detail.setText(("今日の予定・未承諾の会議案内を読み取りました · " + datetime.now().strftime("%H:%M更新"))
+        self.panel.calendar_detail.setText(("今日の予定・未承諾の会議案内を読み取りました · " + datetime.now().strftime("%H:%M") + "更新")
                                           + ('\n' + '\n'.join(warnings) if warnings else ''))
         now = datetime.now().astimezone()
         future = [event for event in events if event.start > now]
