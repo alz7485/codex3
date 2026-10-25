@@ -39,7 +39,8 @@ class FileHistoryTests(unittest.TestCase):
         rows = self.rows()
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0][:3], ("予算.xlsx", "C:\\work\\A\\予算.xlsx", "Excel"))
-        with sqlite3.connect(self.path) as db:
+        from contextlib import closing
+        with closing(sqlite3.connect(self.path)) as db:
             columns = [row[1] for row in db.execute("PRAGMA table_info(files)")]
             self.assertEqual(columns, ["id", "name", "path", "source", "opened", "observed"])
 

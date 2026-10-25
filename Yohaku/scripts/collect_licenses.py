@@ -11,6 +11,11 @@ def collect(folder):
         source = project / name
         if source.is_file():
             shutil.copy2(source, Path(folder) / name)
+    for name in ('INSTALL_UPDATE.md', 'WINDOWS_CHECKLIST.md'):
+        source = project / 'docs' / name
+        if source.is_file():
+            (Path(folder) / 'docs').mkdir(exist_ok=True)
+            shutil.copy2(source, Path(folder) / 'docs' / name)
     destination = Path(folder) / "third-party-licenses"
     destination.mkdir(parents=True, exist_ok=True)
     for name in ("PySide6", "PySide6_Essentials", "PySide6_Addons", "shiboken6", "pywin32", "pyinstaller", "pyinstaller-hooks-contrib", "packaging", "altgraph"):

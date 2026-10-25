@@ -389,10 +389,19 @@ class UserInterfaceTests(unittest.TestCase):
         c = self.controller
         old = (c.events, c.connected, c.connected_at, c.settings.show_titles)
         now = datetime.now().astimezone()
+        class AsciiLocaleDatetime(datetime):
+            @classmethod
+            def now(cls, tz=None):
+                return cls.fromtimestamp(now.timestamp(), tz)
+
+            def strftime(self, fmt):
+                fmt.encode('ascii')  # Windows C/English locale rejects non-ASCII format literals.
+                return super().strftime(fmt)
         try:
             c.settings.show_titles = False
-            c.received(c.generation, CalendarEvents([Event('pending-ui', now + timedelta(minutes=30),
-                       now + timedelta(hours=1), response='未承諾')], complete=False, warnings=['会議案内を一部取得できません。']), '')
+            with patch('companion.ui.datetime', AsciiLocaleDatetime):
+                c.received(c.generation, CalendarEvents([Event('pending-ui', now + timedelta(minutes=30),
+                           now + timedelta(hours=1), response='未承諾')], complete=False, warnings=['会議案内を一部取得できません。']), '')
             self.assertIn('未承諾', c.panel.event_summary.text())
             self.assertIn('一部取得', c.panel.status_label.text())
             self.assertIn('一部取得できません', c.panel.calendar_detail.text())
@@ -510,7 +519,7 @@ class UserInterfaceTests(unittest.TestCase):
                 QTest.mouseClick(window.table.viewport(), Qt.MouseButton.LeftButton, pos=point)
                 QTest.mouseDClick(window.table.viewport(), Qt.MouseButton.LeftButton, pos=point)
                 opener.assert_called_once()
-                self.assertEqual(opener.call_args.args[0].toLocalFile(), path)
+            self.assertEqual(Path(opener.call_args.args[0].toLocalFile()).resolve(), Path(path).resolve())
         finally:
             window.hide()
             window.deleteLater()
@@ -708,7 +717,7 @@ class UserInterfaceTests(unittest.TestCase):
     def test_app_has_brand_name_version_and_windows_icon(self):
         c = self.controller
         self.assertEqual(self.app.applicationDisplayName(), "Yohaku")
-        self.assertEqual(self.app.applicationVersion(), "0.19.2")
+        self.assertEqual(self.app.applicationVersion(), "0.20.0")
         self.assertFalse(c.brand_icon.isNull())
         self.assertEqual(c.panel.windowIcon().cacheKey(), c.brand_icon.cacheKey())
         c.panel.character_buttons["B"].click()

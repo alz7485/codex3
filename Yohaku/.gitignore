@@ -29,3 +29,6 @@ history.tmp
 one_shot_notifications.json
 one_shot_notifications.json.bak
 one_shot_notifications.json.tmp
+
+# Track the hand-written build specification even when the parent ignores *.spec.
+!Yohaku.spec
