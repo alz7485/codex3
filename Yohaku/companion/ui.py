@@ -617,7 +617,7 @@ class Panel(QMainWindow):
         self.profile_description = label(self.profile(self.settings.character)[1], "muted", True)
         chooser.addWidget(self.profile_description)
         chooser.addWidget(button('ドロップしたファイルの処理を設定', self.file_drop_requested.emit))
-        chooser.addWidget(label('キャラにファイルを1つドロップすると、拡張子に応じて移動・PDF印刷・ZIP解凍を選べます。', 'muted', True))
+        chooser.addWidget(label('ファイルやフォルダーを渡すと移動先を選べます。PDFはA4・A3・用紙に合わせる印刷も選べます。', 'muted', True))
         self.animation_check = QCheckBox("表情・まばたきのアニメーション")
         self.animation_check.setChecked(self.settings.animation)
         self.animation_check.toggled.connect(lambda v: self.update_setting("animation", v))
@@ -1149,6 +1149,12 @@ class InteractionBubble(Bubble):
             self.drop_buttons[key] = choice; drop_layout.addWidget(choice)
         self.drop_settings_button = button('移動先・パスワードなどを設定', self.file_settings_requested.emit, 'speechChoice')
         drop_layout.addWidget(self.drop_settings_button)
+        self.drop_targets = QWidget()
+        self.drop_targets_layout = QVBoxLayout(self.drop_targets);self.drop_targets_layout.setContentsMargins(0,0,0,0);self.drop_targets_layout.setSpacing(6)
+        self.drop_targets_scroll=QScrollArea();self.drop_targets_scroll.setWidgetResizable(True);self.drop_targets_scroll.setWidget(self.drop_targets)
+        self.drop_targets_scroll.setFrameShape(QFrame.Shape.NoFrame);self.drop_targets_scroll.setFixedHeight(180)
+        drop_layout.insertWidget(1,self.drop_targets_scroll);self.drop_targets_scroll.hide()
+        self.drop_extra_buttons={}
         self.drop_cancel = button('キャンセル', self.dismiss, 'speechChoice'); drop_layout.addWidget(self.drop_cancel)
         layout.addWidget(self.drop_row); self.drop_row.hide()
         self.departure_row = QWidget()
@@ -1312,23 +1318,38 @@ class InteractionBubble(Bubble):
         if self.kind in ('calendar', 'reminder', 'departure'):
             self.calendar_presented.emit()
 
-    def show_drop_choices(self, path, rule, error=''):
-        text = str(path.name) + '\nどう処理しましょう？'
-        if rule and any(row['action'] != 'print_pdf' for row in rule['actions']):
-            text += '\n移動先：' + (rule['destination'] or '未設定')
-        if error:
-            text += '\n\n' + error
-        self.display(Notice('', text))
-        self.text.setTextFormat(Qt.TextFormat.PlainText)
-        self.current = 'file_drop'; self.interactive = True; self.set_kind('menu'); self.timer.stop()
-        self.drop_notice.clear(); self.drop_notice.hide()
-        rows = {row['action']: row['label'] for row in rule['actions']} if rule else {}
-        for key, choice in self.drop_buttons.items():
-            choice.setText(rows.get(key, '')); choice.setVisible(key in rows)
-            choice.setEnabled(key == 'print_pdf' or bool(rule and rule['destination']))
-            choice.setIcon(speech_action_icon('activity'))
-        self.drop_settings_button.setEnabled(True); self.drop_cancel.setEnabled(True)
-        self.drop_row.show(); self.resize_text(); self.activateWindow()
+    def show_drop_stage(self, path, stage, destinations=(), error=''):
+        prompts={'action':'どう処理しましょう？','destination':'どこに移動しましょう？','paper':'どの用紙で印刷しましょう？'}
+        text=path.name+'\n'+prompts[stage]
+        if error:text+='\n\n'+error
+        self.display(Notice('',text));self.current='file_drop';self.interactive=True;self.set_kind('menu');self.timer.stop()
+        self.drop_notice.clear();self.drop_notice.hide()
+        for choice in self.drop_buttons.values():choice.hide();choice.setEnabled(True)
+        for choice in self.drop_extra_buttons.values():
+            self.drop_targets_layout.removeWidget(choice);choice.hide();choice.deleteLater()
+        self.drop_extra_buttons={};self.drop_targets_scroll.hide();self.drop_settings_button.hide()
+        self.drop_cancel.setEnabled(True)
+        if stage=='action':
+            choices={'move':'移動する'}
+            if not path.is_dir() and path.suffix.lower()=='.pdf':choices['print_pdf']='印刷する'
+            for key,title in choices.items():
+                choice=self.drop_buttons[key];choice.setText(title);choice.setEnabled(not error);choice.show()
+                choice.setIcon(speech_action_icon('activity'))
+        else:
+            choices=([(f'destination:{row["id"]}',row['name'],row['path']) for row in destinations] if stage=='destination'
+                     else [('paper:a4','A4で印刷する',''),('paper:a3','A3で印刷する',''),('paper:auto','用紙サイズに合わせる','')])
+            for key,title,tooltip in choices:
+                choice=button(title,lambda checked=False,action=key:self.file_action_requested.emit(action),'speechChoice')
+                choice.setToolTip(tooltip);choice.setEnabled(not error);self.drop_targets_layout.addWidget(choice);self.drop_extra_buttons[key]=choice
+            self.drop_targets_scroll.setFixedHeight(min(250,max(42,len(choices)*42)))
+            self.drop_targets_scroll.show()
+            if stage=='destination':
+                self.drop_settings_button.setText('移動先を編集する');self.drop_settings_button.setEnabled(True);self.drop_settings_button.show()
+                if not destinations and not error:self.drop_notice.setText('移動先が未登録です。「移動先を編集する」から登録してください。');self.drop_notice.show()
+        self.drop_row.show();self.resize_text();self.activateWindow()
+
+    def show_drop_choices(self,path,rule=None,error=''):
+        self.show_drop_stage(path,'action',error=error)
 
     def show_one_shot_form(self):
         self.display(Notice('', 'いつ、何をお知らせしましょう？'))
@@ -1748,8 +1769,7 @@ class Controller(QObject):
         if not visible:
             if self.file_drop_service.print_dialog:
                 self.file_drop_service.print_dialog.reject()
-            if self.file_drop_service.editor:
-                self.file_drop_service.editor.hide()
+            self.file_drop_service.hide_editors()
             self.bubble.hide()
             self.history_window.hide()
             self.panel.hide()
@@ -2276,8 +2296,7 @@ class Controller(QObject):
         self.file_drop_service.closed = True
         if self.file_drop_service.print_dialog:
             self.file_drop_service.print_dialog.reject()
-        if self.file_drop_service.editor:
-            self.file_drop_service.editor.hide()
+        self.file_drop_service.hide_editors()
         if self.context_editor: self.context_editor.hide()
         self.pending_reaction = None
         self.static_pose_timer.stop()

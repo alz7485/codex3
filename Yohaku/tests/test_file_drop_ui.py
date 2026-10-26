@@ -42,6 +42,7 @@ class FileDropUITests(unittest.TestCase):
         document = defaults()
         for rule in document['rules']: rule['destination'] = str(self.output)
         self.c.file_drop_service.store.save(document)
+        self.c.file_drop_service.destinations.save({'schema_version':1,'destinations':[{'id':'out','name':'保管用','path':str(self.output)}]})
         self.c.panel.hide()
 
     def cleanup(self):
@@ -79,25 +80,27 @@ class FileDropUITests(unittest.TestCase):
         self.assertEqual(self.c.bubble.current, 'file_drop'); self.assertFalse(self.c.bubble.timer.isActive())
         self.assertTrue(self.c.bubble.drop_buttons['move'].isVisible())
         self.assertFalse(self.c.bubble.drop_buttons['print_pdf'].isVisible())
-        self.c.bubble.drop_buttons['move'].click(); self.c.file_drop_service.run('move')
+        self.c.bubble.drop_buttons['move'].click(); self.assertTrue(source.exists())
+        self.c.bubble.drop_extra_buttons['destination:out'].click(); self.c.file_drop_service.run('destination:out')
         self.wait_worker()
         self.assertFalse(source.exists()); self.assertEqual((self.output/source.name).read_bytes(), b'content')
         self.assertIn('移動しました', self.c.bubble.text.text())
 
-    def test_cancel_and_changed_file_do_not_move_and_pdf_print_uses_dialog(self):
-        source = self.file('資料.pdf')
-        self.c.file_drop_service.drop(source)
+    def test_cancel_changed_file_and_print_paper_selection(self):
+        source=self.file('資料.pdf');self.c.file_drop_service.drop(source)
         self.assertTrue(self.c.bubble.drop_buttons['move'].isVisible())
         self.assertTrue(self.c.bubble.drop_buttons['print_pdf'].isVisible())
-        self.c.bubble.drop_cancel.click(); self.c.file_drop_service.run('move')
-        self.assertTrue(source.exists()); self.assertEqual(list(self.output.iterdir()), [])
-        self.c.file_drop_service.drop(source); source.write_bytes(b'edited document')
-        self.c.file_drop_service.run('move'); self.assertTrue(source.exists())
-        self.assertIn('変更', self.c.bubble.text.text())
+        self.assertFalse(self.c.bubble.drop_settings_button.isVisible())
+        self.c.bubble.drop_cancel.click();self.c.file_drop_service.run('move');self.assertTrue(source.exists())
+        self.c.file_drop_service.drop(source);source.write_bytes(b'edited')
+        self.c.file_drop_service.run('move');self.assertIn('変更',self.c.bubble.text.text());self.assertTrue(source.exists())
         self.c.file_drop_service.drop(source)
-        with patch('companion.pdf_print.print_pdf', return_value=False) as printing:
-            self.c.bubble.drop_buttons['print_pdf'].click(); printing.assert_called_once()
-        self.assertTrue(source.exists()); self.assertIn('キャンセル', self.c.bubble.text.text())
+        with patch('companion.pdf_print.print_pdf',return_value=True) as printing:
+            self.c.bubble.drop_buttons['print_pdf'].click();printing.assert_not_called()
+            self.assertEqual(set(self.c.bubble.drop_extra_buttons),{'paper:a4','paper:a3','paper:auto'})
+            self.c.bubble.drop_extra_buttons['paper:a3'].click();self.wait_worker()
+            printing.assert_called_once_with(source,'a3')
+        self.assertIn('送信しました',self.c.bubble.text.text());self.assertTrue(source.exists())
 
     def test_remote_urls_and_multiple_files_do_not_run_but_folders_offer_only_move(self):
         one = self.file('one.txt'); two = self.file('two.txt')
@@ -115,7 +118,7 @@ class FileDropUITests(unittest.TestCase):
         enter, drop = self.gesture([QUrl.fromLocalFile(str(source))])
         self.assertTrue(enter.isAccepted()); self.assertTrue(drop.isAccepted())
         self.assertIsNotNone(self.c.resident.held_frame)
-        self.c.bubble.drop_buttons['move'].click(); self.wait_worker()
+        self.c.bubble.drop_buttons['move'].click(); self.c.bubble.drop_extra_buttons['destination:out'].click(); self.wait_worker()
         self.assertFalse(source.exists()); self.assertEqual((self.output/source.name/'資料.txt').read_bytes(), b'original')
         self.assertIsNone(self.c.resident.held_frame)
 
@@ -191,20 +194,34 @@ class FileDropUITests(unittest.TestCase):
             self.assertEqual(self.c.engine.one_shots.data['notifications'][0]['message_styles'],styles)
         finally:editor.dirty=False;editor.close();editor.deleteLater()
 
-    def test_unconfigured_move_prompts_settings_and_editor_saves_month_template(self):
-        self.c.file_drop_service.store.save(defaults())
-        self.c.file_drop_service.drop(self.file('data.zip'))
-        self.assertFalse(self.c.bubble.drop_buttons['move_extract'].isEnabled())
+    def test_named_destinations_editor_closes_speech_and_plus_adds_json_rows(self):
+        from companion.destination_editor import DestinationEditor
+        service=self.c.file_drop_service
+        service.destinations.save({'schema_version':1,'destinations':[]})
+        source=self.file('data.zip');service.drop(source)
+        self.assertFalse(self.c.bubble.drop_buttons['move_extract'].isVisible())
+        self.c.bubble.drop_buttons['move'].click()
+        self.assertEqual(service.stage,'destination');self.assertFalse(self.c.bubble.drop_extra_buttons)
         self.c.bubble.drop_settings_button.click()
-        editor = self.c.file_drop_service.editor
-        self.assertIsInstance(editor, FileDropEditor)
-        editor.selector.setCurrentIndex(1)
-        self.assertEqual(editor.password.echoMode(), editor.password.EchoMode.Password)
-        editor.folder.setText(str(self.output)); editor.password.setText('sample{month}'); editor.save()
-        saved = json.loads((self.root/'Yohaku/file_drop_settings.json').read_text())
-        self.assertEqual(saved['rules'][1]['password_template'], 'sample{month}')
-        self.assertTrue(self.c.bubble.drop_buttons['move_extract'].isEnabled())
-        editor.hide()
+        self.assertFalse(self.c.bubble.isVisible());self.assertIsNone(service.pending)
+        editor=service.destination_editor;self.assertIsInstance(editor,DestinationEditor)
+        editor.add_button.click();editor.rows[0]['name'].setText('提出用');editor.rows[0]['path'].setText(str(self.output));editor.save()
+        saved=json.loads((self.root/'Yohaku/file_destinations.json').read_text())
+        self.assertEqual(saved['destinations'][0]['name'],'提出用');self.assertEqual(saved['destinations'][0]['path'],str(self.output))
+        self.assertTrue(source.exists());self.assertFalse(self.c.bubble.isVisible());editor.hide()
+        service.drop(source);self.c.bubble.drop_buttons['move'].click()
+        self.assertEqual([b.text() for b in self.c.bubble.drop_extra_buttons.values()],['提出用'])
+
+    def test_destination_snapshot_does_not_change_when_json_is_edited_and_cancel_is_safe(self):
+        service=self.c.file_drop_service;source=self.file('a.txt');service.drop(source)
+        service.run('destination:out');self.assertTrue(source.exists())
+        service.run('move');second=self.root/'changed'
+        document={'schema_version':1,'destinations':[{'id':'out','name':'変更後','path':str(second)}]}
+        (self.root/'Yohaku/file_destinations.json').write_text(json.dumps(document))
+        self.c.bubble.drop_cancel.click();service.run('destination:out');self.assertTrue(source.exists())
+        service.drop(source);service.run('move')
+        self.assertEqual(self.c.bubble.drop_extra_buttons['destination:out'].text(),'変更後')
+        service.run('destination:out');self.wait_worker();self.assertTrue((second/source.name).exists())
 
     def test_drop_choices_hold_while_mail_is_shown_inline_and_not_during_reminder_input(self):
         source = self.file('a.txt'); self.c.file_drop_service.drop(source)
@@ -243,48 +260,21 @@ class FileDropUITests(unittest.TestCase):
         self.assertIn('移動しました', self.c.bubble.inline_mail.text())
         self.assertFalse(self.c.bubble.timer.isActive())
 
-    def test_pdf_parser_and_print_cancel_do_not_submit_a_job(self):
-        path = self.root/'real.pdf'; writer = QPdfWriter(str(path)); painter = QPainter(writer)
-        painter.drawText(50, 100, 'Synthetic document'); painter.end(); del writer
-        with patch('companion.pdf_print.QPrintDialog.exec', return_value=QDialog.DialogCode.Rejected):
-            self.assertFalse(print_pdf(path))
-        self.assertTrue(path.exists())
-        moved = path.with_name('after-cancel.pdf')
-        path.rename(moved); moved.rename(path)  # The source must not stay locked on Windows.
+    def test_print_menu_cancel_never_submits_a_job(self):
+        source=self.file('資料.pdf');self.c.file_drop_service.drop(source)
+        with patch('companion.pdf_print.print_pdf') as printing:
+            self.c.bubble.drop_buttons['print_pdf'].click();self.c.bubble.drop_cancel.click()
+            self.c.file_drop_service.run('paper:a4');printing.assert_not_called()
+        self.assertTrue(source.exists())
 
     def test_closed_application_does_not_redisplay_a_late_result(self):
         self.c.file_drop_service.closed = True; self.c.bubble.hide()
         self.c.file_drop_service.finished({'path': str(self.output/'a.txt')}, '')
         self.assertFalse(self.c.bubble.isVisible())
 
-    def test_sharing_hides_settings_and_rejects_an_open_print_dialog(self):
-        dialog = QDialog(); dialog.show(); self.c.file_drop_service.print_dialog = dialog
-        self.c.file_drop_service.show_editor()
-        try:
-            with patch.object(dialog, 'reject', wraps=dialog.reject) as rejected:
-                self.c.share(); rejected.assert_called_once()
-            self.assertFalse(dialog.isVisible())
-            self.assertFalse(self.c.file_drop_service.editor.isVisible())
-        finally:
-            self.c.file_drop_service.print_dialog = None; dialog.hide()
-            if self.c.hidden: self.c.share()
-
-    def test_pdf_print_range_renders_only_selected_pages_to_a_synthetic_pdf_printer(self):
-        from unittest.mock import Mock
-        source = self.root/'two.pdf'; output = self.root/'printed.pdf'
-        writer = QPdfWriter(str(source)); painter = QPainter(writer)
-        painter.drawText(50, 100, 'First'); writer.newPage(); painter.drawText(50, 100, 'Second')
-        painter.end(); del writer
-        def fake_dialog(printer, parent):
-            printer.setOutputFormat(QPrinter.OutputFormat.PdfFormat); printer.setOutputFileName(str(output))
-            printer.setPrintRange(QPrinter.PrintRange.PageRange); printer.setFromTo(2, 2)
-            dialog = Mock(); dialog.exec.return_value = QDialog.DialogCode.Accepted
-            return dialog
-        with patch('companion.pdf_print.QPrintDialog', side_effect=fake_dialog) as dialog_type:
-            dialog_type.PrintDialogOption = __import__('PySide6.QtPrintSupport', fromlist=['QPrintDialog']).QPrintDialog.PrintDialogOption
-            self.assertTrue(print_pdf(source))
-        document = QPdfDocument()
-        try:
-            self.assertEqual(document.load(str(output)), QPdfDocument.Error.None_)
-            self.assertEqual(document.pageCount(), 1)
-        finally: document.close()
+    def test_sharing_hides_both_general_and_destination_editors(self):
+        service=self.c.file_drop_service;service.show_editor();service.show_destination_editor()
+        self.assertTrue(service.destination_editor.isVisible())
+        self.c.share()
+        self.assertFalse(service.editor.isVisible());self.assertFalse(service.destination_editor.isVisible())
+        if self.c.hidden:self.c.share()
