@@ -98,7 +98,7 @@ jobs:
             if (-not $result.success -or $result.version -ne $version) { throw 'Kit smoke report failed.' }
             $result | ConvertTo-Json
           } finally { Pop-Location }
-      - name: Package two source ZIPs
+      - name: Package source ZIP
         working-directory: ${{ env.YOHAKU_PROJECT }}
         run: python scripts/package_source.py
       - name: Upload ZIPs and checksums

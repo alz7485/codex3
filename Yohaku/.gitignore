@@ -32,3 +32,6 @@ one_shot_notifications.json.tmp
 
 # Track the hand-written build specification even when the parent ignores *.spec.
 !Yohaku.spec
+file_drop_settings.json
+file_drop_settings.json.bak
+file_drop_settings.json.tmp

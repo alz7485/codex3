@@ -45,9 +45,36 @@ def check_bundle():
                 raise ValueError('Bubble rendering failed')
     finally:
         bubble.hide(); bubble.deleteLater(); app.processEvents()
+    # Exercise the added libraries from the packaged EXE using disposable files,
+    # without touching user settings, user documents, printers or Outlook.
+    import tempfile
+    from datetime import datetime
+    import pyzipper
+    from PySide6.QtCore import QSize
+    from PySide6.QtGui import QPainter, QPdfWriter
+    from PySide6.QtPdf import QPdfDocument
+    from .file_drop import defaults as drop_defaults, execute
+    from .pdf_print import print_pdf  # Also load the frozen QtPrintSupport library.
+    with tempfile.TemporaryDirectory(prefix='yohaku-bundle-') as temporary:
+        root = Path(temporary); archive_path = root/'sample.zip'; output = root/'output'; output.mkdir()
+        with pyzipper.AESZipFile(archive_path, 'w', encryption=pyzipper.WZ_AES) as archive:
+            archive.setpassword(b'check10'); archive.writestr('sample.txt', b'Yohaku')
+        rule = drop_defaults()['rules'][1]; rule.update(destination=str(output), password_template='check{month}')
+        result = execute('move_extract', archive_path, rule, datetime(2026, 10, 1))
+        if (Path(result['extracted'])/'sample.txt').read_bytes() != b'Yohaku':
+            raise ValueError('Archive operation failed')
+        pdf = root/'sample.pdf'; writer = QPdfWriter(str(pdf)); painter = QPainter(writer)
+        painter.drawText(30, 100, 'Yohaku'); painter.end(); del writer
+        pdf_document = QPdfDocument()
+        try:
+            if pdf_document.load(str(pdf)) != QPdfDocument.Error.None_ or pdf_document.render(0, QSize(128, 128)).isNull():
+                raise ValueError('PDF rendering failed')
+        finally:
+            pdf_document.close()
     return {'version': VERSION, 'python': platform.python_version(), 'qt': qVersion(),
             'platform': sys.platform, 'success': True, 'character_frames_rendered': rendered,
-            'topics': len(document['rules']), 'voices': len(document['phrases'])}
+            'topics': len(document['rules']), 'voices': len(document['phrases']),
+            'encrypted_zip_checked': True, 'pdf_render_checked': True}
 
 
 def run(output):
