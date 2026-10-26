@@ -102,6 +102,25 @@ class FileDropUITests(unittest.TestCase):
             printing.assert_called_once_with(source,'a3')
         self.assertIn('送信しました',self.c.bubble.text.text());self.assertTrue(source.exists())
 
+    def test_paper_button_prints_real_pdf_in_worker_without_native_printer(self):
+        source=self.root/'thread-input.pdf';output=self.root/'thread-output.pdf'
+        writer=QPdfWriter(str(source));painter=QPainter(writer)
+        painter.drawText(100,200,'Synthetic background print');painter.end();del writer
+        def factory():
+            printer=QPrinter(QPrinter.PrinterMode.HighResolution)
+            printer.setOutputFormat(QPrinter.OutputFormat.PdfFormat);printer.setOutputFileName(str(output));printer.setResolution(300)
+            return printer,[]
+        self.c.file_drop_service.drop(source);self.c.bubble.drop_buttons['print_pdf'].click()
+        with patch('companion.pdf_print.default_printer',side_effect=factory):
+            self.c.bubble.drop_extra_buttons['paper:auto'].click();self.wait_worker()
+        self.assertIn('送信しました',self.c.bubble.text.text());self.assertTrue(source.exists())
+        from PySide6.QtCore import QFile,QIODevice
+        device=QFile(str(output));document=QPdfDocument()
+        try:
+            self.assertTrue(device.open(QIODevice.OpenModeFlag.ReadOnly));document.load(device)
+            self.assertEqual(document.status(),QPdfDocument.Status.Ready);self.assertEqual(document.pageCount(),1)
+        finally:document.close();device.close()
+
     def test_remote_urls_and_multiple_files_do_not_run_but_folders_offer_only_move(self):
         one = self.file('one.txt'); two = self.file('two.txt')
         for urls in ([QUrl('https://example.invalid/a.zip')], [QUrl('file:relative.txt')], [QUrl.fromLocalFile(str(one)), QUrl.fromLocalFile(str(two))]):
