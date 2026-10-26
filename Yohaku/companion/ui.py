@@ -345,6 +345,7 @@ class Panel(QMainWindow):
     reminders_requested = Signal()
     clear_usage_requested = Signal()
     context_options_requested = Signal()
+    file_drop_requested = Signal()
 
     def __init__(self, settings, dialogue=None):
         super().__init__()
@@ -531,6 +532,8 @@ class Panel(QMainWindow):
         chooser.addLayout(row)
         self.profile_description = label(self.profile(self.settings.character)[1], "muted", True)
         chooser.addWidget(self.profile_description)
+        chooser.addWidget(button('ドロップしたファイルの処理を設定', self.file_drop_requested.emit))
+        chooser.addWidget(label('キャラにファイルを1つドロップすると、拡張子に応じて移動・PDF印刷・ZIP解凍を選べます。', 'muted', True))
         self.animation_check = QCheckBox("表情・まばたきのアニメーション")
         self.animation_check.setChecked(self.settings.animation)
         self.animation_check.toggled.connect(lambda v: self.update_setting("animation", v))
@@ -741,6 +744,7 @@ class Resident(Mascot):
     context_requested = Signal(object)
     dragged = Signal(object)
     drag_finished = Signal()
+    file_dropped = Signal(str)
 
     def __init__(self, character="A"):
         super().__init__(82, character=character)
@@ -753,6 +757,38 @@ class Resident(Mascot):
         self.press_position = None
         self.press_origin = None
         self.dragging = False
+        self.drop_hover = False
+        self.drop_allowed = lambda: True
+        self.setAcceptDrops(True)
+
+    @staticmethod
+    def dropped_path(event):
+        urls = event.mimeData().urls() if event.mimeData().hasUrls() else []
+        path = urls[0].toLocalFile() if len(urls) == 1 and urls[0].isLocalFile() else ''
+        return path if path and Path(path).is_absolute() else ''
+
+    def dragEnterEvent(self, event):
+        if self.drop_allowed() and self.dropped_path(event) and event.possibleActions() & Qt.DropAction.CopyAction:
+            self.drop_hover = True
+            event.setDropAction(Qt.DropAction.CopyAction); event.accept()
+        else:
+            self.drop_hover = False
+            event.ignore()
+
+    def dragMoveEvent(self, event):
+        self.dragEnterEvent(event)
+
+    def dragLeaveEvent(self, event):
+        self.drop_hover = False; event.accept()
+
+    def dropEvent(self, event):
+        self.drop_hover = False
+        path = self.dropped_path(event)
+        if self.drop_allowed() and path and event.possibleActions() & Qt.DropAction.CopyAction:
+            event.setDropAction(Qt.DropAction.CopyAction); event.accept()
+            self.file_dropped.emit(path)
+        else:
+            event.ignore()
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.RightButton:
@@ -789,6 +825,7 @@ class Resident(Mascot):
         # Do not carry that press into the next visible session.
         self.press_position = self.press_origin = None
         self.dragging = False
+        self.drop_hover = False
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         super().hideEvent(event)
 
@@ -971,6 +1008,8 @@ class InteractionBubble(Bubble):
     attendance_requested = Signal()
     file_requested = Signal(str)
     one_shot_requested = Signal()
+    file_action_requested = Signal(str)
+    file_settings_requested = Signal()
 
     def __init__(self):
         super().__init__()
@@ -1009,6 +1048,18 @@ class InteractionBubble(Bubble):
             choices.addWidget(choice)
         layout.addWidget(self.choice_row)
         self.choice_row.hide()
+        self.drop_row = QWidget(objectName='speechChoiceRow')
+        drop_layout = QVBoxLayout(self.drop_row); drop_layout.setContentsMargins(0, 0, 0, 0); drop_layout.setSpacing(6)
+        self.drop_notice = label('', wrap=True); self.drop_notice.setTextFormat(Qt.TextFormat.PlainText)
+        drop_layout.addWidget(self.drop_notice); self.drop_notice.hide()
+        self.drop_buttons = {}
+        for key in ('move', 'print_pdf', 'move_extract'):
+            choice = button('', lambda checked=False, action=key: self.file_action_requested.emit(action), 'speechChoice')
+            self.drop_buttons[key] = choice; drop_layout.addWidget(choice)
+        self.drop_settings_button = button('移動先・パスワードなどを設定', self.file_settings_requested.emit, 'speechChoice')
+        drop_layout.addWidget(self.drop_settings_button)
+        self.drop_cancel = button('キャンセル', self.dismiss, 'speechChoice'); drop_layout.addWidget(self.drop_cancel)
+        layout.addWidget(self.drop_row); self.drop_row.hide()
         self.departure_row = QWidget()
         actions = QHBoxLayout(self.departure_row)
         actions.setContentsMargins(0, 0, 0, 0)
@@ -1117,6 +1168,7 @@ class InteractionBubble(Bubble):
         self.content_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
 
     def open_choices(self, text="お呼びですか？", name="Yohaku"):
+        self.drop_row.hide()
         self.reminder_bounds_timer.stop()
         self.notice = None
         self.one_shot_form.hide()
@@ -1141,6 +1193,7 @@ class InteractionBubble(Bubble):
         self.current = key
 
     def display(self, notice):
+        self.drop_row.hide()
         self.reminder_bounds_timer.stop()
         self.one_shot_form.hide()
         self.notice = notice
@@ -1159,6 +1212,24 @@ class InteractionBubble(Bubble):
         self.content_scroll.verticalScrollBar().setValue(0)
         self.show()  # WA_ShowWithoutActivating keeps automatic notices passive.
         self.timer.start(self.display_duration_ms())
+
+    def show_drop_choices(self, path, rule, error=''):
+        text = str(path.name) + '\nどう処理しましょう？'
+        if rule and any(row['action'] != 'print_pdf' for row in rule['actions']):
+            text += '\n移動先：' + (rule['destination'] or '未設定')
+        if error:
+            text += '\n\n' + error
+        self.display(Notice('', text))
+        self.text.setTextFormat(Qt.TextFormat.PlainText)
+        self.current = 'file_drop'; self.interactive = True; self.set_kind('menu'); self.timer.stop()
+        self.drop_notice.clear(); self.drop_notice.hide()
+        rows = {row['action']: row['label'] for row in rule['actions']} if rule else {}
+        for key, choice in self.drop_buttons.items():
+            choice.setText(rows.get(key, '')); choice.setVisible(key in rows)
+            choice.setEnabled(key == 'print_pdf' or bool(rule and rule['destination']))
+            choice.setIcon(speech_action_icon('activity'))
+        self.drop_settings_button.setEnabled(True); self.drop_cancel.setEnabled(True)
+        self.drop_row.show(); self.resize_text(); self.activateWindow()
 
     def show_one_shot_form(self):
         self.display(Notice('', 'いつ、何をお知らせしましょう？'))
@@ -1506,6 +1577,8 @@ class Controller(QObject):
         self.tray.setContextMenu(self.menu)
         self.tray.activated.connect(self.tray_activated)
         self.tray.show()
+        from .file_drop_ui import FileDropController
+        self.file_drop_service = FileDropController(self)
         self.panel.share_button.setEnabled(QSystemTrayIcon.isSystemTrayAvailable())
         if not QSystemTrayIcon.isSystemTrayAvailable():
             self.panel.share_button.setToolTip("画面共有モードにはシステムトレイが必要です。")
@@ -1571,6 +1644,10 @@ class Controller(QObject):
         visible = not self.hidden and not self.user_hidden
         self.resident.setVisible(visible)
         if not visible:
+            if self.file_drop_service.print_dialog:
+                self.file_drop_service.print_dialog.reject()
+            if self.file_drop_service.editor:
+                self.file_drop_service.editor.hide()
             self.bubble.hide()
             self.history_window.hide()
             self.panel.hide()
@@ -1616,6 +1693,10 @@ class Controller(QObject):
             self.bubble.resize_text()
 
     def request_quit(self):
+        if self.file_drop_service.busy:
+            self.panel.saved_label.setText('ファイルの処理中です。完了してから終了してください。')
+            self.show_panel()
+            return
         if self.context_editor is not None and not self.context_editor.close(): return
         if self.editor is not None and self.editor.dirty:
             self.editor.show()
@@ -1747,7 +1828,7 @@ class Controller(QObject):
         self.panel.sync_behavior()
         self.panel.refresh_dialogue()
         self.bubble.duration_ms = self.dialogue.data['options']['bubble_seconds'] * 1000
-        if self.bubble.current == 'one_shot' or self.pending_reaction is not None and self.bubble.notice is self.pending_reaction:
+        if self.bubble.current in ('one_shot', 'file_drop') or self.pending_reaction is not None and self.bubble.notice is self.pending_reaction:
             self.bubble.timer.stop()
         elif self.bubble.isVisible():
             self.bubble.timer.start(self.bubble.display_duration_ms())
@@ -1875,7 +1956,7 @@ class Controller(QObject):
         # Give a moving pointer time to click, without pinning the character
         # forever beneath an untouched pointer. This transient position is not logged.
         hover_pause = hovered and now < self.hover_until
-        blocked = self.pending_reaction is not None or (self.bubble.isVisible() and self.bubble.interactive) or hover_pause
+        blocked = self.pending_reaction is not None or (self.bubble.isVisible() and self.bubble.interactive) or hover_pause or self.resident.drop_hover
         self.motion_x = self.motion.advance(dt, self.motion_x if self.motion_x is not None else upper,
                                           lower, upper, self.settings.walking and not blocked)
         frame = self.motion.frame()
@@ -2074,6 +2155,10 @@ class Controller(QObject):
         self.engine.last_display = now
         self.motion.react(rule['expression'], speaking=True)
         self.mail_burst_notice = Notice('', self.engine.phrase('mail_received'), True, rule['expression'], 'notification')
+        if self.bubble.isVisible() and self.bubble.current == 'file_drop':
+            self.bubble.drop_notice.setText(self.mail_burst_notice.text)
+            self.bubble.drop_notice.show(); self.bubble.resize_text(); self.position()
+            return
         if self.bubble.isVisible() and self.bubble.current == 'one_shot':
             self.bubble.inline_mail.setText(self.mail_burst_notice.text)
             self.bubble.inline_mail.show();self.bubble.resize_text();self.position()
@@ -2082,6 +2167,11 @@ class Controller(QObject):
         self.position()
 
     def shutdown(self):
+        self.file_drop_service.closed = True
+        if self.file_drop_service.print_dialog:
+            self.file_drop_service.print_dialog.reject()
+        if self.file_drop_service.editor:
+            self.file_drop_service.editor.hide()
         if self.context_editor: self.context_editor.hide()
         self.pending_reaction = None
         self.static_pose_timer.stop()
@@ -2098,7 +2188,9 @@ class Controller(QObject):
                 pass
 
     def show_message(self):
-        if self.bubble.isVisible() and self.bubble.current == 'one_shot':
+        if self.file_drop_service.busy:
+            return
+        if self.bubble.isVisible() and self.bubble.current in ('one_shot', 'file_drop'):
             return
         if self.hidden or self.user_hidden or self.pending_reaction is not None:
             return
@@ -2558,7 +2650,7 @@ class Controller(QObject):
             self.update_mode()
         self.update_animation_policy()
         self.refresh_context_metrics(now)
-        if self.bubble.isVisible() and self.bubble.current == 'one_shot':
+        if self.bubble.isVisible() and self.bubble.current in ('one_shot', 'file_drop'):
             return  # Keep scheduled messages from replacing unfinished input.
         departure = self.engine.departure_notice(now, self.hidden or self.user_hidden, system_uptime_seconds)
         if departure:

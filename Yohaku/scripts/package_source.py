@@ -1,4 +1,4 @@
-"""Package source into two independently readable ZIPs, excluding local user data."""
+"""Package source as one ZIP up to 24 MB, otherwise two; exclude user data."""
 from __future__ import annotations
 
 import argparse
@@ -17,6 +17,7 @@ from companion.metadata import VERSION
 EXCLUDED_DIRS = {".git", ".venv", "__pycache__", "build", "dist", "release", ".pytest_cache", ".aws", ".ssh", ".codex", ".agents"}
 PRIVATE_NAMES = {"settings.json", "history.json", "instance.lock", ".env", "smoke-report.json", "dialogue.json", "dialogue.json.bak", "dialogue.json.tmp", "Yohaku-conversation.json", "usage.json", "usage.tmp", "settings.tmp", "history.tmp", "reminders.json", "reminders.json.bak", "reminders.json.tmp"}
 PRIVATE_NAMES.update({name+suffix for name in ("context_options", "topic_preferences", "one_shot_notifications") for suffix in (".json", ".json.bak", ".json.tmp")})
+PRIVATE_NAMES.update({'file_drop_settings'+suffix for suffix in ('.json', '.json.bak', '.json.tmp')})
 
 
 def source_files(project):
@@ -25,7 +26,7 @@ def source_files(project):
         relative = path.relative_to(project)
         if any(part in EXCLUDED_DIRS for part in relative.parts):
             continue
-        if not path.is_file() or path.is_symlink() or path.name in PRIVATE_NAMES or path.name.startswith(".env."):
+        if not path.is_file() or path.is_symlink() or path.name.casefold() in {name.casefold() for name in PRIVATE_NAMES} or path.name.casefold().startswith(".env."):
             continue
         # Documentation previews are published on GitHub. Runtime artwork in
         # companion/assets remains included; source ZIPs need no large demo GIFs.
@@ -102,16 +103,26 @@ def create_split_archives(project, output_directory):
             return paths
 
 
+def create_default_archives(project, output_directory, limit=24_000_000):
+    output_directory = Path(output_directory)
+    path = output_directory / f'Yohaku-v{VERSION}-source.zip'
+    create_archive(project, path)
+    if path.stat().st_size <= limit:
+        return [path]
+    path.unlink(); path.with_suffix('.zip.sha256').unlink()
+    return create_split_archives(project, output_directory)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output-dir', type=Path, default=PROJECT / 'release')
-    parser.add_argument('--output', type=Path, help='Optional single ZIP output; default is two ZIPs.')
+    parser.add_argument('--output', type=Path, help='Explicit single ZIP output; otherwise choose by compressed size.')
     args = parser.parse_args()
     if args.output:
         digest = create_archive(PROJECT, args.output)
         print(f'Ready: {args.output}\nSHA-256: {digest}')
     else:
-        for path in create_split_archives(PROJECT, args.output_dir):
+        for path in create_default_archives(PROJECT, args.output_dir):
             print(f'Ready: {path} ({path.stat().st_size:,} bytes)')
 
 

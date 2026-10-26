@@ -65,7 +65,7 @@ jobs:
           $expected = python -c "from companion.metadata import VERSION; print(VERSION)"
           if (-not $result.success -or $result.version -ne $expected) { throw 'Bundle report failed or version mismatched.' }
           $result | ConvertTo-Json
-      - name: Package two source ZIPs
+      - name: Package source ZIP
         working-directory: ${{ env.YOHAKU_PROJECT }}
         run: python scripts/package_source.py
       - name: Upload ZIPs and checksums

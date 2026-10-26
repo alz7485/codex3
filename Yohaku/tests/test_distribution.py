@@ -6,10 +6,20 @@ import unittest
 import zipfile
 
 from scripts.build_onedir import required_files
-from scripts.package_source import create_archive, create_split_archives
+from scripts.package_source import create_archive, create_split_archives, create_default_archives
 
 
 class DistributionTests(unittest.TestCase):
+    def test_default_packaging_is_single_under_the_limit_and_splits_only_when_needed(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)/'project'; root.mkdir(); (root/'main.py').write_bytes(b'code')
+            for limit, expected in ((24_000_000, 1), (1, 2)):
+                output = Path(temporary)/str(limit)
+                paths = create_default_archives(root, output, limit)
+                self.assertEqual(len(paths), expected)
+                for path in paths:
+                    with zipfile.ZipFile(path) as archive:
+                        self.assertIsNone(archive.testzip())
     def test_source_zip_keeps_runtime_artwork_but_omits_web_documentation_media(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)/'project'; root.mkdir()

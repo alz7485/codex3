@@ -31,9 +31,9 @@ def verify_source(project):
             raise SourceCheckError('マニフェストの形式が不正です。')
         document = json.loads(manifest.read_text(encoding='utf-8'), object_pairs_hook=_unique_object)
     except FileNotFoundError:
-        raise SourceCheckError('MANIFEST_SHA256.json がありません。2つのZIPを同じ場所へ展開してください。') from None
+        raise SourceCheckError('MANIFEST_SHA256.json がありません。同じ版のビルド用ZIPを新しい場所へ展開してください。') from None
     except (OSError, UnicodeError, json.JSONDecodeError, RecursionError):
-        raise SourceCheckError('マニフェストを読み込めません。同じ版の2つのZIPから展開し直してください。') from None
+        raise SourceCheckError('マニフェストを読み込めません。同じ版のビルド用ZIPから展開し直してください。') from None
     if not isinstance(document, dict) or not 1 <= len(document) <= 10000:
         raise SourceCheckError('マニフェストの形式が不正です。')
     missing, changed = [], []
@@ -65,7 +65,7 @@ def verify_source(project):
         details = '\n'.join([*(f'不足: {name}' for name in missing[:8]),
                              *(f'内容の不一致: {name}' for name in changed[:8])])
         raise SourceCheckError(f'ソースの確認に失敗しました（不足{len(missing)}件、不一致{len(changed)}件）。\n'
-                               f'{details}\n同じ版のZIP 1/2と2/2を、空の同じ場所へ展開して統合してください。')
+                               f'{details}\n同じ版の単一ZIPを空の場所へ展開し直してください。旧分割版ではZIP 1/2と2/2を統合してください。')
     return len(document)
 
 

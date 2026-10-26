@@ -8,6 +8,8 @@ PyInstaller is used to build the application.
 - Qt 6: component-specific LGPL / GPL / third-party licenses, https://doc.qt.io/qt-6/licenses.html
 - pywin32: PSF-style license, https://github.com/mhammond/pywin32
 - PyInstaller: GPL with the bootloader exception permitting distribution of generated bundles, https://pyinstaller.org/en/stable/license.html
+- pyzipper: MIT License, https://github.com/danifus/pyzipper
+- PyCryptodome / pycryptodomex: BSD and public-domain components, https://www.pycryptodome.org/src/license
 
 The build script copies license texts available in installed distribution metadata
 into `third-party-licenses/` in the onedir folder. Keep that folder with the
