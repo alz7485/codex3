@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (QCheckBox, QComboBox, QFormLayout, QHBoxLayout, Q
 
 from .reminders import KINDS, WEEKDAYS, ReminderError, new_rule, next_occurrence
 from .ui import box, button, label
+from .message_format_ui import MessageEditor
 
 
 class ReminderEditor(QMainWindow):
@@ -84,10 +85,11 @@ class ReminderEditor(QMainWindow):
         form.addRow('時刻', self.time)
         fields.addLayout(form)
         fields.addWidget(label('吹き出しに表示するメッセージ'))
-        self.message = QPlainTextEdit()
+        self.message = MessageEditor()
         self.message.setAccessibleName('登録通知のメッセージ')
         self.message.setMaximumHeight(140)
         self.message.textChanged.connect(self.edit_rule)
+        fields.addWidget(self.message.toolbar())
         fields.addWidget(self.message)
         self.description = label('', 'muted', True)
         fields.addWidget(self.description)
@@ -139,7 +141,7 @@ class ReminderEditor(QMainWindow):
         for i, check in enumerate(self.weekdays):
             check.setChecked(i in rule['condition'].get('weekdays', [0, 1, 2, 3, 4]))
         self.time.setTime(QTime.fromString(rule['time'], 'HH:mm'))
-        self.message.setPlainText(rule['message'])
+        self.message.set_message(rule['message'], rule.get('message_styles', []))
         self.loading = False
         self.update_preview(rule)
 
@@ -155,7 +157,7 @@ class ReminderEditor(QMainWindow):
             condition['weekdays'] = [i for i, check in enumerate(self.weekdays) if check.isChecked()]
         rule = self.draft['notifications'][index]
         rule.update(name=self.name.text(), enabled=self.enabled.isChecked(),
-                    time=self.time.time().toString('HH:mm'), message=self.message.toPlainText(), condition=condition)
+                    time=self.time.time().toString('HH:mm'), message=self.message.toPlainText(), message_styles=self.message.styles(), condition=condition)
         self.rules.item(index).setText(self.row_text(rule))
         self.dirty = True
         self.status.setText('編集中です。「保存して反映」で通知に反映します。')

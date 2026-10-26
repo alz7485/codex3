@@ -50,7 +50,7 @@ def check_bundle():
             prop_rendered += 1
     bubble = InteractionBubble()
     try:
-        for notice in (Notice('', '表示の確認'), Notice('', '通知の確認', True, kind='notification')):
+        for notice in (Notice('', '表示の確認'), Notice('', '17:00にメールの確認', True, kind='notification', styles=[dict(start=0,length=5,bold=True,color='#28744f')])):
             bubble.display(notice)
             if bubble.grab().isNull():
                 raise ValueError('Bubble rendering failed')

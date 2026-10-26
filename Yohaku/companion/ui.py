@@ -24,6 +24,7 @@ from .activity import FileHistory, FileTracker, opened_file_snapshot
 from .motion import Motion
 from .dialogue import AUTO_PERSONALITY, BUBBLE_MS, PROFILES, DialogueError, DialogueStore, voice_for
 from .characters import profile_for
+from .message_format_ui import MessageEditor, MessageLabel
 from .outlook import read_calendar
 from .metadata import APP_DISPLAY_NAME, VERSION
 from .context import ResourceSampler, UsageLedger, input_idle_seconds, desktop_file_count, office_file_count, work_metrics, system_power_metrics
@@ -941,7 +942,7 @@ class Bubble(QFrame):
         self.heading = label('', 'muted')
         self.heading.setParent(self)
         self.heading.hide()
-        self.text = label("", wrap=True)
+        self.text = MessageLabel()
         self.text.setTextFormat(Qt.TextFormat.PlainText)
         self.text.setStyleSheet("font-size: 14px;")
         layout.addWidget(self.text)
@@ -1008,7 +1009,10 @@ class Bubble(QFrame):
         self.notice = notice
         self.set_kind('calendar' if notice.important and notice.kind == 'message' else notice.kind)
         self.heading.setText(notice.heading)
-        self.text.setText(notice.text)
+        if notice.important or notice.kind in ('calendar','notification','reminder','departure'):
+            self.text.set_message(notice.text, styles=notice.styles)
+        else:
+            self.text.setText(notice.text)
         self.layout().activate()
         self.resize(self.width(), self.layout().sizeHint().height())
         self.show()
@@ -1137,7 +1141,7 @@ class InteractionBubble(Bubble):
         self.choice_row.hide()
         self.drop_row = QWidget(objectName='speechChoiceRow')
         drop_layout = QVBoxLayout(self.drop_row); drop_layout.setContentsMargins(0, 0, 0, 0); drop_layout.setSpacing(6)
-        self.drop_notice = label('', wrap=True); self.drop_notice.setTextFormat(Qt.TextFormat.PlainText)
+        self.drop_notice = MessageLabel(); self.drop_notice.setTextFormat(Qt.TextFormat.PlainText)
         drop_layout.addWidget(self.drop_notice); self.drop_notice.hide()
         self.drop_buttons = {}
         for key in ('move', 'print_pdf', 'move_extract'):
@@ -1168,12 +1172,13 @@ class InteractionBubble(Bubble):
         self.reminder_time.setAccessibleName('通知する時刻（24時間表記、HH:mm）')
         date_time.addWidget(self.reminder_date, 3);date_time.addWidget(self.reminder_time, 2)
         form.addLayout(date_time)
-        self.reminder_message = QPlainTextEdit()
+        self.reminder_message = MessageEditor()
         self.reminder_message.setPlaceholderText('通知内容（1000文字まで）')
         self.reminder_message.setAccessibleName('通知内容');self.reminder_message.setFixedHeight(76)
+        form.addWidget(self.reminder_message.toolbar())
         form.addWidget(self.reminder_message)
         self.reminder_status = label('', 'muted', True);form.addWidget(self.reminder_status)
-        self.inline_mail = label('', wrap=True)
+        self.inline_mail = MessageLabel()
         self.inline_mail.setStyleSheet('background: #e7f1ff; color: #315878; border-radius: 5px; padding: 6px;')
         form.addWidget(self.inline_mail);self.inline_mail.hide()
         form_actions = QHBoxLayout()
@@ -1293,7 +1298,10 @@ class InteractionBubble(Bubble):
         self.interactive = False
         self.choice_row.hide()
         self.heading.setText(notice.heading)
-        self.text.setText(notice.text)
+        if notice.important or notice.kind in ('calendar','notification','reminder','departure'):
+            self.text.set_message(notice.text, styles=notice.styles)
+        else:
+            self.text.setText(notice.text)
         if self.kind=='calendar':
             self.interactive=True
             self.detail_action.setText('Outlookの予定を開く');self.detail_action.show()
@@ -2251,12 +2259,12 @@ class Controller(QObject):
         self.motion.react(rule['expression'], speaking=True)
         self.mail_burst_notice = Notice('', self.engine.phrase('mail_received'), True, rule['expression'], 'notification')
         if self.bubble.isVisible() and self.bubble.current == 'file_drop':
-            self.bubble.drop_notice.setText(self.mail_burst_notice.text)
+            self.bubble.drop_notice.set_message(self.mail_burst_notice.text)
             self.bubble.drop_notice.show(); self.bubble.resize_text(); self.position()
             self.resident.raise_mail()
             return
         if self.bubble.isVisible() and self.bubble.current == 'one_shot':
-            self.bubble.inline_mail.setText(self.mail_burst_notice.text)
+            self.bubble.inline_mail.set_message(self.mail_burst_notice.text)
             self.bubble.inline_mail.show();self.bubble.resize_text();self.position()
             self.resident.raise_mail()
             return  # Notify immediately without replacing the unfinished form.
@@ -2405,7 +2413,7 @@ class Controller(QObject):
         day = self.bubble.reminder_date.date();clock = self.bubble.reminder_time.time()
         when = datetime(day.year(), day.month(), day.day(), clock.hour(), clock.minute())
         try:
-            self.engine.one_shots.add(when, self.bubble.reminder_message.toPlainText(), now)
+            self.engine.one_shots.add(when, self.bubble.reminder_message.toPlainText(), now, self.bubble.reminder_message.styles())
         except ValueError as error:
             self.bubble.reminder_status.setText(str(error))
             self.bubble.reminder_status.show()

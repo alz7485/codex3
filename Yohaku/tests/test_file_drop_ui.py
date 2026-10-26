@@ -173,6 +173,24 @@ class FileDropUITests(unittest.TestCase):
         self.assertIsNone(self.c.resident.held_icon)
         self.assertFalse(self.c.resident.mail_raised); self.assertFalse(self.c.resident.calendar_checking)
 
+    def test_notification_editors_save_the_selected_bold_color_ranges(self):
+        from companion.reminder_editor import ReminderEditor
+        from companion.reminders import ReminderStore
+        from PySide6.QtGui import QTextCursor
+        store=ReminderStore(self.root/'editor-reminders.json');editor=ReminderEditor(store)
+        try:
+            editor.add_rule();editor.message.setPlainText('提出してください')
+            cursor=editor.message.textCursor();cursor.setPosition(0);cursor.setPosition(2,QTextCursor.MoveMode.KeepAnchor)
+            editor.message.setTextCursor(cursor);editor.message.bold_button.click()
+            editor.message.color_box.activated.emit(editor.message.color_box.findData('#7650a3'))
+            editor.save()
+            styles=[dict(start=0,length=2,bold=True,color='#7650a3')]
+            self.assertEqual(ReminderStore(store.path).data['notifications'][0]['message_styles'],styles)
+            self.c.bubble.show_one_shot_form();self.c.bubble.reminder_message.set_message('提出してください',styles)
+            self.c.save_one_shot()
+            self.assertEqual(self.c.engine.one_shots.data['notifications'][0]['message_styles'],styles)
+        finally:editor.dirty=False;editor.close();editor.deleteLater()
+
     def test_unconfigured_move_prompts_settings_and_editor_saves_month_template(self):
         self.c.file_drop_service.store.save(defaults())
         self.c.file_drop_service.drop(self.file('data.zip'))
