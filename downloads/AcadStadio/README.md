@@ -1,6 +1,7 @@
-# AcadStadio 1.21.0 — 作図対象と累積プレビュー・試用版10
+# AcadStadio 1.21.1 — 上部をコンパクトに・試用版11
 
-**[試用版10 ZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.21.0_TargetsPreviewTrial10.zip)** ／ [SHA256](AcadStadio_v1.21.0_TargetsPreviewTrial10.zip.sha256)
+**[試用版11 ZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.21.1_CompactHeaderTrial11.zip)** ／ [SHA256](AcadStadio_v1.21.1_CompactHeaderTrial11.zip.sha256)
+アプリ内の大きなタイトル・ロゴ・キャッチコピーを削除し、プロジェクト名と操作ボタンを上部1段に集約しました。確認した画面ではプレビューの高さが106px増えています。
 
 作図設定を「行番号で1行」「チェックリストで複数行」の2つに整理しました。ブロック編集には、クリックしたコマンドまでを累積表示するモードを追加しました。
 
@@ -98,7 +99,7 @@ CAD初期設定はサンプルでONです。既存図面の同名レイヤーを
 AutoCADを起動しておいてください。読取後に登録する項目へチェックし、「チェックした項目を登録」→「設定を確定」で反映します。
 
 線種は名前の登録だけです。形状定義は複製せず、使用するCAD図面に同名の線種があることが必要です。追加のLINファイルは指定しません。
-詳細は CAD初期設定（ZIP内 docs/CAD_INITIALIZATION.md） と 複数表・行指定（ZIP内 docs/TABLE_ROW_REFERENCES.md） を参照してください。
+詳細は [CAD初期設定](ZIP内 docs/CAD_INITIALIZATION.md) と [複数表・行指定](ZIP内 docs/TABLE_ROW_REFERENCES.md) を参照してください。
 
 ## onedirでEXE化
 
@@ -108,9 +109,9 @@ py -3 -m venv .venv
 .\.venv\Scripts\python.exe -m PyInstaller --clean --noconfirm AcadStadio.spec
 ```
 
-出力は `dist/AcadStadio/AcadStadio.exe`。フォルダ全体を配布してください。同梱の EXE_BUILD_ONEDIR.md（ZIP内 EXE_BUILD_ONEDIR.md） に詳細があります。
+出力は `dist/AcadStadio/AcadStadio.exe`。フォルダ全体を配布してください。同梱の [EXE_BUILD_ONEDIR.md](ZIP内 EXE_BUILD_ONEDIR.md) に詳細があります。
 このZIPはソース版で、EXEは含みません。
 
-検証結果は VALIDATION（ZIP内 docs/VALIDATION.md） に記録しています。Windows上のExplorerからの実ドロップ・AutoCAD実DWG読取・Windows EXEは未検証です。
+検証結果は [VALIDATION](ZIP内 docs/VALIDATION.md) に記録しています。Windows上のExplorerからの実ドロップ・AutoCAD実DWG読取・Windows EXEは未検証です。
 
-396件のテストに合格。Windows / AutoCADでの実行は未検証です。
+今回の検証・既知の問題はZIP内 docs/VALIDATION.mdに記載。Windows / AutoCAD実機は未検証です。
