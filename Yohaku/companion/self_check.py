@@ -11,13 +11,13 @@ def check_bundle():
     from PySide6.QtCore import qVersion
     from PySide6.QtGui import QPixmap
     from .dialogue import defaults
-    from .ui import InteractionBubble, Mascot, create_application
+    from .ui import InteractionBubble, Mascot, character_pixmap, create_application
     from .core import Notice
     from .characters import CHARACTERS
 
     app = create_application()
     assets = Path(__file__).parent / 'assets'
-    images = ['app/yohaku.png', 'app/yohaku.ico', 'characters/front_reactions.png']
+    images = ['app/yohaku.png', 'app/yohaku.ico', 'characters/front_reactions.png', 'characters/holding_poses.png', 'characters/mail_poses.png', 'characters/calendar_poses.png']
     images += [f'characters/{key.lower()}_motion.png' for key in CHARACTERS]
     for name in images:
         if QPixmap(str(assets/name)).isNull():
@@ -37,6 +37,17 @@ def check_bundle():
                 rendered += 1
         finally:
             widget.hide(); widget.deleteLater()
+    # Render all nine added prop poses independently of user files/settings.
+    from PySide6.QtWidgets import QStyle
+    from .props import prop_frame
+    prop_rendered = 0
+    for character in CHARACTERS:
+        reference = character_pixmap(character)
+        for kind in ('file', 'mail', 'calendar'):
+            icon = app.style().standardIcon(QStyle.StandardPixmap.SP_DirIcon)
+            if prop_frame(character, reference, kind, icon).isNull():
+                raise ValueError('Prop rendering failed')
+            prop_rendered += 1
     bubble = InteractionBubble()
     try:
         for notice in (Notice('', '表示の確認'), Notice('', '通知の確認', True, kind='notification')):
@@ -79,7 +90,7 @@ def check_bundle():
     return {'version': VERSION, 'python': platform.python_version(), 'qt': qVersion(),
             'platform': sys.platform, 'success': True, 'character_frames_rendered': rendered,
             'topics': len(document['rules']), 'voices': len(document['phrases']),
-            'encrypted_zip_checked': True, 'pdf_render_checked': True}
+            'encrypted_zip_checked': True, 'pdf_render_checked': True, 'prop_poses_rendered': prop_rendered}
 
 
 def run(output):

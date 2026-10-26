@@ -28,7 +28,7 @@ class FileDropEditor(QDialog):
         self.name = QLineEdit(); self.extensions = QLineEdit(); self.folder = QLineEdit(); self.password = QLineEdit()
         self.name.setMaxLength(60); self.extensions.setMaxLength(600); self.folder.setMaxLength(2048); self.password.setMaxLength(256)
         self.password.setEchoMode(QLineEdit.EchoMode.Password)
-        self.extensions.setPlaceholderText('.pdf または .zip, .拡張子 ／ その他は *')
+        self.extensions.setPlaceholderText('.pdf または .zip, .拡張子 ／ フォルダーは <folder> ／ その他は *')
         self.folder.setPlaceholderText('移動先フォルダー（移動・解凍には必須）')
         self.password.setPlaceholderText('ZIP用。例：固定部分{month} ／ 空欄はパスワードなし')
         form = QFormLayout()
@@ -116,7 +116,7 @@ class FileDropEditor(QDialog):
         if len(self.draft['rules']) >= 30:
             self.status.setText('ルールは30件までです。'); return
         key = next(f'custom_{i}' for i in range(1, 100) if all(row['id'] != f'custom_{i}' for row in self.draft['rules']))
-        row = deepcopy(defaults()['rules'][-1]); row.update(id=key, label='新しいルール', extensions=['.txt'])
+        row = deepcopy(defaults()['rules'][2]); row.update(id=key, label='新しいルール', extensions=['.txt'])
         self.draft['rules'].append(row); self.dirty = True; self.populate(len(self.draft['rules'])-1)
 
     def remove_rule(self):

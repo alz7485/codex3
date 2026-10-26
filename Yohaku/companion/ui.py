@@ -296,12 +296,86 @@ class Mascot(QWidget):
         self.previous_frame = None
         self.previous_flipped = False
         self.frame_changed_at = 0.0
+        self.held_icon = None; self.held_frame = None; self.mail_frame = None; self.mail_raised = False
+        self.calendar_frame = None; self.calendar_checking = False
+        self.mail_timer = QTimer(self); self.mail_timer.setSingleShot(True)
+        self.mail_timer.timeout.connect(self.lower_mail)
+        self.calendar_timer = QTimer(self); self.calendar_timer.setSingleShot(True)
+        self.calendar_timer.timeout.connect(self.lower_calendar)
+        self.prop_animation_enabled = True; self.prop_from = None; self.prop_target = None
+        self.prop_started = 0.0
+        self.prop_timer = QTimer(self); self.prop_timer.setInterval(16)
+        self.prop_timer.timeout.connect(self.advance_prop)
         self.set_character(character)
+
+    def transition_prop(self, previous, target):
+        self.prop_timer.stop()
+        self.prop_from = previous; self.prop_target = target
+        self.prop_started = time.monotonic()
+        if self.prop_animation_enabled:
+            self.prop_timer.start()
+        self.update()
+
+    def advance_prop(self):
+        if time.monotonic()-self.prop_started >= .20:
+            self.prop_timer.stop(); self.prop_from = self.prop_target = None
+        self.update()
+
+    def visible_prop(self):
+        return (self.mail_frame if self.mail_raised else self.calendar_frame if self.calendar_checking else self.held_frame) or character_pixmap(self.character)
+
+    def check_calendar(self):
+        from .props import prop_frame
+        previous = self.visible_prop()
+        self.calendar_frame = prop_frame(self.character, character_pixmap(self.character), 'calendar')
+        self.calendar_checking = True; self.calendar_timer.start(3500)
+        self.transition_prop(previous, self.visible_prop())
+
+    def lower_calendar(self):
+        previous = self.visible_prop()
+        self.calendar_checking = False
+        self.transition_prop(previous, self.visible_prop())
+
+    def clear_props(self):
+        self.prop_timer.stop(); self.prop_from = self.prop_target = None
+        self.held_icon = None; self.held_frame = None; self.mail_frame = None
+        self.mail_timer.stop(); self.mail_raised = False
+        self.calendar_timer.stop(); self.calendar_checking = False; self.calendar_frame = None
+        self.update()
+
+    def hold_item(self, path):
+        from .props import item_icon, prop_frame
+        previous = self.visible_prop()
+        self.held_icon = item_icon(path)
+        self.held_frame = prop_frame(self.character, character_pixmap(self.character), 'file', self.held_icon)
+        self.transition_prop(previous, self.visible_prop())
+
+    def raise_mail(self):
+        previous = self.visible_prop()
+        from .props import prop_frame
+        self.mail_frame = prop_frame(self.character, character_pixmap(self.character), 'mail')
+        self.mail_raised = True; self.mail_timer.start(2600)
+        self.transition_prop(previous, self.visible_prop())
+
+    def lower_mail(self):
+        previous = self.visible_prop()
+        self.mail_raised = False
+        self.transition_prop(previous, self.visible_prop())
 
     def set_character(self, character):
         self.character = character if character in CHARACTERS else "A"
         self.pixmap = character_pixmap(self.character)
         self.previous_frame = None
+        self.prop_timer.stop(); self.prop_from = self.prop_target = None
+        if self.calendar_checking:
+            from .props import prop_frame
+            self.calendar_frame = prop_frame(self.character, self.pixmap, 'calendar')
+        if self.held_icon is not None:
+            from .props import prop_frame
+            self.held_frame = prop_frame(self.character, self.pixmap, 'file', self.held_icon)
+        if self.mail_raised:
+            from .props import prop_frame
+            self.mail_frame = prop_frame(self.character, self.pixmap, 'mail')
         self.setAccessibleName(CHARACTERS[self.character])
         self.update()
 
@@ -309,6 +383,15 @@ class Mascot(QWidget):
         p = QPainter(self)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
         p.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
+        prop = self.mail_frame if self.mail_raised else self.calendar_frame if self.calendar_checking else self.held_frame
+        if self.prop_timer.isActive() and self.prop_from is not None:
+            progress = min(1., max(0., (time.monotonic()-self.prop_started)/.20))
+            progress = progress*progress*(3-2*progress)
+            prop = blend_frames(self.prop_from, self.prop_target, progress)
+        if prop is not None:
+            size = prop.size().scaled(QSize(self.width()-6, self.height()-6), Qt.AspectRatioMode.KeepAspectRatio)
+            target = QRectF((self.width()-size.width())/2, self.height()-size.height()-self.bottom_padding, size.width(), size.height())
+            p.drawPixmap(target, prop, QRectF(prop.rect())); p.end(); return
         p.translate(self.subpixel, self.bob)
         p.translate(self.width() / 2, self.height() - 4)
         p.rotate(self.sway)
@@ -826,12 +909,15 @@ class Resident(Mascot):
         self.press_position = self.press_origin = None
         self.dragging = False
         self.drop_hover = False
+        self.clear_props()
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         super().hideEvent(event)
 
 
 class Bubble(QFrame):
     call_requested = Signal()
+    calendar_presented = Signal()
+    content_changing = Signal()
     dismissed = Signal()
     hidden = Signal()
 
@@ -918,6 +1004,7 @@ class Bubble(QFrame):
         self.update()
 
     def display(self, notice):
+        self.content_changing.emit()
         self.notice = notice
         self.set_kind('calendar' if notice.important and notice.kind == 'message' else notice.kind)
         self.heading.setText(notice.heading)
@@ -1168,6 +1255,7 @@ class InteractionBubble(Bubble):
         self.content_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
 
     def open_choices(self, text="お呼びですか？", name="Yohaku"):
+        self.content_changing.emit()
         self.drop_row.hide()
         self.reminder_bounds_timer.stop()
         self.notice = None
@@ -1193,6 +1281,7 @@ class InteractionBubble(Bubble):
         self.current = key
 
     def display(self, notice):
+        self.content_changing.emit()
         self.drop_row.hide()
         self.reminder_bounds_timer.stop()
         self.one_shot_form.hide()
@@ -1212,6 +1301,8 @@ class InteractionBubble(Bubble):
         self.content_scroll.verticalScrollBar().setValue(0)
         self.show()  # WA_ShowWithoutActivating keeps automatic notices passive.
         self.timer.start(self.display_duration_ms())
+        if self.kind in ('calendar', 'reminder', 'departure'):
+            self.calendar_presented.emit()
 
     def show_drop_choices(self, path, rule, error=''):
         text = str(path.name) + '\nどう処理しましょう？'
@@ -1480,6 +1571,9 @@ class Controller(QObject):
         self.pending_reaction = None
         self.bubble.dismissed.connect(self.bubble_dismissed)
         self.bubble.hidden.connect(self.bubble_hidden)
+        self.bubble.hidden.connect(self.resident.clear_props)
+        self.bubble.content_changing.connect(self.resident.clear_props)
+        self.bubble.calendar_presented.connect(self.resident.check_calendar)
         self.history_window = HistoryWindow()
         self.motion = Motion()
         self.static_pose_timer = QTimer(self)
@@ -1908,6 +2002,7 @@ class Controller(QObject):
                     bubble.update()
 
     def update_animation_policy(self):
+        self.resident.prop_animation_enabled = self.settings.animation
         now = datetime.now().astimezone()
         enabled = self.settings.animation and not self.hidden and not self.user_hidden
         enabled = enabled and not (self.engine.paused_until and now < self.engine.paused_until)
@@ -1956,7 +2051,7 @@ class Controller(QObject):
         # Give a moving pointer time to click, without pinning the character
         # forever beneath an untouched pointer. This transient position is not logged.
         hover_pause = hovered and now < self.hover_until
-        blocked = self.pending_reaction is not None or (self.bubble.isVisible() and self.bubble.interactive) or hover_pause or self.resident.drop_hover
+        blocked = self.pending_reaction is not None or (self.bubble.isVisible() and self.bubble.interactive) or hover_pause or self.resident.drop_hover or self.resident.mail_raised or self.resident.calendar_checking
         self.motion_x = self.motion.advance(dt, self.motion_x if self.motion_x is not None else upper,
                                           lower, upper, self.settings.walking and not blocked)
         frame = self.motion.frame()
@@ -2158,12 +2253,15 @@ class Controller(QObject):
         if self.bubble.isVisible() and self.bubble.current == 'file_drop':
             self.bubble.drop_notice.setText(self.mail_burst_notice.text)
             self.bubble.drop_notice.show(); self.bubble.resize_text(); self.position()
+            self.resident.raise_mail()
             return
         if self.bubble.isVisible() and self.bubble.current == 'one_shot':
             self.bubble.inline_mail.setText(self.mail_burst_notice.text)
             self.bubble.inline_mail.show();self.bubble.resize_text();self.position()
+            self.resident.raise_mail()
             return  # Notify immediately without replacing the unfinished form.
         self.bubble.display(self.mail_burst_notice)
+        self.resident.raise_mail()
         self.position()
 
     def shutdown(self):

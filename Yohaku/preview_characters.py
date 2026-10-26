@@ -26,7 +26,7 @@ def main():
 
     text(36, 36, f'Yohaku / v{VERSION}', 13, True)
     text(36, 80, '3体の相棒。7つの話し方。', 30, True)
-    text(36, 114, 'つづり・ビット・ペンギー / 全7性格のセリフはそのまま', 17)
+    text(36, 114, 'つづり・ビット・ペギー / 全7性格のセリフはそのまま', 17)
     for column, (key, profile) in enumerate(defaults()['profiles'].items()):
         left = 25 + column * 470
         painter.setPen(Qt.PenStyle.NoPen); painter.setBrush(QColor('#f9fbf6'))

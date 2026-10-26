@@ -25,7 +25,7 @@ def main():
         text(x, 178, filename, 19, True)
         bubble = InteractionBubble(); bubble.show_drop_choices(Path(filename), rule)
         app.processEvents(); painter.drawPixmap(x, 198, bubble.grab()); widgets.append(bubble)
-        mascot = Mascot(82, character=character); mascot.frame_index = 24; mascot.show(); app.processEvents()
+        mascot = Mascot(82, character=character); mascot.prop_animation_enabled = False; mascot.hold_item(Path(filename)); mascot.show(); app.processEvents()
         painter.drawPixmap(x+230, 198+bubble.height(), mascot.grab()); widgets.append(mascot)
     text(36, 659, 'ZIPのパスワード例：固定部分{month} → 1月は固定部分01、10月は固定部分10', 16)
     text(36, 697, '実装ウィジェットの表示例 / JSONと専用画面で編集 / バッチ・外部コマンドを登録する機能はありません', 13)

@@ -8,7 +8,7 @@ from PySide6.QtCore import QObject, Signal
 from PySide6.QtWidgets import QApplication
 
 from .core import Notice
-from .file_drop import FileDropError, FileDropStore, execute, file_identity, regular_file
+from .file_drop import FileDropError, FileDropStore, execute, file_identity, dropped_item
 
 
 class FileDropController(QObject):
@@ -40,9 +40,9 @@ class FileDropController(QObject):
             return
         self.pending = self.rule = self.identity = None
         try:
-            self.pending = regular_file(path); self.identity = file_identity(self.pending)
+            self.pending = dropped_item(path); self.identity = file_identity(self.pending)
         except (FileDropError, OSError):
-            self.message('通常のファイルを1つドロップしてください。フォルダーやリンクは対象外です。'); return
+            self.message('通常のファイルかフォルダーを1つドロップしてください。リンクは対象外です。'); return
         # External JSON edits apply on the next drop; no user-authored content is
         # discarded or rewritten just by loading the settings.
         self.store.__init__(self.store.path)
@@ -55,6 +55,7 @@ class FileDropController(QObject):
         self.rule = self.store.matching_rule(self.pending)
         error = self.store.error or ('この拡張子の処理が登録されていません。' if self.rule is None else '')
         c.bubble.show_drop_choices(self.pending, self.rule, error)
+        c.resident.hold_item(self.pending)
         c.engine.last_display = datetime.now().astimezone()
         c.motion.face_front(); c.resident.frame_index = 24; c.resident.update(); c.position()
 
@@ -89,7 +90,7 @@ class FileDropController(QObject):
         if action not in {row['action'] for row in self.rule['actions']}:
             return
         try:
-            path = regular_file(self.pending)
+            path = dropped_item(self.pending)
             if file_identity(path) != self.identity:
                 raise FileDropError('ファイルが変更されています。もう一度ドロップしてください。')
         except (FileDropError, OSError):
@@ -130,6 +131,7 @@ class FileDropController(QObject):
 
     def finished(self, result, error):
         self.busy = False; self.pending = None; self.rule = None; self.identity = None
+        self.owner.resident.clear_props()
         if self.closed:
             return
         if error:
@@ -140,6 +142,8 @@ class FileDropController(QObject):
             text = '移動して解凍しました。\n' + result['extracted']
         else:
             text = '移動しました。\n' + result.get('path', '')
+            if result.get('source_retained'):
+                text += '\n元の場所に残った項目があります。移動先を確認してから整理してください。'
         c = self.owner
         if not self.closed and not c.hidden and not c.user_hidden and c.bubble.isVisible():
             if c.bubble.current == 'one_shot':
