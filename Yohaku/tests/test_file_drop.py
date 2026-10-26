@@ -48,6 +48,49 @@ class FileDropTests(unittest.TestCase):
             self.assertEqual(store.matching_rule(name)['id'], expected)
         store.data['enabled'] = False; self.assertIsNone(store.matching_rule('a.pdf'))
 
+    def test_folder_rule_is_independent_of_suffix_and_old_settings_fall_back_to_move(self):
+        folder = self.inbox/'folder.pdf'; folder.mkdir()
+        store = FileDropStore(self.root/'settings.json')
+        self.assertEqual(store.matching_rule(folder)['id'], 'folder')
+        store.data['rules'] = store.data['rules'][:3]
+        self.assertEqual(store.matching_rule(folder)['actions'], [{'action': 'move', 'label': '移動する'}])
+        validate(store.data)
+
+    def test_folder_move_preserves_nested_files_empty_directories_and_refuses_overwrite(self):
+        folder = self.inbox/'資料'; folder.mkdir(); (folder/'empty').mkdir(); (folder/'file.txt').write_bytes(b'content')
+        target = self.output/folder.name; target.mkdir()
+        with self.assertRaises(FileDropError): execute('move', folder, self.rule(3))
+        self.assertEqual((folder/'file.txt').read_bytes(), b'content'); target.rmdir()
+        result = execute('move', folder, self.rule(3))
+        self.assertFalse(folder.exists()); self.assertEqual((target/'file.txt').read_bytes(), b'content')
+        self.assertTrue((target/'empty').is_dir()); self.assertEqual(result['path'], str(target))
+
+    def test_folder_refuses_own_descendants_copy_failure_and_internal_links(self):
+        folder = self.inbox/'資料'; folder.mkdir(); (folder/'file.txt').write_bytes(b'content')
+        rule = self.rule(3); rule['destination'] = str(folder/'child')
+        with self.assertRaises(FileDropError): execute('move', folder, rule)
+        self.assertFalse((folder/'child').exists())
+        with patch('companion.file_drop.shutil.copytree', side_effect=OSError('synthetic')):
+            with self.assertRaises(FileDropError): execute('move', folder, self.rule(3))
+        self.assertEqual((folder/'file.txt').read_bytes(), b'content'); self.assertEqual(list(self.output.iterdir()), [])
+        link = folder/'link'
+        try: link.symlink_to(folder/'file.txt')
+        except OSError: return
+        with self.assertRaises(FileDropError): execute('move', folder, self.rule(3))
+        self.assertTrue(link.is_symlink()); self.assertEqual(list(self.output.iterdir()), [])
+
+    def test_new_or_edited_source_files_are_preserved_during_final_cleanup(self):
+        from companion.file_drop import remove_copied_folder
+        folder = self.inbox/'資料'; folder.mkdir(); (folder/'file.txt').write_bytes(b'content')
+        def writer(source, snapshot):
+            (source/'new.txt').write_bytes(b'new'); (source/'file.txt').write_bytes(b'edited')
+            return remove_copied_folder(source, snapshot)
+        with patch('companion.file_drop.remove_copied_folder', side_effect=writer):
+            result = execute('move', folder, self.rule(3))
+        self.assertTrue(result['source_retained']); self.assertEqual((folder/'new.txt').read_bytes(), b'new')
+        self.assertEqual((folder/'file.txt').read_bytes(), b'edited')
+        self.assertEqual((self.output/folder.name/'file.txt').read_bytes(), b'content')
+
     def test_month_templates_at_boundaries_and_literal_passwords(self):
         self.assertEqual(password_value('fixed{month}', datetime(2026, 1, 31)), 'fixed01')
         self.assertEqual(password_value('fixed{month}', datetime(2026, 12, 1)), 'fixed12')

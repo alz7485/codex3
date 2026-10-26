@@ -5,6 +5,7 @@ import re
 from uuid import uuid4
 
 from .context_options import ContextOptionsStore
+from .message_format import validate_styles, trimmed_styles
 
 
 class OneShotError(ValueError):
@@ -37,6 +38,8 @@ class OneShotStore(ContextOptionsStore):
             message = row.get('message')
             if not isinstance(message, str) or not message.strip() or len(message) > 1000:
                 raise OneShotError('通知内容は1〜1000文字で入力してください。')
+            try:validate_styles(message, row.get('message_styles', []))
+            except ValueError as error:raise OneShotError(str(error)) from None
         return deepcopy(document)
 
     def __init__(self, path):
@@ -46,7 +49,7 @@ class OneShotStore(ContextOptionsStore):
         if self.error:
             self.error = '単発通知を読み込めません。元のファイルは保持しています。'
 
-    def add(self, when, message, now):
+    def add(self, when, message, now, styles=None):
         if self.error:
             raise OneShotError(self.error)
         when = when.replace(tzinfo=None, second=0, microsecond=0)
@@ -55,9 +58,11 @@ class OneShotStore(ContextOptionsStore):
         candidate = deepcopy(self.data)
         candidate['notifications'].append({'id': uuid4().hex, 'at': when.isoformat(timespec='minutes'),
                                             'message': message.strip()})
+        if styles is not None:
+            candidate['notifications'][-1]['message_styles'] = trimmed_styles(message, styles)
         self.save(candidate)
 
-    def take_due(self, now):
+    def take_due(self, now, with_styles=False):
         """Commit removal before returning; a failed write leaves it pending."""
         if self.error:
             return None
@@ -67,5 +72,5 @@ class OneShotStore(ContextOptionsStore):
             candidate = deepcopy(self.data)
             candidate['notifications'] = [item for item in candidate['notifications'] if item['id'] != row['id']]
             self.save(candidate)
-            return row['message']
+            return deepcopy(row) if with_styles else row['message']
         return None

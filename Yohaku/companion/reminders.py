@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import re
 from uuid import uuid4
+from .message_format import validate_styles
 
 
 KINDS = {
@@ -48,6 +49,8 @@ def validate(document):
         for key, maximum, title in (('name', 80, '管理用の名前'), ('message', 1000, 'メッセージ')):
             if not isinstance(row.get(key), str) or not row[key].strip() or len(row[key]) > maximum:
                 raise ReminderError(f'{title}は1〜{maximum}文字で入力してください。')
+        try:validate_styles(row['message'], row.get('message_styles', []))
+        except ValueError as error:raise ReminderError(str(error)) from None
         if type(row.get('enabled')) is not bool:
             raise ReminderError('有効・無効はtrueかfalseで指定してください。')
         if not isinstance(row.get('time'), str) or not re.fullmatch(r'(?:[01]\d|2[0-3]):[0-5]\d', row['time']):

@@ -1,7 +1,7 @@
 """Stable character IDs; appearance and selected personality stay independent."""
 
 CHARACTERS = {
-    'A': 'つづり', 'B': 'ビット', 'E': 'ペンギー',
+    'A': 'つづり', 'B': 'ビット', 'E': 'ペギー',
 }
 # Keep retired profile metadata readable without shipping their artwork or
 # showing them in selectors. Existing custom conversations remain intact.

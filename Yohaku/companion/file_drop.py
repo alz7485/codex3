@@ -29,7 +29,8 @@ def defaults():
     return {'schema_version': 1, 'enabled': True, 'rules': [
         rule('pdf', 'PDF', ['.pdf'], ['move', 'print_pdf']),
         rule('zip', 'ZIP', ['.zip'], ['move_extract']),
-        rule('other', 'その他のファイル', ['*'], ['move'])]}
+        rule('other', 'その他のファイル', ['*'], ['move']),
+        rule('folder', 'フォルダー', ['<folder>'], ['move'])]}
 
 
 def password_value(template, now):
@@ -57,9 +58,9 @@ def validate(document):
         if not isinstance(items, list) or not 1 <= len(items) <= 30:
             raise FileDropError('拡張子はルールごとに1〜30個です。')
         for extension in items:
-            if (not isinstance(extension, str) or extension != '*' and not re.fullmatch(r'\.[a-z0-9]{1,15}', extension)
-                    or extension in extensions or extension == '*' and len(items) != 1):
-                raise FileDropError('拡張子は小文字の.pdfなどで指定し、重複させないでください。')
+            if (not isinstance(extension, str) or extension not in ('*', '<folder>') and not re.fullmatch(r'\.[a-z0-9]{1,15}', extension)
+                    or extension in extensions or extension in ('*', '<folder>') and len(items) != 1):
+                raise FileDropError('拡張子は.pdfなど、フォルダーは<folder>、その他は*で指定し、重複させないでください。')
             extensions.add(extension)
         folder, template = rule['destination'], rule['password_template']
         if (not isinstance(folder, str) or len(folder) > 2048 or '\0' in folder
@@ -101,17 +102,117 @@ class FileDropStore(ContextOptionsStore):
     def matching_rule(self, path):
         if self.error or not self.data['enabled']:
             return None
-        extension = Path(path).suffix.lower()
+        extension = '<folder>' if Path(path).is_dir() else Path(path).suffix.lower()
         for rule in self.data['rules']:
             if extension in rule['extensions']:
                 return deepcopy(rule)
-        return next((deepcopy(rule) for rule in self.data['rules'] if rule['extensions'] == ['*']), None)
+        rule = next((deepcopy(rule) for rule in self.data['rules'] if rule['extensions'] == ['*']), None)
+        if extension == '<folder>' and rule:
+            rule['actions'] = [row for row in rule['actions'] if row['action'] == 'move']
+        return rule if rule and rule['actions'] else None
+
+
+def is_link(path):
+    value = Path(path).lstat()
+    return stat.S_ISLNK(value.st_mode) or bool(getattr(value, 'st_file_attributes', 0) & 0x400)
+
+
+def dropped_item(path):
+    path = Path(path)
+    try:
+        if not path.is_absolute() or is_link(path) or not (path.is_file() or path.is_dir()) or path.parent == path:
+            raise FileDropError('通常のファイルかフォルダーを1つ選んでください。リンクは対象外です。')
+        return path.absolute()
+    except OSError:
+        raise FileDropError('ファイルまたはフォルダーを確認できません。') from None
+
+
+def folder_snapshot(source):
+    """Bounded inventory; never traverse symbolic links or Windows junctions."""
+    result = {}; total = 0; pending = [Path(source)]
+    while pending:
+        path = pending.pop()
+        if is_link(path):
+            raise FileDropError('リンクを含むフォルダーは移動できません。元の場所に保持しました。')
+        directory = path.is_dir()
+        if not directory and not path.is_file():
+            raise FileDropError('通常のファイル以外が含まれています。')
+        identity = file_identity(path)
+        result[str(path.relative_to(source))] = (directory, identity)
+        if directory:
+            pending.extend(path.iterdir())
+        else:
+            total += identity[2]
+        if len(result) > MAX_ENTRIES or total > MAX_EXPANDED_BYTES:
+            raise FileDropError('フォルダーの移動は10,000項目・合計1GiBまでです。')
+    return result
+
+
+def remove_copied_folder(source, snapshot):
+    """Delete only the inventoried entries; keep later additions or edits."""
+    def same_directory(path):
+        key = str(path.relative_to(source)); old = snapshot.get(key)
+        return old and old[0] and not is_link(path) and file_identity(path)[:2] == old[1][:2]
+    for key, (directory, identity) in snapshot.items():
+        if directory:
+            continue
+        path = source/key
+        try:
+            ancestors = [path.parent]
+            while ancestors[-1] != source:
+                ancestors.append(ancestors[-1].parent)
+            if all(same_directory(parent) for parent in ancestors) and not is_link(path) and file_identity(path) == identity:
+                path.unlink()
+        except OSError:
+            pass
+    for key, (directory, _) in sorted(snapshot.items(), key=lambda row: len(Path(row[0]).parts), reverse=True):
+        if directory:
+            path = source/key
+            try:
+                if same_directory(path):
+                    path.rmdir()  # New children cause failure and remain untouched.
+            except OSError:
+                pass
+    return source.exists() or source.is_symlink()
+
+
+def move_folder(source, rule):
+    source = dropped_item(source)
+    configured = Path(rule['destination']) if rule['destination'] else None
+    if configured and (configured.resolve() == source.resolve() or source.resolve() in configured.resolve().parents):
+        raise FileDropError('フォルダー自身や、その中には移動できません。')
+    before = folder_snapshot(source)
+    folder = destination(rule); target = folder/source.name
+    if target.resolve() == source.resolve():
+        return {'path': str(source)}
+    if target.exists() or target.is_symlink():
+        raise FileDropError('移動先に同名の項目があります。上書きせず中止しました。')
+    try:
+        # Copy to a private staging directory on the destination volume first.
+        # Keep the entire original until a complete copy has been published.
+        with tempfile.TemporaryDirectory(prefix='.yohaku-move-', dir=folder) as temporary:
+            stage = Path(temporary)/'content'
+            shutil.copytree(source, stage, symlinks=True)
+            if folder_snapshot(source) != before:
+                raise FileDropError('処理中にフォルダーが変更されました。元の場所に保持しました。')
+            copied = folder_snapshot(stage)
+            if set(copied) != set(before) or any(copied[key][0] != row[0] or not row[0] and copied[key][1][2:4] != row[1][2:4] for key, row in before.items()):
+                raise FileDropError('コピー結果を確認できません。元の場所に保持しました。')
+            if target.exists() or target.is_symlink():
+                raise FileDropError('移動先に同名の項目があります。上書きせず中止しました。')
+            stage.rename(target)
+        retained = remove_copied_folder(source, before)
+        return {'path': str(target), 'source_retained': retained}
+    except FileDropError:
+        raise
+    except OSError:
+        raise FileDropError('フォルダーを移動できません。元の場所に保持しました。') from None
 
 
 def regular_file(path):
     path = Path(path)
     try:
-        if not path.is_absolute() or path.is_symlink() or not path.is_file():
+        if not path.is_absolute() or is_link(path) or not path.is_file():
             raise FileDropError('通常のファイルを1つ選んでください。フォルダーやリンクは対象外です。')
         return path.absolute()
     except OSError:
@@ -254,7 +355,11 @@ def execute(action, path, rule, now=None):
     validate({'schema_version': 1, 'enabled': True, 'rules': [rule]})
     if action not in {row['action'] for row in rule['actions']}:
         raise FileDropError('この処理はルールに登録されていません。')
-    source = regular_file(path)
+    source = dropped_item(path)
+    if source.is_dir():
+        if action != 'move' or not set(rule['extensions']) <= {'<folder>', '*'}:
+            raise FileDropError('フォルダーは移動だけを選べます。')
+        return move_folder(source, rule)
     if source.suffix.lower() not in rule['extensions'] and '*' not in rule['extensions']:
         raise FileDropError('ファイルの拡張子とルールが一致しません。')
     if action == 'move':

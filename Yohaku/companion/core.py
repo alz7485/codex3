@@ -124,6 +124,7 @@ class Notice:
     important: bool = False
     expression: str = "happy"
     kind: str = "message"
+    styles: tuple | list = ()
 
 
 
@@ -298,7 +299,7 @@ class Engine:
                     self.custom_notified[rule['id']] = previous
                 self.last_display = last_display
                 raise
-            return Notice('', rule['message'], True, 'notice', 'reminder')
+            return Notice('', rule['message'], True, 'notice', 'reminder', rule.get('message_styles', []))
         return None
 
     def departure_notice(self, now, hidden=False, uptime_provider=lambda: None):
@@ -345,10 +346,10 @@ class Engine:
                 status = f" · {event.response}" if event.response else ""
                 return Notice(f"予定まで あと{minutes}分{status}", text, True, reminder["expression"], "calendar")
         if allow_reminders:
-            message = self.one_shots.take_due(now)
+            message = self.one_shots.take_due(now, with_styles=True)
             if message is not None:
                 self.last_display = now
-                return Notice('', message, True, 'notice', 'reminder')
+                return Notice('', message['message'], True, 'notice', 'reminder', message.get('message_styles', []))
             notice = self.custom_notice(now)
             if notice:
                 return notice

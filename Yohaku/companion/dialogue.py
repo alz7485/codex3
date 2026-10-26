@@ -96,7 +96,7 @@ def validate(document):
     _require(isinstance(phrases, dict) and set(phrases) == set(VOICE_NAMES), f'{len(VOICE_NAMES)}種の性格のセリフを指定してください。')
     profiles = document.get('profiles')
     _require(isinstance(profiles, dict) and set(CHARACTERS) <= set(profiles)
-             and set(profiles) <= set(RECOGNIZED_PROFILE_KEYS), 'つづり・ビット・ペンギーのキャラ設定が必要です。')
+             and set(profiles) <= set(RECOGNIZED_PROFILE_KEYS), 'つづり・ビット・ペギーのキャラ設定が必要です。')
     for key, profile in profiles.items():
         _require(isinstance(profile, dict) and profile.get('voice') in VOICE_NAMES, f'{key}の性格が不正です。')
         _require(_text(profile.get('description'), 300) and _text(profile.get('tagline'), 1000), f'{key}の説明と代表的な一言を入力してください。')

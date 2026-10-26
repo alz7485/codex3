@@ -34,7 +34,7 @@ class LightweightCharacterTests(unittest.TestCase):
         self.root = Path(self.temporary.name)
 
     def test_three_characters_retain_all_seven_voice_banks(self):
-        self.assertEqual(CHARACTERS, {'A': 'つづり', 'B': 'ビット', 'E': 'ペンギー'})
+        self.assertEqual(CHARACTERS, {'A': 'つづり', 'B': 'ビット', 'E': 'ペギー'})
         document = defaults()
         self.assertEqual(set(document['profiles']), set('ABE'))
         self.assertEqual(len(VOICE_NAMES), 7)
@@ -97,7 +97,7 @@ class LightweightCharacterTests(unittest.TestCase):
     def test_runtime_artwork_has_only_three_sheets_and_shared_fronts(self):
         project = Path(__file__).resolve().parents[1]
         actual = {p.name for p in (project/'companion/assets/characters').iterdir() if p.is_file()}
-        self.assertEqual(actual, {'a_motion.png', 'b_motion.png', 'e_motion.png', 'front_reactions.png', 'motion_layout.json'})
+        self.assertEqual(actual, {'a_motion.png', 'b_motion.png', 'e_motion.png', 'front_reactions.png', 'motion_layout.json', 'holding_poses.png', 'mail_poses.png', 'calendar_poses.png'})
         for character in CHARACTERS:
             frames = character_frames(character)
             self.assertEqual(len(frames), 28)

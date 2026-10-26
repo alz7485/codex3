@@ -99,14 +99,97 @@ class FileDropUITests(unittest.TestCase):
             self.c.bubble.drop_buttons['print_pdf'].click(); printing.assert_called_once()
         self.assertTrue(source.exists()); self.assertIn('キャンセル', self.c.bubble.text.text())
 
-    def test_remote_urls_multiple_files_folders_and_links_do_not_run(self):
+    def test_remote_urls_and_multiple_files_do_not_run_but_folders_offer_only_move(self):
         one = self.file('one.txt'); two = self.file('two.txt')
         for urls in ([QUrl('https://example.invalid/a.zip')], [QUrl('file:relative.txt')], [QUrl.fromLocalFile(str(one)), QUrl.fromLocalFile(str(two))]):
             enter, drop = self.gesture(urls)
             self.assertFalse(enter.isAccepted()); self.assertFalse(drop.isAccepted())
         self.c.file_drop_service.drop(self.output)
-        self.assertIn('フォルダー', self.c.bubble.text.text())
+        self.assertEqual(self.c.bubble.current, 'file_drop')
+        self.assertTrue(self.c.bubble.drop_buttons['move'].isVisible())
+        self.assertFalse(self.c.bubble.drop_buttons['move_extract'].isVisible())
         self.assertTrue(one.exists()); self.assertTrue(two.exists())
+
+    def test_folder_drop_holds_icon_moves_after_choice_and_releases_after_completion(self):
+        source = self.root/'資料フォルダ'; source.mkdir(); (source/'資料.txt').write_bytes(b'original')
+        enter, drop = self.gesture([QUrl.fromLocalFile(str(source))])
+        self.assertTrue(enter.isAccepted()); self.assertTrue(drop.isAccepted())
+        self.assertIsNotNone(self.c.resident.held_frame)
+        self.c.bubble.drop_buttons['move'].click(); self.wait_worker()
+        self.assertFalse(source.exists()); self.assertEqual((self.output/source.name/'資料.txt').read_bytes(), b'original')
+        self.assertIsNone(self.c.resident.held_frame)
+
+    def test_cancel_and_replacing_choices_clear_the_held_item(self):
+        source = self.file('資料.pdf'); self.c.file_drop_service.drop(source)
+        self.assertIsNotNone(self.c.resident.held_icon)
+        self.c.bubble.dismiss(); self.assertIsNone(self.c.resident.held_icon)
+        self.c.file_drop_service.drop(source); self.c.bubble.open_choices()
+        self.assertIsNone(self.c.resident.held_icon); self.assertTrue(source.exists())
+
+    def test_mail_raises_envelope_and_returns_to_held_file_without_losing_choices(self):
+        self.c.settings.outlook_enabled = self.c.settings.mail_enabled = True
+        self.c.file_drop_service.drop(self.file('資料.txt'))
+        held = self.c.resident.held_frame
+        self.c.mail_result(self.c.mail_generation, {'messages': [{'kind': 'mail'}]}, '')
+        self.assertTrue(self.c.resident.mail_raised); self.assertIsNotNone(self.c.resident.mail_frame)
+        self.assertEqual(self.c.bubble.current, 'file_drop')
+        self.c.resident.lower_mail(); self.assertFalse(self.c.resident.mail_raised)
+        self.assertIs(self.c.resident.held_frame, held)
+        self.c.bubble.dismiss(); self.assertIsNone(self.c.resident.held_frame)
+
+    def test_unread_counts_do_not_raise_envelope_and_dismiss_clears_mail_pose(self):
+        self.c.settings.outlook_enabled = self.c.settings.mail_enabled = True
+        self.c.mail_result(self.c.mail_generation, {'unread_count': 10}, '')
+        self.assertFalse(self.c.resident.mail_raised)
+        self.c.mail_result(self.c.mail_generation, {'messages': [{'kind': 'mail'}]}, '')
+        self.assertTrue(self.c.resident.mail_raised)
+        self.c.bubble.dismiss(); self.assertFalse(self.c.resident.mail_raised)
+        self.assertFalse(self.c.resident.mail_timer.isActive())
+
+    def test_calendar_requests_and_reminders_check_planner_and_other_messages_do_not(self):
+        self.c.select_content('calendar')
+        self.assertTrue(self.c.resident.calendar_checking)
+        self.assertIsNotNone(self.c.resident.calendar_frame)
+        self.c.bubble.dismiss(); self.assertFalse(self.c.resident.calendar_checking)
+        for kind in ('calendar', 'reminder', 'departure'):
+            self.c.bubble.display(Notice('', '予定のお知らせ', True, kind=kind))
+            self.assertTrue(self.c.resident.calendar_checking)
+        self.c.bubble.display(Notice('', '普通のひとこと'))
+        self.assertFalse(self.c.resident.calendar_checking)
+        self.assertFalse(self.c.resident.calendar_timer.isActive())
+
+    def test_character_switch_keeps_held_icon_and_all_three_added_poses_render(self):
+        self.c.file_drop_service.drop(self.file('a.txt'))
+        icon = self.c.resident.held_icon
+        for character in 'ABE':
+            self.c.resident.set_character(character)
+            self.assertIs(self.c.resident.held_icon, icon)
+            self.assertFalse(self.c.resident.grab().isNull())
+            self.c.resident.raise_mail(); self.assertFalse(self.c.resident.grab().isNull())
+            self.c.resident.lower_mail(); self.c.resident.check_calendar()
+            self.assertFalse(self.c.resident.grab().isNull()); self.c.resident.lower_calendar()
+        with patch.object(QSystemTrayIcon, 'isSystemTrayAvailable', return_value=True):
+            self.c.hide_character()
+        self.assertIsNone(self.c.resident.held_icon)
+        self.assertFalse(self.c.resident.mail_raised); self.assertFalse(self.c.resident.calendar_checking)
+
+    def test_notification_editors_save_the_selected_bold_color_ranges(self):
+        from companion.reminder_editor import ReminderEditor
+        from companion.reminders import ReminderStore
+        from PySide6.QtGui import QTextCursor
+        store=ReminderStore(self.root/'editor-reminders.json');editor=ReminderEditor(store)
+        try:
+            editor.add_rule();editor.message.setPlainText('提出してください')
+            cursor=editor.message.textCursor();cursor.setPosition(0);cursor.setPosition(2,QTextCursor.MoveMode.KeepAnchor)
+            editor.message.setTextCursor(cursor);editor.message.bold_button.click()
+            editor.message.color_box.activated.emit(editor.message.color_box.findData('#7650a3'))
+            editor.save()
+            styles=[dict(start=0,length=2,bold=True,color='#7650a3')]
+            self.assertEqual(ReminderStore(store.path).data['notifications'][0]['message_styles'],styles)
+            self.c.bubble.show_one_shot_form();self.c.bubble.reminder_message.set_message('提出してください',styles)
+            self.c.save_one_shot()
+            self.assertEqual(self.c.engine.one_shots.data['notifications'][0]['message_styles'],styles)
+        finally:editor.dirty=False;editor.close();editor.deleteLater()
 
     def test_unconfigured_move_prompts_settings_and_editor_saves_month_template(self):
         self.c.file_drop_service.store.save(defaults())
