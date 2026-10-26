@@ -1,22 +1,25 @@
-﻿# Yohaku v0.25.0 onedirビルド用セット
+﻿# Yohaku v0.26.0 onedirビルド用セット
 
-このZIPだけを新しいフォルダーへ展開してください。分割ZIPの統合やtestsフォルダーの追加は不要です。
-つづり・ビット・ペギーの3体、全7性格を含みます。ファイル・フォルダーを渡すとアイコンを手に持って処理を尋ねます。移動・PDF印刷・ZIP解凍を選べます。新着メールは大きな薄い水色の手紙を掲げ、予定の確認・通知は穏やかに予定表を確認するポーズで知らせます。移動先とZIPパスワードのひな形は設定画面からJSONに保存できます。
-
-Windows 11、64bit Python 3.11または3.12を使用します。
-Yohaku.spec・main.py・ONEDIR_COMMAND.txtが並ぶYohakuフォルダーでPowerShellを開き、次の5行を順番に実行してください。バッチファイルや仮想環境の有効化は不要です。
+このZIPだけを新しい空のフォルダーへ展開してください。testsフォルダーは不要です。
+Windows 11の64bit Python 3.11または3.12を使用します。
+Yohaku.specとmain.pyが並ぶYohakuフォルダーでPowerShellを開き、次の5行を順番に実行してください。バッチや仮想環境の有効化は不要です。
 
 ```powershell
 py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements-build.txt
 .\.venv\Scripts\python.exe -m PyInstaller --noconfirm --clean Yohaku.spec
 .\.venv\Scripts\python.exe scripts\collect_licenses.py dist\Yohaku
-.\.venv\Scripts\python.exe -c "import shutil; shutil.make_archive('Yohaku-v0.25.0-windows-x64-onedir', 'zip', 'dist', 'Yohaku')"
+.\.venv\Scripts\python.exe -c "import shutil; shutil.make_archive('Yohaku-v0.26.0-windows-x64-onedir', 'zip', 'dist', 'Yohaku')"
 ```
 
 Python 3.12の場合は1行目を `py -3.12 -m venv .venv` に変更します。
-出力は `dist\Yohaku\Yohaku.exe` と `Yohaku-v0.25.0-windows-x64-onedir.zip` です。
-`dist\Yohaku` フォルダー全体を配布してください。EXEと同じ場所の_internalフォルダーも必要です。
+出力はdist/Yohaku/Yohaku.exeとYohaku-v0.26.0-windows-x64-onedir.zipです。
+_internalを含むdist/Yohakuフォルダー全体を配布してください。
 
-このセットの検査マニフェストには実際に同梱するファイルだけを登録しています。testsフォルダーはビルドにも実行にも不要です。通常のソース版と混ぜず、このセットを単独で展開してください。
-単体で配布するYohaku.specもZIP内のものと同一です。単体specだけではビルドできないため、初回はZIPを使用してください。
+PDFは吹き出しから移動・印刷、その他のファイル／フォルダーは移動を選べます。
+移動先は表示名とフルパスを登録し、PDF印刷はA4・A3・用紙サイズに合わせる、から選択します。
+印刷はWindowsの既定プリンターへ直接送信し、カラー／モノクロは文書から自動判定します。
+つづり・ビット・ペギーの3体と全7性格を含みます。
+
+このセットの検査マニフェストは実際の同梱ファイルだけを対象にしています。
+旧版や通常のソースZIPと混ぜず、このZIPを単独で展開してください。単体specだけでは本体・素材が足りないため、初回はZIPを使用します。

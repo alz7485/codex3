@@ -35,3 +35,7 @@ one_shot_notifications.json.tmp
 file_drop_settings.json
 file_drop_settings.json.bak
 file_drop_settings.json.tmp
+
+file_destinations.json
+file_destinations.json.bak
+file_destinations.json.tmp

@@ -4,13 +4,13 @@
 
 **仕事に、ひと呼吸。** 予定とファイル履歴をそっと知らせる、デスクトップの小さな同僚です。
 
-[onedirビルド用ZIP（1つ）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.25.0-onedir-build.zip) · [specファイル](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku.spec)
+[onedirビルド用ZIP（1つ）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.26.0-onedir-build.zip) · [specファイル](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku.spec)
 
 **ビルド用ZIPだけを新しいフォルダーに展開してください。** testsは不要で、同梱のONEDIR_COMMAND.txtの5行でEXEを作れます。テキスト化していません。
 
-v0.25.0では3体に受け取り・メール通知・予定確認のポーズを追加しました。ファイル／フォルダーを渡すと、そのアイコンを手に持って処理を尋ねます。新着メールでは大きな薄い水色の手紙を掲げ、予定の確認や通知では予定表に目を落とします。キャラ名は「ペギー」に統一しました。予定・通知の時刻や「メール」は色と太字で強調し、登録通知／単発通知の本文にも選択した文字の太字と色を保存できます。[文字の強調](docs/MESSAGE_FORMAT.md)[ポーズの表示例](https://raw.githubusercontent.com/alz7485/codex3/main/Yohaku/docs/prop-poses.png)
+v0.26.0では、PDFを渡すと「移動する・印刷する・キャンセル」、その他のファイルとフォルダーは「移動する・キャンセル」を表示します。移動するを選ぶと登録済みの移動先の表示名を選択。「移動先を編集する」で吹き出しを閉じ、表示名とフルパスを＋ボタンで追加する編集画面を開きます。JSONに保存します。PDF印刷はA4・A3・用紙サイズに合わせる、から選ぶと既定プリンターへ直接送信。サイズとカラー／モノクロを自動判定します。[操作とJSON](docs/FILE_DROP.md) · [表示例](https://raw.githubusercontent.com/alz7485/codex3/main/Yohaku/docs/file-drop.png)
 
-キャラへのファイルのドロップに対応しています。吹き出しで処理を選ぶと実行します。通常ファイルは移動、PDFは移動・印刷、ZIPは移動して解凍。移動先・ボタン・パスワードのひな形を専用画面とJSONで編集でき、`固定部分{month}` のように実行時の月を指定できます。上書き防止・解凍前の検証を行い、登録できる処理はこの3種類に限定しています。[使い方とJSON](docs/FILE_DROP.md) · [選択画面](https://raw.githubusercontent.com/alz7485/codex3/main/Yohaku/docs/file-drop.png)
+3体の小道具ポーズ、ペギーへの改名、全7性格、予定・通知の時刻や「メール」の色と太字、ユーザー通知の文字装飾を引き継ぎます。[ポーズの表示例](https://raw.githubusercontent.com/alz7485/codex3/main/Yohaku/docs/prop-poses.png) · [文字の強調](docs/MESSAGE_FORMAT.md)
 
 v0.23.0ではキャラを **つづり・ビット・ペギー** の3体に絞り、全7性格・1,519文は維持しました。廃止したキャラと重複する静止画を除き、説明用の大きな画像・GIFはGitHub閲覧に分けてソースZIPを軽量化しました。静かな時間・設定や履歴の画面を開いている間も歩行を継続し、ドラッグ終了・再表示後も速やかに歩き出します。[キャラと動作の説明](docs/NEW_CHARACTERS.md)
 
@@ -230,12 +230,12 @@ py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements-build.txt
 .\.venv\Scripts\python.exe -m PyInstaller --noconfirm --clean Yohaku.spec
 .\.venv\Scripts\python.exe scripts\collect_licenses.py dist\Yohaku
-.\.venv\Scripts\python.exe -c "import shutil; shutil.make_archive('Yohaku-v0.25.0-windows-x64-onedir', 'zip', 'dist', 'Yohaku')"
+.\.venv\Scripts\python.exe -c "import shutil; shutil.make_archive('Yohaku-v0.26.0-windows-x64-onedir', 'zip', 'dist', 'Yohaku')"
 ```
 
 Python 3.12の場合は、1行目を `py -3.12 -m venv .venv` に変更します。
 
-3行目がonedirを作るコマンドです。`Yohaku.spec`にフォルダー形式、アイコン、3体とアニメーション素材、製品名・版を定義しています。出力は `dist\Yohaku\Yohaku.exe`。5行目で作るZIPは作業フォルダー直下の `Yohaku-v0.25.0-windows-x64-onedir.zip` です。
+3行目がonedirを作るコマンドです。`Yohaku.spec`にフォルダー形式、アイコン、3体とアニメーション素材、製品名・版を定義しています。出力は `dist\Yohaku\Yohaku.exe`。5行目で作るZIPは作業フォルダー直下の `Yohaku-v0.26.0-windows-x64-onedir.zip` です。
 
 | 同梱ファイル | 用途 |
 |---|---|
@@ -253,7 +253,7 @@ Python 3.12の場合は、1行目を `py -3.12 -m venv .venv` に変更します
 py -3.11 scripts/build_onedir.py
 ```
 
-ビルドヘルパーの場合の出力は `dist\Yohaku\Yohaku.exe` と `release\Yohaku-v0.25.0-windows-x64-onedir.zip` です。**EXEだけを取り出さず、ZIPをすべて展開して実行してください。** DLL・Qt・画像は同じフォルダーの`_internal`に入ります。配布物には依存ソフトウェアのライセンス文書もコピーします。署名・社内パッケージ化は含みません。LinuxからWindows EXEを作ったものではありません。
+ビルドヘルパーの場合の出力は `dist\Yohaku\Yohaku.exe` と `release\Yohaku-v0.26.0-windows-x64-onedir.zip` です。**EXEだけを取り出さず、ZIPをすべて展開して実行してください。** DLL・Qt・画像は同じフォルダーの`_internal`に入ります。配布物には依存ソフトウェアのライセンス文書もコピーします。署名・社内パッケージ化は含みません。LinuxからWindows EXEを作ったものではありません。
 
 ビルド素材の確認だけなら `python scripts/build_onedir.py --check`、ビルド環境の準備だけなら `py -3.11 scripts/build_onedir.py --setup-only` を使います。Windows用ビルドはWindows上で実行してください。
 

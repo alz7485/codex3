@@ -17,7 +17,7 @@ from companion.metadata import VERSION
 EXCLUDED_DIRS = {".git", ".venv", "__pycache__", "build", "dist", "release", ".pytest_cache", ".aws", ".ssh", ".codex", ".agents"}
 PRIVATE_NAMES = {"settings.json", "history.json", "instance.lock", ".env", "smoke-report.json", "dialogue.json", "dialogue.json.bak", "dialogue.json.tmp", "Yohaku-conversation.json", "usage.json", "usage.tmp", "settings.tmp", "history.tmp", "reminders.json", "reminders.json.bak", "reminders.json.tmp"}
 PRIVATE_NAMES.update({name+suffix for name in ("context_options", "topic_preferences", "one_shot_notifications") for suffix in (".json", ".json.bak", ".json.tmp")})
-PRIVATE_NAMES.update({'file_drop_settings'+suffix for suffix in ('.json', '.json.bak', '.json.tmp')})
+PRIVATE_NAMES.update({name+suffix for name in ('file_drop_settings','file_destinations') for suffix in ('.json','.json.bak','.json.tmp')})
 
 
 def source_files(project):

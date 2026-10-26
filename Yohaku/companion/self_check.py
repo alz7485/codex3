@@ -74,6 +74,17 @@ def check_bundle():
         result = execute('move_extract', archive_path, rule, datetime(2026, 10, 1))
         if (Path(result['extracted'])/'sample.txt').read_bytes() != b'Yohaku':
             raise ValueError('Archive operation failed')
+        from .file_destinations import DestinationStore
+        from .destination_editor import DestinationEditor
+        targets=DestinationStore(root/'file_destinations.json')
+        targets.save(dict(schema_version=1,destinations=[dict(id='sample',name='提出用',path=str(output))]))
+        staged_bubble=InteractionBubble();destination_editor=DestinationEditor(targets)
+        try:
+            for stage in ('action','destination','paper'):
+                staged_bubble.show_drop_stage(root/'sample.pdf',stage,targets.data['destinations'])
+                if staged_bubble.grab().isNull():raise ValueError('Drop stage rendering failed')
+            if destination_editor.grab().isNull():raise ValueError('Destination editor rendering failed')
+        finally:staged_bubble.hide();destination_editor.hide()
         pdf = root/'sample.pdf'; writer = QPdfWriter(str(pdf)); painter = QPainter(writer)
         painter.drawText(30, 100, 'Yohaku'); painter.end(); del writer
         pdf_document = QPdfDocument()
@@ -90,7 +101,7 @@ def check_bundle():
     return {'version': VERSION, 'python': platform.python_version(), 'qt': qVersion(),
             'platform': sys.platform, 'success': True, 'character_frames_rendered': rendered,
             'topics': len(document['rules']), 'voices': len(document['phrases']),
-            'encrypted_zip_checked': True, 'pdf_render_checked': True, 'prop_poses_rendered': prop_rendered}
+            'encrypted_zip_checked': True, 'pdf_render_checked': True, 'prop_poses_rendered': prop_rendered, 'drop_stages_rendered': 3, 'destination_editor_checked': True}
 
 
 def run(output):
