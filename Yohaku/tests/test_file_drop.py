@@ -30,7 +30,11 @@ class FileDropTests(unittest.TestCase):
         if password is None:
             with zipfile.ZipFile(path, 'w', zipfile.ZIP_STORED) as archive:
                 for key, value in (rows or {'フォルダー/資料.txt': b'content'}).items():
-                    archive.writestr(key, value)
+                    info = zipfile.ZipInfo(key)
+                    # ZipInfo normalizes os.sep on Windows. Store the raw name
+                    # so malformed backslashes are really present in the ZIP.
+                    info.filename = info.orig_filename = key
+                    archive.writestr(info, value)
         else:
             with pyzipper.AESZipFile(path, 'w', compression=pyzipper.ZIP_DEFLATED, encryption=pyzipper.WZ_AES) as archive:
                 archive.setpassword(password)

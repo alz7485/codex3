@@ -166,6 +166,8 @@ class FileDropUITests(unittest.TestCase):
         with patch('companion.pdf_print.QPrintDialog.exec', return_value=QDialog.DialogCode.Rejected):
             self.assertFalse(print_pdf(path))
         self.assertTrue(path.exists())
+        moved = path.with_name('after-cancel.pdf')
+        path.rename(moved); moved.rename(path)  # The source must not stay locked on Windows.
 
     def test_closed_application_does_not_redisplay_a_late_result(self):
         self.c.file_drop_service.closed = True; self.c.bubble.hide()

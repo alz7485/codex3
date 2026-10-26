@@ -50,7 +50,7 @@ def check_bundle():
     import tempfile
     from datetime import datetime
     import pyzipper
-    from PySide6.QtCore import QSize
+    from PySide6.QtCore import QFile, QIODevice, QSize
     from PySide6.QtGui import QPainter, QPdfWriter
     from PySide6.QtPdf import QPdfDocument
     from .file_drop import defaults as drop_defaults, execute
@@ -66,11 +66,16 @@ def check_bundle():
         pdf = root/'sample.pdf'; writer = QPdfWriter(str(pdf)); painter = QPainter(writer)
         painter.drawText(30, 100, 'Yohaku'); painter.end(); del writer
         pdf_document = QPdfDocument()
+        pdf_device = QFile(str(pdf))
         try:
-            if pdf_document.load(str(pdf)) != QPdfDocument.Error.None_ or pdf_document.render(0, QSize(128, 128)).isNull():
+            if not pdf_device.open(QIODevice.OpenModeFlag.ReadOnly):
+                raise ValueError('PDF read failed')
+            pdf_document.load(pdf_device)
+            if pdf_document.status() != QPdfDocument.Status.Ready or pdf_document.render(0, QSize(128, 128)).isNull():
                 raise ValueError('PDF rendering failed')
         finally:
             pdf_document.close()
+            pdf_device.close()
     return {'version': VERSION, 'python': platform.python_version(), 'qt': qVersion(),
             'platform': sys.platform, 'success': True, 'character_frames_rendered': rendered,
             'topics': len(document['rules']), 'voices': len(document['phrases']),

@@ -2,7 +2,7 @@
 import math
 from pathlib import Path
 
-from PySide6.QtCore import QRectF, QSize, Qt
+from PySide6.QtCore import QFile, QIODevice, QRectF, QSize, Qt
 from PySide6.QtGui import QPainter
 from PySide6.QtPdf import QPdfDocument
 from PySide6.QtPrintSupport import QPrintDialog, QPrinter
@@ -16,10 +16,14 @@ def print_pdf(path, parent=None, on_dialog=None):
     if path.suffix.lower() != '.pdf' or path.stat().st_size > 256 * 1024 * 1024:
         raise FileDropError('印刷は256MiB以内のPDFを選んでください。')
     document = QPdfDocument(parent)
+    device = QFile(str(path))
     painter = None
     dialog = None
     try:
-        if document.load(str(path)) != QPdfDocument.Error.None_ or not 1 <= document.pageCount() <= 1000:
+        if not device.open(QIODevice.OpenModeFlag.ReadOnly):
+            raise FileDropError('PDFを読み込めません。')
+        document.load(device)
+        if document.status() != QPdfDocument.Status.Ready or not 1 <= document.pageCount() <= 1000:
             raise FileDropError('PDFを開けません。暗号化されたPDFや1,000ページを超えるPDFは対象外です。')
         printer = QPrinter(QPrinter.PrinterMode.HighResolution)
         printer.setDocName(path.name)
@@ -56,11 +60,15 @@ def print_pdf(path, parent=None, on_dialog=None):
             box = QRectF(rect.x()+(rect.width()-target.width())/2,
                          rect.y()+(rect.height()-target.height())/2, target.width(), target.height())
             painter.drawImage(box, image)
+        ended = painter.end(); painter = None
+        if not ended or printer.printerState() in (QPrinter.PrinterState.Error, QPrinter.PrinterState.Aborted):
+            raise FileDropError('印刷データの送信を完了できません。プリンターを確認してください。')
         return True
     finally:
         if painter is not None and painter.isActive():
             painter.end()
         document.close()
+        device.close()  # Release the native handle immediately, before deferred QObject deletion.
         document.deleteLater()
         if dialog is not None:
             dialog.deleteLater()
