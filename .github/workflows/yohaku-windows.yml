@@ -41,6 +41,13 @@ jobs:
       - name: Install build dependencies
         working-directory: ${{ env.YOHAKU_PROJECT }}
         run: python -m pip install -r requirements-build.txt
+      - name: Check shelf operations with a timeout
+        working-directory: ${{ env.YOHAKU_PROJECT }}
+        env:
+          QT_QPA_PLATFORM: offscreen
+          PYTHONUTF8: '1'
+          LOCALAPPDATA: ${{ runner.temp }}/Yohaku-shelf-tests
+        run: python -X faulthandler -c "import faulthandler, unittest; faulthandler.dump_traceback_later(60, exit=True); result=unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.loadTestsFromNames(['tests.test_shelf', 'tests.test_file_drop_ui'])); faulthandler.cancel_dump_traceback_later(); raise SystemExit(not result.wasSuccessful())"
       - name: Run synthetic-data tests
         working-directory: ${{ env.YOHAKU_PROJECT }}
         env:
