@@ -3,7 +3,7 @@ import math
 from PySide6.QtCore import QFile, QIODevice, QRectF, QSize
 from PySide6.QtGui import QPageLayout, QPageSize, QPainter
 from PySide6.QtPdf import QPdfDocument
-from PySide6.QtPrintSupport import QPrinter, QPrinterInfo
+from PySide6.QtPrintSupport import QPrintEngine, QPrinter, QPrinterInfo
 from .file_drop import FileDropError, regular_file
 
 
@@ -36,6 +36,33 @@ def default_printer():
     return printer,info.supportedPageSizes()
 
 
+def configure_page(printer,size,orientation):
+    # Native Windows drivers validate the full QPageLayout including hardware
+    # margins. Applying an old layout to a different sheet can be rejected even
+    # when the sheet itself is supported. Use the individual engine properties,
+    # which let the driver choose its own printable margins, then read back.
+    current=printer.pageLayout()
+    if current.pageSize().isEquivalentTo(size) and current.orientation()==orientation:
+        return
+    if printer.printerState()==QPrinter.PrinterState.Active and printer.outputFormat()==QPrinter.OutputFormat.NativeFormat:
+        # Qt 6.8 public setters reject an active native job. The Windows engine
+        # supports these properties and defers ResetDC until newPage(), after
+        # EndPage and before StartPage. Queue only the next sheet's properties.
+        engine=printer.printEngine()
+        engine.setProperty(QPrintEngine.PrintEnginePropertyKey.PPK_QPageSize,size)
+        engine.setProperty(QPrintEngine.PrintEnginePropertyKey.PPK_Orientation,orientation.value)
+    else:
+        printer.setPageSize(size)
+        printer.setPageOrientation(orientation)
+    current=printer.pageLayout()
+    actual=current.pageSize()
+    wanted=size.size(QPageSize.Unit.Point);got=actual.size(QPageSize.Unit.Point)
+    equivalent=(actual.isValid() and (actual.isEquivalentTo(size) or
+                abs(wanted.width()-got.width())<=2 and abs(wanted.height()-got.height())<=2))
+    if not equivalent or current.orientation()!=orientation:
+        raise FileDropError('プリンターに用紙サイズ・向きを設定できません。既定プリンターの用紙設定を確認してください。')
+
+
 def print_pdf(path,paper='auto'):
     path=regular_file(path)
     if paper not in ('a4','a3','auto'):raise FileDropError('用紙はA4・A3・自動から選んでください。')
@@ -55,6 +82,7 @@ def print_pdf(path,paper='auto'):
             size,orientation=page_layout(document.pagePointSize(page),paper)
             if supported and not any(entry.id()==size.id() or entry.isEquivalentTo(size) for entry in supported):
                 raise FileDropError('既定プリンターが選択した用紙に対応していません。')
+            size=next((entry for entry in supported if entry.id()==size.id() or entry.isEquivalentTo(size)),size)
             layouts.append((size,orientation))
             image=render_page(document,page)
             color=color or not image.allGray()
@@ -63,8 +91,7 @@ def print_pdf(path,paper='auto'):
         for page,(size,orientation) in enumerate(layouts):
             # Windows print engines apply the layout for the NEXT page when it
             # is changed before newPage(). Preserve driver printable margins.
-            layout=printer.pageLayout();layout.setPageSize(size);layout.setOrientation(orientation)
-            if not printer.setPageLayout(layout):raise FileDropError('プリンターの用紙サイズを変更できません。')
+            configure_page(printer,size,orientation)
             if page==0:
                 if not painter.begin(printer):raise FileDropError('プリンターを開始できません。')
                 started=True;painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
