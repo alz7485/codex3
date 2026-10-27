@@ -1260,7 +1260,7 @@ class InteractionBubble(Bubble):
         if has_links:
             # Share the usable screen height between the introduction and the
             # file list, retaining the management button and other controls.
-            cap = min(height, max(1, budget//3))
+            cap = max(1, budget-min(list_height, max(1, budget*2//3)))
         if height > cap:
             width = max(1, width - self.content_scroll.verticalScrollBar().sizeHint().width())
             height = max(1, self.text.heightForWidth(width))
