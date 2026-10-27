@@ -218,18 +218,11 @@ def character_frames(character):
         painter.end()
         cleaned.append(clipped)
         bounds = bounds.united(rect)
-    # The generated walking cells have different origins. Register them to
-    # the shared canvas center and neutral ground line, retaining one scale for all
-    # eight poses. Otherwise every frame visibly hops and slides sideways.
-    for index in range(16, 24):
-        rect = content[index]
-        aligned = QPixmap(cleaned[index].size())
-        aligned.fill(Qt.GlobalColor.transparent)
-        painter = QPainter(aligned)
-        painter.drawPixmap(bounds.center().x() - rect.center().x(),
-                           content[0].bottom() - rect.bottom(), cleaned[index])
-        painter.end()
-        cleaned[index] = aligned
+    # The old eight drawings repeated the same leading foot. Articulate both
+    # neutral feet in opposite phases instead of replaying those poses.
+    from .walk_animation import walk_frames
+    cleaned[16:24]=walk_frames(cleaned[0],character,bounds.center().x(),
+                               content[0].bottom(),content[0].center().x())
     frames = tuple(frame.copy(bounds) for frame in cleaned)
     # Dedicated front-view artwork: rows A/B/E plus a separate cat strip,
     # columns normal/blink/
@@ -444,7 +437,9 @@ class Mascot(QWidget):
         pixmap = self.pixmap if self.frame_index is None else frames[self.frame_index]
         if self.flipped and (self.frame_index is None or self.frame_index < 24):
             pixmap = pixmap.transformed(QTransform().scale(-1, 1))
-        blend = min(1.0, max(0.0, (time.monotonic() - self.frame_changed_at) / 0.085))
+        from .walk_animation import WALK_BLEND_SECONDS
+        duration=WALK_BLEND_SECONDS if self.frame_index is not None and 16<=self.frame_index<24 and self.previous_frame is not None and 16<=self.previous_frame<24 else .085
+        blend = min(1.0, max(0.0, (time.monotonic() - self.frame_changed_at) / duration))
         if self.previous_frame is not None and self.frame_index is not None and blend < 1:
             previous = frames[self.previous_frame]
             if self.previous_flipped and self.previous_frame < 24:
@@ -2197,6 +2192,9 @@ class Controller(QObject):
         # forever beneath an untouched pointer. This transient position is not logged.
         hover_pause = hovered and now < self.hover_until
         blocked = self.pending_reaction is not None or (self.bubble.isVisible() and self.bubble.interactive) or hover_pause or self.resident.drop_hover or self.resident.mail_raised or self.resident.calendar_checking
+        from .walk_animation import RIGS
+        scale=min((self.resident.width()-6)/self.resident.pixmap.width(),(self.resident.height()-6)/self.resident.pixmap.height())
+        self.motion.stride_pixels=4*RIGS[self.settings.character]['stride']*scale
         self.motion_x = self.motion.advance(dt, self.motion_x if self.motion_x is not None else upper,
                                           lower, upper, self.settings.walking and not blocked)
         frame = self.motion.frame()

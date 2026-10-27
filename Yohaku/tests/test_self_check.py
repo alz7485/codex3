@@ -26,6 +26,7 @@ class BundleCheckTests(unittest.TestCase):
             result = json.loads(report.read_text(encoding='utf-8'))
             self.assertTrue(result['success'])
             self.assertEqual(result['character_frames_rendered'], 12)
+            self.assertEqual(result['walk_frames_rendered'],24)
             self.assertEqual(result['prop_poses_rendered'], 9)
             self.assertEqual(result['pickup_poses_rendered'],3)
             self.assertEqual(result['note_poses_rendered'],6)

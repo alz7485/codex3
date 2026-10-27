@@ -1,10 +1,10 @@
-# Yohaku v0.28.0
+# Yohaku v0.28.1
 
-ドラッグ中の「つままれた姿」と、通知入力中の「メモを取るアニメーション」を3体に追加しました。[表示例](../../Yohaku/docs/action-poses.png) · [動作](../../Yohaku/docs/ACTION_POSES.md) 「預ける」と「預けたものを見る」の一時ランチャーを使えます。本体は移動・削除せず、アイコン付き一覧からダブルクリックで開きます。保持期間を1日・1週間・1ヶ月・無期限から設定できます。[使い方とリセット](../../Yohaku/docs/SHELF.md) · [表示例](../../Yohaku/docs/shelf.png)
+3体の歩行を、左右の足が交互に踏み出す動きに修正しました。[歩行GIF](../../Yohaku/docs/walk-alternation.gif) · [歩行の説明](../../Yohaku/docs/TIMING_MOTION.md) ドラッグ中のつままれた姿と通知入力中のメモ動作も継続します。[表示例](../../Yohaku/docs/action-poses.png) · [動作](../../Yohaku/docs/ACTION_POSES.md) 「預ける」と「預けたものを見る」の一時ランチャーを使えます。本体は移動・削除せず、アイコン付き一覧からダブルクリックで開きます。保持期間を1日・1週間・1ヶ月・無期限から設定できます。[使い方とリセット](../../Yohaku/docs/SHELF.md) · [表示例](../../Yohaku/docs/shelf.png)
 
-**[onedir用ZIP（約14MB）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.28.0-onedir-build.zip)**
+**[onedir用ZIP（約14MB）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.28.1-onedir-build.zip)**
 
-[spec単体](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku.spec) · [5行のコマンドと手順](BUILD_ONEDIR.txt) · [SHA-256](Yohaku-v0.28.0-onedir-build.zip.sha256)
+[spec単体](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku.spec) · [5行のコマンドと手順](BUILD_ONEDIR.txt) · [SHA-256](Yohaku-v0.28.1-onedir-build.zip.sha256)
 
 ZIPを新しい空の場所へ展開し、Yohaku.specとmain.pyが並ぶYohakuフォルダーでONEDIR_COMMAND.txtの5行を順番に実行します。Windows 11の64bit Python 3.11/3.12を使用し、バッチや仮想環境の有効化は不要です。testsは同梱・要求しません。検査マニフェストは実際のビルド用ファイルだけです。_internalを含むdist/Yohakuフォルダー全体を配布してください。テキスト化・分割はしていません。
 
