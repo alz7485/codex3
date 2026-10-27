@@ -139,7 +139,7 @@
   "tests/test_message_format.py": "328d337cc4183482113eeae34a1bf59f21780eb8f4214dec4533b0d1a8f4e941",
   "tests/test_motion.py": "91f8e8997d90c685f97624523cd7f7ad86bb100d549949c59e4980eed76297b5",
   "tests/test_motion_policy.py": "c5a2e8d475095ed0fcd63388556a4f97808ed514936a3100c3a0073a8d86a8cf",
-  "tests/test_one_shot.py": "1a0dc72175f92263430be5872a17cd33b76d710cca5e127d8e90448232c9e0e3",
+  "tests/test_one_shot.py": "550173e26ef5edce5ca4da02fd665329a5c1ca19e0d07b2e0308360354f5c3fe",
   "tests/test_outlook.py": "30afe5ecbe4729cd79bcfbd19b6a715f4b55fd9c5aa804746382679d6a83ad69",
   "tests/test_outlook_navigation.py": "aed4b80d682a153fb8d541f20539c5de08e08fdd85598231915a088d2fd0cd91",
   "tests/test_pdf_print.py": "ade61a4f501d54bd7f0c7dde861ef3f3bc6a0f6d0ce492b172040ce6fe4c1271",
