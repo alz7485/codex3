@@ -1,10 +1,10 @@
-# Yohaku v0.27.0
+# Yohaku v0.27.1
 
-「預ける」と「預けたものを見る」の一時ランチャーを追加しました。本体は移動・削除せず、アイコン付き一覧からダブルクリックで開きます。保持期間を1日・1週間・1ヶ月・無期限から設定できます。[使い方とリセット](../../Yohaku/docs/SHELF.md) · [表示例](../../Yohaku/docs/shelf.png)
+自動保存後も「預ける」を利用でき、一覧上の新着メール文は1分後に消えるよう修正しました。「預ける」と「預けたものを見る」の一時ランチャーを使えます。本体は移動・削除せず、アイコン付き一覧からダブルクリックで開きます。保持期間を1日・1週間・1ヶ月・無期限から設定できます。[使い方とリセット](../../Yohaku/docs/SHELF.md) · [表示例](../../Yohaku/docs/shelf.png)
 
-**[onedir用ZIP（約11.1MB）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.27.0-onedir-build.zip)**
+**[onedir用ZIP（約11.2MB）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.27.1-onedir-build.zip)**
 
-[spec単体](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku.spec) · [5行のコマンドと手順](BUILD_ONEDIR.txt) · [SHA-256](Yohaku-v0.27.0-onedir-build.zip.sha256)
+[spec単体](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku.spec) · [5行のコマンドと手順](BUILD_ONEDIR.txt) · [SHA-256](Yohaku-v0.27.1-onedir-build.zip.sha256)
 
 ZIPを新しい空の場所へ展開し、Yohaku.specとmain.pyが並ぶYohakuフォルダーでONEDIR_COMMAND.txtの5行を順番に実行します。Windows 11の64bit Python 3.11/3.12を使用し、バッチや仮想環境の有効化は不要です。testsは同梱・要求しません。検査マニフェストは実際のビルド用ファイルだけです。_internalを含むdist/Yohakuフォルダー全体を配布してください。テキスト化・分割はしていません。
 
