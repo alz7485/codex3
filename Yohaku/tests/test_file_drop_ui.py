@@ -34,7 +34,7 @@ class FileDropUITests(unittest.TestCase):
         save_json(self.root/'Yohaku/settings.json', asdict(Settings(context_enabled=False, mail_enabled=False,
                                                                 quiet_start='00:00', quiet_end='00:00')))
         with patch.dict(os.environ, LOCALAPPDATA=self.temporary.name), patch.object(QSystemTrayIcon, 'isSystemTrayAvailable', return_value=True):
-            self.c = Controller(self.app)
+            self.c = Controller(self.app,data_path=Path(os.environ["LOCALAPPDATA"])/"Yohaku")
         self.addCleanup(self.cleanup)
         for timer in (self.c.tick_timer, self.c.poll_timer, self.c.animation_timer, self.c.activity_timer, self.c.context_timer):
             timer.stop()

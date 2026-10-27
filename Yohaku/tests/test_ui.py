@@ -26,7 +26,7 @@ class UserInterfaceTests(unittest.TestCase):
         cls.old_local = os.environ.get("LOCALAPPDATA")
         os.environ["LOCALAPPDATA"] = cls.temp.name
         cls.app = create_application()
-        cls.controller = Controller(cls.app)
+        cls.controller = Controller(cls.app,data_path=Path(os.environ["LOCALAPPDATA"])/"Yohaku")
 
     @classmethod
     def tearDownClass(cls):
@@ -803,7 +803,7 @@ class UserInterfaceTests(unittest.TestCase):
     def test_app_has_brand_name_version_and_windows_icon(self):
         c = self.controller
         self.assertEqual(self.app.applicationDisplayName(), "Yohaku")
-        self.assertEqual(self.app.applicationVersion(), "0.28.2")
+        self.assertEqual(self.app.applicationVersion(), "0.29.0")
         self.assertFalse(c.brand_icon.isNull())
         self.assertEqual(c.panel.windowIcon().cacheKey(), c.brand_icon.cacheKey())
         c.panel.character_buttons["B"].click()

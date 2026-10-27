@@ -30,7 +30,7 @@ class WalkingPolicyTests(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory(); self.addCleanup(self.temporary.cleanup)
         save_json(Path(self.temporary.name)/'Yohaku/settings.json', asdict(Settings(context_enabled=False, mail_enabled=False)))
         with patch.dict(os.environ, LOCALAPPDATA=self.temporary.name), patch.object(QSystemTrayIcon, 'isSystemTrayAvailable', return_value=True):
-            self.c = Controller(self.app)
+            self.c = Controller(self.app,data_path=Path(os.environ["LOCALAPPDATA"])/"Yohaku")
         self.addCleanup(self.cleanup)
         for timer in (self.c.tick_timer, self.c.poll_timer, self.c.animation_timer, self.c.activity_timer, self.c.context_timer):
             timer.stop()

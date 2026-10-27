@@ -76,7 +76,7 @@ class BubbleTimingTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         with patch.dict(os.environ, {'LOCALAPPDATA': self.temp.name}):
-            self.c = Controller(self.app)
+            self.c = Controller(self.app,data_path=Path(os.environ["LOCALAPPDATA"])/"Yohaku")
         for timer in (self.c.tick_timer, self.c.poll_timer, self.c.animation_timer,
                       self.c.activity_timer, self.c.context_timer):
             timer.stop()

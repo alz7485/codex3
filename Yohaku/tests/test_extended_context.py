@@ -167,7 +167,7 @@ class ExtendedContextInterfaceTests(unittest.TestCase):
     def test_controller_uses_only_fresh_complete_calendar_and_enabled_activity_collection(self):
         from companion.ui import Controller
         with tempfile.TemporaryDirectory() as temporary,patch.dict(os.environ,{'LOCALAPPDATA':temporary}):
-            controller=Controller(self.app)
+            controller=Controller(self.app,data_path=Path(os.environ["LOCALAPPDATA"])/"Yohaku")
             try:
                 for timer in (controller.tick_timer,controller.poll_timer,controller.animation_timer,controller.activity_timer,controller.context_timer):timer.stop()
                 now=datetime.now().astimezone().replace(hour=12, minute=0, second=0, microsecond=0)

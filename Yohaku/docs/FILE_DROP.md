@@ -19,7 +19,7 @@ ZIPも「その他のファイル」として移動します。旧版の解凍�
 
 ![移動先の編集](https://raw.githubusercontent.com/alz7485/codex3/main/Yohaku/docs/file-drop-settings.png)
 
-保存先は `%LOCALAPPDATA%\Yohaku\file_destinations.json`。PDF・通常ファイル・フォルダーで共通の一覧です。最大100件で、表示名は重複しない1〜60文字です。保存時に `.json.bak` を残し、不正なJSONは元のファイルを保持してエラーを表示します。旧版の拡張子別移動先は初回に重複を除いて読み込み、明示して保存するまで元のJSONを書き換えません。
+保存先は `Data\file_destinations.json`。PDF・通常ファイル・フォルダーで共通の一覧です。最大100件で、表示名は重複しない1〜60文字です。保存時に `.json.bak` を残し、不正なJSONは元のファイルを保持してエラーを表示します。旧版の拡張子別移動先は初回に重複を除いて読み込み、明示して保存するまで元のJSONを書き換えません。
 
 ```json
 {
