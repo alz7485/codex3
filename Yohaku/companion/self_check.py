@@ -27,6 +27,7 @@ def check_bundle():
     json.loads((assets/'characters/motion_layout.json').read_text(encoding='utf-8'))
     document = defaults()
     rendered = 0
+    walk_rendered=0
     for character in CHARACTERS:
         widget = Mascot(character=character)
         try:
@@ -35,6 +36,10 @@ def check_bundle():
                 if widget.grab().isNull():
                     raise ValueError('Character rendering failed')
                 rendered += 1
+            for frame in range(16,24):
+                widget.frame_index=frame;widget.previous_frame=None
+                if widget.grab().isNull():raise ValueError('Walking frame rendering failed')
+                walk_rendered+=1
         finally:
             widget.hide(); widget.deleteLater()
     # Render all nine added prop poses independently of user files/settings.
@@ -117,6 +122,7 @@ def check_bundle():
             pdf_device.close()
     return {'version': VERSION, 'python': platform.python_version(), 'qt': qVersion(),
             'platform': sys.platform, 'success': True, 'character_frames_rendered': rendered,
+            'walk_frames_rendered':walk_rendered,
             'topics': len(document['rules']), 'voices': len(document['phrases']),
             'encrypted_zip_checked': True, 'pdf_render_checked': True, 'prop_poses_rendered': prop_rendered,
             'pickup_poses_rendered':pickup_rendered,'note_poses_rendered':notes_rendered,

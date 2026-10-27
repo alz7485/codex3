@@ -79,6 +79,21 @@ class MotionTests(unittest.TestCase):
         x = motion.advance(10000, 100, 0, 200, True)
         self.assertLessEqual(abs(x - 100), 2)
 
+    def test_step_phase_follows_distance_at_different_update_rates_and_freezes_when_blocked(self):
+        phases=[]
+        for count in (10,25,60):
+            motion=Motion(uniform=lambda a,b:a);motion.phase='walk';motion.wait=0
+            motion.distance=10000;motion.speed=20;motion.stride_pixels=28
+            x=200.
+            for _ in range(count):x=motion.advance(1/count,x,0,1000,True)
+            self.assertAlmostEqual(x,180.)
+            self.assertAlmostEqual(motion.gait,20/28)
+            phases.append(motion.gait)
+            motion.advance(.1,x,0,1000,False)
+            self.assertAlmostEqual(motion.gait,phases[-1])
+            self.assertEqual(motion.pose()[0],0)  # No whole-sprite bounce of a planted foot.
+        self.assertAlmostEqual(phases[0],phases[-1])
+
     def test_acceleration_breathing_and_all_expression_reactions(self):
         from companion.motion import EXPRESSION_FRAMES
         motion = Motion(uniform=lambda a, b: a)

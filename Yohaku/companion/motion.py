@@ -3,6 +3,8 @@ import math
 import random
 from collections import deque
 
+WALK_CYCLE_PIXELS=28.0
+
 EXPRESSION_FRAMES = {
     "neutral": 0, "blink": 1, "happy": 2, "notice": 3, "think": 4, "sleepy": 5,
     "proud": 6, "concern": 7, "wink": 8, "laugh": 9, "curious": 10,
@@ -61,6 +63,7 @@ class Motion:
         self.walking = False
         self.speed = 0.0
         self.gait = 0.0
+        self.stride_pixels = WALK_CYCLE_PIXELS
         self.walk_weight = 0.0
         self.expression = None
         self.expression_until = 0.0
@@ -147,7 +150,7 @@ class Motion:
                 next_x = min(upper, max(lower, x + amount * self.direction))
                 moved = abs(next_x - x)
                 self.distance -= moved
-                self.gait += moved / 22
+                self.gait += moved / max(1.,self.stride_pixels)
                 self.walking = moved > 0
                 if self.walking:
                     self.facing = self.direction
@@ -180,10 +183,11 @@ class Motion:
 
     def pose(self):
         """Continuous transforms between sprite frames; amplitudes are in logical pixels."""
-        phase = self.gait * 2 * math.pi
         weight = self.walk_weight
-        bob = -abs(math.sin(phase)) * 1.2 * weight
-        sway = math.sin(phase) * 1.3 * weight
+        # Foot frames already control lift and contact. Moving the whole sprite
+        # vertically or rotating it here would make planted feet float/slide.
+        bob = 0.0
+        sway = 0.0
         if self.phase == 'lean':
             sway += self.direction * 0.8 * min(1.0, self.phase_elapsed / 0.14)
         breath = math.sin(self.elapsed * 1.7) * 0.007 * (1 - weight)
