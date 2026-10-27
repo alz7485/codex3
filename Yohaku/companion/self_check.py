@@ -17,7 +17,7 @@ def check_bundle():
 
     app = create_application()
     assets = Path(__file__).parent / 'assets'
-    images = ['app/yohaku.png', 'app/yohaku.ico', 'characters/front_reactions.png', 'characters/holding_poses.png', 'characters/mail_poses.png', 'characters/calendar_poses.png']
+    images = ['app/yohaku.png', 'app/yohaku.ico', 'characters/front_reactions.png', 'characters/holding_poses.png', 'characters/mail_poses.png', 'characters/calendar_poses.png', 'characters/pickup_poses.png', 'characters/note_poses.png']
     images += [f'characters/{key.lower()}_motion.png' for key in CHARACTERS]
     for name in images:
         if QPixmap(str(assets/name)).isNull():
@@ -48,6 +48,14 @@ def check_bundle():
             if prop_frame(character, reference, kind, icon).isNull():
                 raise ValueError('Prop rendering failed')
             prop_rendered += 1
+    pickup_rendered=notes_rendered=0
+    for character in CHARACTERS:
+        reference=character_pixmap(character)
+        if prop_frame(character,reference,'pickup').isNull():raise ValueError('Pickup rendering failed')
+        pickup_rendered+=1
+        for frame in (0,1):
+            if prop_frame(character,reference,'notes',frame=frame).isNull():raise ValueError('Note rendering failed')
+            notes_rendered+=1
     bubble = InteractionBubble()
     try:
         for notice in (Notice('', '表示の確認'), Notice('', '17:00にメールの確認', True, kind='notification', styles=[dict(start=0,length=5,bold=True,color='#28744f')])):
@@ -110,7 +118,9 @@ def check_bundle():
     return {'version': VERSION, 'python': platform.python_version(), 'qt': qVersion(),
             'platform': sys.platform, 'success': True, 'character_frames_rendered': rendered,
             'topics': len(document['rules']), 'voices': len(document['phrases']),
-            'encrypted_zip_checked': True, 'pdf_render_checked': True, 'prop_poses_rendered': prop_rendered, 'drop_stages_rendered': 3, 'destination_editor_checked': True, 'shelf_launcher_checked': True}
+            'encrypted_zip_checked': True, 'pdf_render_checked': True, 'prop_poses_rendered': prop_rendered,
+            'pickup_poses_rendered':pickup_rendered,'note_poses_rendered':notes_rendered,
+            'drop_stages_rendered': 3, 'destination_editor_checked': True, 'shelf_launcher_checked': True}
 
 
 def run(output):

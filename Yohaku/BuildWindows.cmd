@@ -26,7 +26,7 @@ if errorlevel 1 goto failed
 
 :ready
 echo Ready: dist\Yohaku\Yohaku.exe
-echo ZIP: release\Yohaku-v0.27.1-windows-x64-onedir.zip
+echo ZIP: release\Yohaku-v0.28.0-windows-x64-onedir.zip
 echo Distribute the whole onedir ZIP, not only the EXE.
 pause
 exit /b 0

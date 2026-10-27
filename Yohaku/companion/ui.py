@@ -303,6 +303,10 @@ class Mascot(QWidget):
         self.frame_changed_at = 0.0
         self.held_icon = None; self.held_frame = None; self.mail_frame = None; self.mail_raised = False
         self.calendar_frame = None; self.calendar_checking = False
+        self.note_frames = (); self.taking_notes = False; self.note_started = 0.0
+        self.note_timer = QTimer(self);self.note_timer.setInterval(33)
+        self.note_timer.timeout.connect(self.advance_notes)
+        self.pickup_frame = None
         self.mail_timer = QTimer(self); self.mail_timer.setSingleShot(True)
         self.mail_timer.timeout.connect(self.lower_mail)
         self.calendar_timer = QTimer(self); self.calendar_timer.setSingleShot(True)
@@ -327,7 +331,24 @@ class Mascot(QWidget):
         self.update()
 
     def visible_prop(self):
-        return (self.mail_frame if self.mail_raised else self.calendar_frame if self.calendar_checking else self.held_frame) or character_pixmap(self.character)
+        return (self.mail_frame if self.mail_raised else self.note_frames[0] if self.taking_notes
+                else self.calendar_frame if self.calendar_checking else self.held_frame) or character_pixmap(self.character)
+
+    def take_notes(self):
+        from .props import prop_frame
+        previous=self.visible_prop()
+        if not self.note_frames:
+            self.note_frames=tuple(prop_frame(self.character,self.pixmap,'notes',frame=n) for n in range(2))
+        self.taking_notes=True;self.note_started=time.monotonic()
+        self.transition_prop(previous,self.visible_prop());self.sync_note_animation()
+
+    def sync_note_animation(self):
+        if self.taking_notes and self.prop_animation_enabled and self.isVisible():
+            if not self.note_timer.isActive():self.note_timer.start()
+        else:self.note_timer.stop()
+
+    def advance_notes(self):
+        self.sync_note_animation();self.update()
 
     def check_calendar(self):
         from .props import prop_frame
@@ -343,6 +364,7 @@ class Mascot(QWidget):
 
     def clear_props(self):
         self.prop_timer.stop(); self.prop_from = self.prop_target = None
+        self.note_timer.stop();self.taking_notes=False
         self.held_icon = None; self.held_frame = None; self.mail_frame = None
         self.mail_timer.stop(); self.mail_raised = False
         self.calendar_timer.stop(); self.calendar_checking = False; self.calendar_frame = None
@@ -372,6 +394,10 @@ class Mascot(QWidget):
         self.pixmap = character_pixmap(self.character)
         self.previous_frame = None
         self.prop_timer.stop(); self.prop_from = self.prop_target = None
+        self.pickup_frame=None;self.note_frames=()
+        if self.taking_notes:
+            from .props import prop_frame
+            self.note_frames=tuple(prop_frame(self.character,self.pixmap,'notes',frame=n) for n in range(2))
         if self.calendar_checking:
             from .props import prop_frame
             self.calendar_frame = prop_frame(self.character, self.pixmap, 'calendar')
@@ -388,7 +414,19 @@ class Mascot(QWidget):
         p = QPainter(self)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
         p.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
-        prop = self.mail_frame if self.mail_raised else self.calendar_frame if self.calendar_checking else self.held_frame
+        if getattr(self,'dragging',False):
+            if self.pickup_frame is None:
+                from .props import prop_frame
+                self.pickup_frame=prop_frame(self.character,self.pixmap,'pickup')
+            # Grip pose takes precedence over any retained mail/form props.
+            size=self.pickup_frame.size().scaled(QSize(self.width()-10,self.height()-10),Qt.AspectRatioMode.KeepAspectRatio)
+            target=QRectF((self.width()-size.width())/2,4,size.width(),size.height())
+            p.translate(self.width()/2,5);p.rotate(self.pickup_sway);p.translate(-self.width()/2,-5)
+            p.drawPixmap(target,self.pickup_frame,QRectF(self.pickup_frame.rect()));p.end();return
+        prop = self.mail_frame if self.mail_raised else self.note_frames[0] if self.taking_notes else self.calendar_frame if self.calendar_checking else self.held_frame
+        if self.taking_notes and not self.mail_raised and self.prop_animation_enabled:
+            amount=(1-math.cos((time.monotonic()-self.note_started)*math.tau/1.1))/2
+            prop=blend_frames(self.note_frames[0],self.note_frames[1],amount)
         if self.prop_timer.isActive() and self.prop_from is not None:
             progress = min(1., max(0., (time.monotonic()-self.prop_started)/.20))
             progress = progress*progress*(3-2*progress)
@@ -855,6 +893,9 @@ class Resident(Mascot):
         self.press_position = None
         self.press_origin = None
         self.dragging = False
+        self.pickup_sway=0.0;self.pickup_last=None
+        self.pickup_timer=QTimer(self);self.pickup_timer.setInterval(16)
+        self.pickup_timer.timeout.connect(self.settle_pickup)
         self.drop_hover = False
         self.drop_allowed = lambda: True
         self.setAcceptDrops(True)
@@ -895,15 +936,32 @@ class Resident(Mascot):
             self.press_position = event.globalPosition().toPoint()
             self.press_origin = self.pos()
             self.dragging = False
+            self.reset_pickup()
         event.accept()
+
+    def reset_pickup(self):
+        self.pickup_timer.stop();self.pickup_sway=0.0;self.pickup_last=None;self.update()
+
+    def settle_pickup(self):
+        if not self.dragging or not self.prop_animation_enabled:
+            self.reset_pickup();return
+        self.pickup_sway*=.84
+        if abs(self.pickup_sway)<.02:self.pickup_sway=0.0;self.pickup_timer.stop()
+        self.update()
 
     def mouseMoveEvent(self, event):
         if self.press_position is not None and event.buttons() & Qt.MouseButton.LeftButton:
             delta = event.globalPosition().toPoint() - self.press_position
             if self.dragging or delta.manhattanLength() >= QApplication.startDragDistance():
                 self.dragging = True
+                point=event.globalPosition().toPoint()
+                if self.prop_animation_enabled and self.pickup_last is not None:
+                    self.pickup_sway=self.pickup_sway*.6+max(-6.,min(6.,(point.x()-self.pickup_last.x())*.25))*.4
+                    self.pickup_timer.start()
+                self.pickup_last=point
                 self.setCursor(Qt.CursorShape.ClosedHandCursor)
                 self.dragged.emit(self.press_origin + delta)
+                self.update()
         event.accept()
 
     def mouseReleaseEvent(self, event):
@@ -911,6 +969,7 @@ class Resident(Mascot):
             was_dragging = self.dragging
             self.press_position = None
             self.dragging = False
+            self.reset_pickup()
             self.setCursor(Qt.CursorShape.PointingHandCursor)
             if was_dragging:
                 self.drag_finished.emit()
@@ -923,6 +982,7 @@ class Resident(Mascot):
         # Do not carry that press into the next visible session.
         self.press_position = self.press_origin = None
         self.dragging = False
+        self.reset_pickup()
         self.drop_hover = False
         self.clear_props()
         self.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -1108,6 +1168,7 @@ class ReminderTimeEdit(QLineEdit):
 
 
 class InteractionBubble(Bubble):
+    notes_requested = Signal()
     """The usual speech bubble with five actions and passive left-click remarks."""
     selected = Signal(str)
     attendance_requested = Signal()
@@ -1405,6 +1466,7 @@ class InteractionBubble(Bubble):
         self.reminder_bounds_timer.start()
         self.one_shot_form.show();self.timer.stop();self.resize_text()
         self.activateWindow();self.reminder_message.setFocus()
+        self.notes_requested.emit()
 
     def confirm_reminder_date(self, *_):
         if not self._adjusting_reminder_bounds:
@@ -1654,6 +1716,7 @@ class Controller(QObject):
         self.bubble.hidden.connect(self.resident.clear_props)
         self.bubble.content_changing.connect(self.resident.clear_props)
         self.bubble.calendar_presented.connect(self.resident.check_calendar)
+        self.bubble.notes_requested.connect(self.resident.take_notes)
         self.history_window = HistoryWindow()
         self.motion = Motion()
         self.static_pose_timer = QTimer(self)
@@ -2084,6 +2147,7 @@ class Controller(QObject):
 
     def update_animation_policy(self):
         self.resident.prop_animation_enabled = self.settings.animation
+        self.resident.sync_note_animation()
         now = datetime.now().astimezone()
         enabled = self.settings.animation and not self.hidden and not self.user_hidden
         enabled = enabled and not (self.engine.paused_until and now < self.engine.paused_until)

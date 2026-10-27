@@ -488,6 +488,88 @@ class UserInterfaceTests(unittest.TestCase):
             c.bubble.hide()
             c.position()
 
+
+    def test_pickup_pose_renders_for_all_characters_and_restores_on_release(self):
+        for key in CHARACTERS:
+            resident=Resident(key);resident.prop_animation_enabled=False;resident.show()
+            clicks=[];resident.clicked.connect(lambda:clicks.append(True))
+            try:
+                before=resident.grab().toImage()
+                QTest.mousePress(resident,Qt.MouseButton.LeftButton,pos=QPoint(30,30))
+                origin=resident.press_position
+                small=QMouseEvent(QEvent.Type.MouseMove,QPointF(31,31),QPointF(origin+QPoint(1,1)),
+                                  Qt.MouseButton.NoButton,Qt.MouseButton.LeftButton,Qt.KeyboardModifier.NoModifier)
+                self.app.sendEvent(resident,small);self.assertFalse(resident.dragging)
+                self.assertEqual(resident.grab().toImage(),before)
+                move=QMouseEvent(QEvent.Type.MouseMove,QPointF(30,30),QPointF(origin+QPoint(80,-30)),
+                                 Qt.MouseButton.NoButton,Qt.MouseButton.LeftButton,Qt.KeyboardModifier.NoModifier)
+                self.app.sendEvent(resident,move)
+                self.assertTrue(resident.dragging);self.assertNotEqual(resident.grab().toImage(),before)
+                self.assertFalse(resident.pickup_frame.isNull())
+                QTest.mouseRelease(resident,Qt.MouseButton.LeftButton,pos=QPoint(30,30))
+                self.assertFalse(resident.dragging);self.assertFalse(resident.pickup_timer.isActive())
+                self.assertEqual(resident.grab().toImage(),before);self.assertFalse(clicks)
+            finally:resident.hide();resident.deleteLater()
+
+    def test_hiding_during_pickup_clears_the_pose_and_does_not_leave_a_stuck_press(self):
+        resident=Resident();resident.show();clicks=[];resident.clicked.connect(lambda:clicks.append(True))
+        try:
+            QTest.mousePress(resident,Qt.MouseButton.LeftButton,pos=QPoint(30,30));origin=resident.press_position
+            for x in (30,80):
+                move=QMouseEvent(QEvent.Type.MouseMove,QPointF(30,30),QPointF(origin+QPoint(x,0)),
+                                 Qt.MouseButton.NoButton,Qt.MouseButton.LeftButton,Qt.KeyboardModifier.NoModifier)
+                self.app.sendEvent(resident,move)
+            self.assertTrue(resident.dragging);self.assertTrue(resident.pickup_timer.isActive())
+            resident.hide()
+            self.assertFalse(resident.dragging);self.assertFalse(resident.pickup_timer.isActive())
+            self.assertIsNone(resident.press_position);self.assertEqual(resident.pickup_sway,0)
+            resident.show();QTest.mouseClick(resident,Qt.MouseButton.LeftButton,pos=QPoint(30,30))
+            self.assertEqual(clicks,[True])
+        finally:resident.hide();resident.deleteLater()
+
+    def test_reminder_input_keeps_note_pose_and_leaving_the_form_clears_it(self):
+        c=self.controller
+        try:
+            c.select_content('one_shot')
+            self.assertTrue(c.resident.taking_notes);self.assertEqual(len(c.resident.note_frames),2)
+            c.bubble.reminder_message.setPlainText('入力途中の通知')
+            self.assertTrue(c.resident.taking_notes)
+            c.resident.raise_mail();self.assertTrue(c.resident.mail_raised)
+            c.resident.lower_mail();self.assertTrue(c.resident.taking_notes)
+            self.assertEqual(c.bubble.reminder_message.toPlainText(),'入力途中の通知')
+            c.bubble.open_choices()
+            self.assertFalse(c.resident.taking_notes);self.assertFalse(c.resident.note_timer.isActive())
+            c.select_content('one_shot');self.assertTrue(c.resident.taking_notes)
+            c.bubble.reminder_cancel.click()
+            self.assertFalse(c.resident.taking_notes);self.assertFalse(c.resident.note_timer.isActive())
+        finally:c.bubble.hide()
+
+    def test_note_frames_animate_and_static_mode_keeps_the_notepad_for_every_character(self):
+        resident=Resident();resident.show()
+        try:
+            for key in CHARACTERS:
+                resident.set_character(key);resident.prop_animation_enabled=False;resident.take_notes()
+                self.assertTrue(resident.taking_notes);self.assertFalse(resident.note_timer.isActive())
+                self.assertFalse(resident.grab().isNull())
+                first=resident.note_frames[0].toImage();second=resident.note_frames[1].toImage()
+                self.assertNotEqual(first,second)
+                for frame in (first,second):
+                    self.assertEqual(frame.pixelColor(0,0).alpha(),0)
+                    self.assertEqual(frame.pixelColor(frame.width()-1,frame.height()-1).alpha(),0)
+                resident.prop_animation_enabled=True;resident.sync_note_animation()
+                self.assertTrue(resident.note_timer.isActive())
+                resident.prop_timer.stop()
+                with patch('companion.ui.time.monotonic',return_value=resident.note_started):a=resident.grab().toImage()
+                with patch('companion.ui.time.monotonic',return_value=resident.note_started+.55):b=resident.grab().toImage()
+                self.assertNotEqual(a,b)
+                # Dragging temporarily overrides the note pose, and releases back to it.
+                resident.prop_animation_enabled=False;resident.sync_note_animation()
+                before=resident.grab().toImage();resident.dragging=True
+                self.assertNotEqual(resident.grab().toImage(),before)
+                resident.dragging=False;self.assertEqual(resident.grab().toImage(),before)
+                resident.clear_props();self.assertFalse(resident.note_timer.isActive())
+        finally:resident.hide();resident.deleteLater()
+
     def test_drag_uses_secondary_monitor_and_recovers_after_monitor_removal(self):
         from types import SimpleNamespace
         c = self.controller
@@ -721,7 +803,7 @@ class UserInterfaceTests(unittest.TestCase):
     def test_app_has_brand_name_version_and_windows_icon(self):
         c = self.controller
         self.assertEqual(self.app.applicationDisplayName(), "Yohaku")
-        self.assertEqual(self.app.applicationVersion(), "0.27.1")
+        self.assertEqual(self.app.applicationVersion(), "0.28.0")
         self.assertFalse(c.brand_icon.isNull())
         self.assertEqual(c.panel.windowIcon().cacheKey(), c.brand_icon.cacheKey())
         c.panel.character_buttons["B"].click()

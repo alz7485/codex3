@@ -6,12 +6,16 @@ from PySide6.QtGui import QIcon, QImage, QPainter, QPixmap
 from PySide6.QtWidgets import QApplication, QFileIconProvider, QStyle
 
 
-@lru_cache(maxsize=9)
-def pose_art(character, kind):
-    name = {'mail': 'mail_poses.png', 'calendar': 'calendar_poses.png', 'file': 'holding_poses.png'}[kind]
+@lru_cache(maxsize=24)
+def pose_art(character, kind, frame=0):
+    name = {'mail': 'mail_poses.png', 'calendar': 'calendar_poses.png', 'file': 'holding_poses.png',
+            'pickup': 'pickup_poses.png', 'notes': 'note_poses.png'}[kind]
     sheet = QPixmap(str(Path(__file__).parent/'assets/characters'/name))
     if sheet.isNull():
         raise RuntimeError('小道具のポーズ画像を読み込めません。')
+    if kind=='notes':
+        height=sheet.height()//2
+        sheet=sheet.copy(0,(frame%2)*height,sheet.width(),height)
     column = 'ABE'.index(character)
     # Generated sprites can use unequal whitespace. Find transparent gutters
     # near thirds so a raised envelope is never cut or borrowed by its neighbor.
@@ -61,18 +65,19 @@ def item_icon(path):
     return QIcon(icon)
 
 
-def prop_frame(character, canvas, kind, icon=None):
-    artwork = pose_art(character, kind)
+def prop_frame(character, canvas, kind, icon=None, frame=0):
+    artwork = pose_art(character, kind, frame)
     # Match the neutral front pose's occupied height and ground line.
     reference = canvas.toImage(); occupied = []
     for y in range(reference.height()):
         if any(reference.pixelColor(x, y).alpha() >= 160 for x in range(reference.width())):
             occupied.append(y)
     top, bottom = (occupied[0], occupied[-1]) if occupied else (0, canvas.height()-1)
-    size = artwork.size().scaled(QSize(canvas.width(), bottom-top+1), Qt.AspectRatioMode.KeepAspectRatio)
+    bounds=QSize(canvas.width()-8,canvas.height()-4) if kind=='pickup' else QSize(canvas.width(),bottom-top+1)
+    size = artwork.size().scaled(bounds, Qt.AspectRatioMode.KeepAspectRatio)
     output = QPixmap(canvas.size()); output.fill(Qt.GlobalColor.transparent)
     p = QPainter(output); p.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
-    target = QRectF((canvas.width()-size.width())/2, bottom+1-size.height(), size.width(), size.height())
+    target = QRectF((canvas.width()-size.width())/2, 2 if kind=='pickup' else bottom+1-size.height(), size.width(), size.height())
     p.drawPixmap(target, artwork, QRectF(artwork.rect()))
     if kind == 'file' and icon is not None:
         # Draw the icon above the torso, then restore the two mitten/flipper

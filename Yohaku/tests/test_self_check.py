@@ -27,6 +27,8 @@ class BundleCheckTests(unittest.TestCase):
             self.assertTrue(result['success'])
             self.assertEqual(result['character_frames_rendered'], 12)
             self.assertEqual(result['prop_poses_rendered'], 9)
+            self.assertEqual(result['pickup_poses_rendered'],3)
+            self.assertEqual(result['note_poses_rendered'],6)
             self.assertEqual(result['topics'], 76)
             self.assertEqual(result['voices'], 7)
             self.assertFalse((root/'user-data').exists())
