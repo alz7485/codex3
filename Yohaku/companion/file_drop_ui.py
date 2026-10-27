@@ -102,6 +102,13 @@ class FileDropController(QObject):
         except (FileDropError,OSError):
             self.message('ファイルを確認できないか、変更されています。もう一度ドロップしてください。');return
         if self.stage=='action':
+            if action=='shelve':
+                try:
+                    self.owner.shelf_service.deposit(path)
+                    self.message('預かりました。\n「預けたものを見る」から開けます。')
+                    self.cancel_pending()
+                except (ValueError,OSError):self.message('預けたものを保存できません。設定ファイルと保存先を確認してください。')
+                return
             if action=='move':self.stage='destination';self.show_choices()
             elif action=='print_pdf' and path.is_file() and path.suffix.lower()=='.pdf':self.stage='paper';self.show_choices()
             return

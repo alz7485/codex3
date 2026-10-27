@@ -297,3 +297,82 @@ class FileDropUITests(unittest.TestCase):
         self.c.share()
         self.assertFalse(service.editor.isVisible());self.assertFalse(service.destination_editor.isVisible())
         if self.c.hidden:self.c.share()
+
+    def test_deposit_is_first_choice_and_only_saves_a_reference(self):
+        self.c.panel.shelf_period.setCurrentIndex(self.c.panel.shelf_period.findData('forever'))
+        service=self.c.shelf_service
+        file=self.file('預ける.pdf');folder=self.root/'預けるフォルダ';folder.mkdir();(folder/'inside.txt').write_bytes(b'keep')
+        for path,title in [(file,'ファイルを預ける'),(folder,'フォルダを預ける')]:
+            self.c.file_drop_service.drop(path)
+            self.assertEqual(next(iter(self.c.bubble.drop_buttons)),'shelve')
+            self.assertEqual(self.c.bubble.drop_buttons['shelve'].text(),title)
+            self.c.bubble.drop_buttons['shelve'].click();self.assertTrue(path.exists())
+            self.assertIn('預かりました',self.c.bubble.text.text())
+        self.assertEqual(len(service.store.data['items']),2)
+        self.assertEqual((folder/'inside.txt').read_bytes(),b'keep');self.assertEqual(list(self.output.iterdir()),[])
+        self.c.file_drop_service.drop(file);self.c.bubble.drop_buttons['shelve'].click()
+        self.assertEqual(len(service.store.data['items']),2)
+
+    def test_shelf_single_click_does_not_open_but_double_click_does(self):
+        self.c.panel.shelf_period.setCurrentIndex(self.c.panel.shelf_period.findData('forever'))
+        from PySide6.QtGui import QDesktopServices
+        path=self.file('launcher.txt');service=self.c.shelf_service;service.deposit(path)
+        self.c.select_content('shelf');self.app.processEvents()
+        self.assertEqual(self.c.bubble.current,'shelf');self.assertFalse(self.c.bubble.timer.isActive())
+        widget=self.c.bubble.file_links;item=widget.item(0);self.assertFalse(item.icon().isNull())
+        point=widget.visualItemRect(item).center()
+        with patch.object(QDesktopServices,'openUrl',return_value=True) as opened:
+            QTest.mouseClick(widget.viewport(),Qt.MouseButton.LeftButton,pos=point);opened.assert_not_called()
+            QTest.mouseDClick(widget.viewport(),Qt.MouseButton.LeftButton,pos=point)
+            opened.assert_called_once_with(QUrl.fromLocalFile(str(path)))
+
+    def test_shelf_right_click_menu_and_delete_touch_only_registry(self):
+        self.c.panel.shelf_period.setCurrentIndex(self.c.panel.shelf_period.findData('forever'))
+        from PySide6.QtGui import QDesktopServices
+        from PySide6.QtWidgets import QMenu
+        service=self.c.shelf_service;path=self.file('launcher.txt');folder=self.root/'launcher-folder';folder.mkdir()
+        service.deposit(path);service.deposit(folder);self.c.select_content('shelf');self.app.processEvents()
+        rows={row['kind']:row for row in service.store.data['items']}
+        file_menu=service.menu_for(rows['file']);folder_menu=service.menu_for(rows['folder'])
+        try:
+            self.assertEqual([a.text() for a in file_menu.actions()],['フォルダを開く','削除'])
+            self.assertEqual([a.text() for a in folder_menu.actions()],['削除'])
+            with patch.object(QDesktopServices,'openUrl',return_value=True) as opened:
+                file_menu.actions()[0].trigger();opened.assert_called_once_with(QUrl.fromLocalFile(str(path.parent)))
+            widget=self.c.bubble.file_links;point=widget.visualItemRect(widget.item(0)).center()
+            with patch.object(QMenu,'exec',return_value=None) as shown:
+                QTest.mouseClick(widget.viewport(),Qt.MouseButton.RightButton,pos=point);shown.assert_called_once()
+            self.assertEqual(self.c.bubble.current,'shelf');self.assertFalse(self.c.bubble.choice_row.isVisible())
+            file_menu.actions()[1].trigger();folder_menu.actions()[0].trigger()
+            self.assertFalse(service.store.data['items']);self.assertEqual(path.read_bytes(),b'content');self.assertTrue(folder.is_dir())
+        finally:file_menu.deleteLater();folder_menu.deleteLater()
+
+    def test_shelf_setting_persists_and_expiry_refreshes_visible_list(self):
+        from companion.shelf import ShelfStore
+        service=self.c.shelf_service;before=datetime(2026,10,25,23,59)
+        with patch.object(service,'now',return_value=before):
+            field=self.c.panel.shelf_period;field.setCurrentIndex(field.findData('week'))
+            self.assertEqual(ShelfStore(service.store.path).data['period'],'week')
+            service.deposit(self.file('expires.txt'));self.c.select_content('shelf')
+            self.assertEqual(self.c.bubble.file_links.count(),1)
+        with patch.object(service,'now',return_value=datetime(2026,10,26)):
+            service.expire();self.assertFalse(service.store.data['items'])
+            self.assertEqual(self.c.bubble.file_links.count(),0);self.assertIn('何も',self.c.bubble.text.text())
+        self.assertTrue((self.root/'expires.txt').exists())
+
+    def test_shelf_new_mail_is_inline_and_does_not_replace_the_list(self):
+        self.c.panel.shelf_period.setCurrentIndex(self.c.panel.shelf_period.findData('forever'))
+        self.c.shelf_service.deposit(self.file('safe.txt'));self.c.select_content('shelf')
+        self.c.settings.outlook_enabled=self.c.settings.mail_enabled=True
+        self.c.mail_result(self.c.mail_generation,{'messages':[{'kind':'mail'}]},'')
+        self.assertEqual(self.c.bubble.current,'shelf');self.assertEqual(self.c.bubble.file_links.count(),1)
+        self.assertIn('メール',self.c.bubble.text.text());self.assertFalse(self.c.bubble.timer.isActive())
+
+    def test_shelf_browsing_does_not_block_due_notifications(self):
+        self.c.panel.shelf_period.setCurrentIndex(self.c.panel.shelf_period.findData('forever'))
+        self.c.shelf_service.deposit(self.file('notification-safe.txt'));self.c.select_content('shelf')
+        notice=Notice('','期限のお知らせ',True,kind='reminder')
+        with patch.object(self.c.engine,'departure_notice',return_value=None),patch.object(self.c.engine,'next_notice',return_value=notice) as next_notice:
+            self.c.tick();self.assertTrue(next_notice.call_args.kwargs['allow_reminders'])
+        self.assertIs(self.c.bubble.notice,notice);self.assertEqual(len(self.c.shelf_service.store.data['items']),1)
+        self.c.shelf_service.expire();self.assertIs(self.c.bubble.notice,notice)

@@ -39,3 +39,7 @@ file_drop_settings.json.tmp
 file_destinations.json
 file_destinations.json.bak
 file_destinations.json.tmp
+
+shelf.json
+shelf.json.bak
+shelf.json.tmp
