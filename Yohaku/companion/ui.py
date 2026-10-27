@@ -1123,7 +1123,9 @@ class InteractionBubble(Bubble):
         self.file_links=QListWidget()
         self.file_links.setAccessibleName('今日開いたファイルのリンク。クリックすると開きます')
         self.file_links.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.file_links.setStyleSheet('QListWidget { background: transparent; border: none; } QListWidget::item { padding: 5px 2px; }')
+        self.file_links.setStyleSheet('QListWidget { background: transparent; border: none; } QListWidget::item { padding: 2px 2px; }')
+        self.file_links.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.file_links.setTextElideMode(Qt.TextElideMode.ElideRight)
         self.file_links.itemClicked.connect(lambda item:self.file_requested.emit(item.data(Qt.ItemDataRole.UserRole)))
         layout.addWidget(self.file_links);self.file_links.hide()
         self.choice_row = QWidget(objectName="speechChoiceRow")
@@ -1242,23 +1244,31 @@ class InteractionBubble(Bubble):
         self.content_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.text.setMinimumHeight(0)
         self.content_scroll.setFixedHeight(1)
-        if self.file_links.isVisible():
-            row_height=self.file_links.sizeHintForRow(0) if self.file_links.count() else 0
-            self.file_links.setFixedHeight(min(max(1,self.file_links.count()*row_height+4),210))
+        has_links = self.file_links.isVisible()
+        if has_links:
+            row_height = max(1, self.file_links.sizeHintForRow(0)) if self.file_links.count() else 1
+            list_height = max(1, self.file_links.count()*row_height+2*self.file_links.frameWidth())
+            self.file_links.setFixedHeight(1)
         self.layout().invalidate()
         self.layout().activate()
-        chrome = self.layout().sizeHint().height() - 1
-        cap = max(1, maximum - chrome)
-        if self.kind != 'message':
-            cap = min(200, cap)
+        chrome = self.layout().sizeHint().height() - 1 - (1 if has_links else 0)
+        budget = max(1, maximum - chrome)
+        cap = budget
         margins = self.layout().contentsMargins()
         width = max(1, self.contentsRect().width() - margins.left() - margins.right())
         height = max(1, self.text.heightForWidth(width))
+        if has_links:
+            # Share the usable screen height between the introduction and the
+            # file list, retaining the management button and other controls.
+            cap = max(1, budget-min(list_height, max(1, budget*2//3)))
         if height > cap:
             width = max(1, width - self.content_scroll.verticalScrollBar().sizeHint().width())
             height = max(1, self.text.heightForWidth(width))
         self.text.setMinimumHeight(height)
-        self.content_scroll.setFixedHeight(min(height, cap))
+        body_height = min(height, cap)
+        self.content_scroll.setFixedHeight(body_height)
+        if has_links:
+            self.file_links.setFixedHeight(min(list_height, max(1, budget-body_height)))
         self.layout().invalidate()
         self.layout().activate()
         # QWidget.adjustSize() can impose a 100px minimum on a top-level window.
@@ -1505,6 +1515,7 @@ class HistoryWindow(QMainWindow):
         self.day_label = label("", "section")
         files.addWidget(self.day_label)
         self.table = QTreeWidget()
+        self.table.setStyleSheet("QTreeWidget::item { padding: 3px 5px; }")
         self.table.setHeaderLabels(["時刻", "ファイル名", "保存先"])
         self.table.setRootIsDecorated(False)
         self.table.setUniformRowHeights(True)
