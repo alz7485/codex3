@@ -97,7 +97,7 @@ class LightweightCharacterTests(unittest.TestCase):
     def test_runtime_artwork_has_only_three_sheets_and_shared_fronts(self):
         project = Path(__file__).resolve().parents[1]
         actual = {p.name for p in (project/'companion/assets/characters').iterdir() if p.is_file()}
-        self.assertEqual(actual, {'a_motion.png', 'b_motion.png', 'e_motion.png', 'front_reactions.png', 'motion_layout.json', 'holding_poses.png', 'mail_poses.png', 'calendar_poses.png'})
+        self.assertEqual(actual, {'a_motion.png', 'b_motion.png', 'e_motion.png', 'front_reactions.png', 'motion_layout.json', 'holding_poses.png', 'mail_poses.png', 'calendar_poses.png', 'pickup_poses.png', 'note_poses.png'})
         for character in CHARACTERS:
             frames = character_frames(character)
             self.assertEqual(len(frames), 28)

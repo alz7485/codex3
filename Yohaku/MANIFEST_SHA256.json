@@ -123,7 +123,7 @@
   "tests/test_advanced_context.py": "a00df842fd0dd70908a00cf75bf3f3181ca45ba0c6e73aae5b216dbffc1ba84e",
   "tests/test_advanced_editor.py": "858c106e4466e90e837be6180062756831444434d0211942a1a7f2cc583d1bc1",
   "tests/test_audit_fixes.py": "34c5149f91491f89f1f7496a9d22ea7f343199ebc96ba12dbdb2f3ded5b24197",
-  "tests/test_characters.py": "95731a5e4c87745340153b962788703712561f459c4a91f1b9264cbe8ab08d33",
+  "tests/test_characters.py": "10fb22de81f9f631254dd8f8f0b6298c66c6c161519b3e99946c2bf5a8d33478",
   "tests/test_click_reactions.py": "337457b83042d8a30955784f498af33cdf6fe320adf37be35b67350baaf1e047",
   "tests/test_comfort_features.py": "c9b4588d67e073cec7aed6f104d8a9646535efa96964e1fb146a1eb928aff48e",
   "tests/test_context.py": "96f46af75902a23cd5749785db6715d40a763c35e4051d8ec8542956ab6d39c3",
