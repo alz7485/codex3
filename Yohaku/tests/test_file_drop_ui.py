@@ -340,8 +340,9 @@ class FileDropUITests(unittest.TestCase):
             with patch.object(QDesktopServices,'openUrl',return_value=True) as opened:
                 file_menu.actions()[0].trigger();opened.assert_called_once_with(QUrl.fromLocalFile(str(path.parent)))
             widget=self.c.bubble.file_links;point=widget.visualItemRect(widget.item(0)).center()
-            with patch.object(QMenu,'exec',return_value=None) as shown:
-                QTest.mouseClick(widget.viewport(),Qt.MouseButton.RightButton,pos=point);shown.assert_called_once()
+            QTest.mouseClick(widget.viewport(),Qt.MouseButton.RightButton,pos=point)
+            self.assertIsNotNone(service.popup);self.assertTrue(service.popup.isVisible())
+            service.close_popup()
             self.assertEqual(self.c.bubble.current,'shelf');self.assertFalse(self.c.bubble.choice_row.isVisible())
             file_menu.actions()[1].trigger();folder_menu.actions()[0].trigger()
             self.assertFalse(service.store.data['items']);self.assertEqual(path.read_bytes(),b'content');self.assertTrue(folder.is_dir())

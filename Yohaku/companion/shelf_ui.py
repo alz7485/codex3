@@ -10,7 +10,9 @@ from .shelf import ShelfStore,ShelfError
 
 class ShelfController(QObject):
     def __init__(self,owner):
-        super().__init__(owner);self.owner=owner;self.store=ShelfStore(owner.path/'shelf.json')
+        super().__init__(owner);self.owner=owner;self.popup=None;self.store=ShelfStore(owner.path/'shelf.json')
+        owner.bubble.hidden.connect(self.close_popup)
+        owner.bubble.content_changing.connect(self.close_popup)
         owner.bubble.shelf_open_requested.connect(self.open_item)
         owner.bubble.shelf_context_requested.connect(self.context_menu)
         owner.panel.shelf_period_requested.connect(self.change_period)
@@ -70,6 +72,9 @@ class ShelfController(QObject):
         if row['kind']=='file':menu.addAction('フォルダを開く',lambda:self.open_parent(row['id']))
         menu.addAction('削除',lambda:self.remove(row['id']))
         return menu
+    def close_popup(self):
+        menu=self.popup;self.popup=None
+        if menu is not None:menu.close();menu.deleteLater()
     def context_menu(self,point):
         c=self.owner
         if c.bubble.current!='shelf':return
@@ -79,6 +84,9 @@ class ShelfController(QObject):
         try:row=self.lookup(item.data(Qt.ItemDataRole.UserRole))
         except (ShelfError,OSError):self.report('登録を読み込めません。');return
         if row is None:self.refresh();return
-        menu=self.menu_for(row)
-        try:menu.exec(c.bubble.file_links.viewport().mapToGlobal(point))
-        finally:menu.deleteLater()
+        self.close_popup();menu=self.menu_for(row);self.popup=menu
+        def release():
+            if self.popup is menu:self.popup=None
+            menu.deleteLater()
+        menu.aboutToHide.connect(release)
+        menu.popup(c.bubble.file_links.viewport().mapToGlobal(point))
