@@ -1,8 +1,18 @@
-# AcadStadio 1.24.1 — 左の一覧で入力表を管理・試用版16
+# AcadStadio 1.24.2 — スペース付きCAD名の修正・試用版17
 
-**[試用版16 ZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.24.1_TableListTrial16.zip)** ／ [SHA256](AcadStadio_v1.24.1_TableListTrial16.zip.sha256)
+**[試用版17 ZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.24.2_SpacedCadNamesTrial17.zip)** ／ [SHA256](AcadStadio_v1.24.2_SpacedCadNamesTrial17.zip.sha256)
 
 Excel / CSVの行からAutoCAD用SCRを生成するローカルアプリです。このZIPはソース版です。
+
+## 修正した問題
+
+DWGから文字スタイル「MS明朝　縦」「SX_FONT 縦」を読むと、アプリ側の名前検証で除外される問題を修正しました。
+
+- 半角・全角スペースを含むCAD名に対応。元の名前を保持し、変更する必要はありません。
+- 取込候補・登録・コマンドの選択・JSON保存・再読込を通して同じ名前を使います。
+- SCRではスペース付きの名前を引用符で囲み、一つの引数として出力します。
+- レイヤー・線種・寸法スタイルも同じ名前の規則に統一。改行・タブ・制御文字・禁止記号は拒否します。
+- CAD初期設定画面の「名前は空白なし」という説明も更新しました。
 
 ## 入力表を左の一覧で管理
 
@@ -43,7 +53,7 @@ py -3 -m venv .venv
 
 ## 検証
 
-非GUI243件・実Tk GUI217件、計460件合格。一覧の実クリック・上下キー・未確定編集・表ごとの行選択・管理操作・Undo/Redo・26表のスクロール・保存再読込を確認しました。通常1120×680と最小780×460で全管理ボタンが収まります。
+非GUI247件・実Tk GUI218件、計465件合格。両名のDWG抽出・チェック登録・設定の確定・コマンド選択・SCR出力と、JSON保存・再読込、マクロON/OFF、各リソースの引用と不正名の拒否を確認しました。DWGのCOM抽出はFakeDocumentで検証しています。
 フランジの1行102図形・全3行312図形は前版とSCR全文・図形情報が一致しています。ZIPのCRC・全ファイルのSHA256と展開後の実Tk起動も確認しました。
 LinuxのTkで検証し、Windows EXE・AutoCAD実機は未検証です。詳細とログはZIP内のdocs/VALIDATION.mdにあります。
 
