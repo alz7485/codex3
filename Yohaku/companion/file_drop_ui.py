@@ -18,7 +18,7 @@ class FileDropController(QObject):
     def __init__(self, owner):
         super().__init__(owner)
         self.owner=owner;self.busy=False;self.closed=False;self.editor=None;self.destination_editor=None
-        self.print_dialog=None;self.pending=None;self.rule=None;self.identity=None;self.stage=None
+        self.print_dialog=None;self.pending=None;self.rule=None;self.identity=None;self.pending_kind=None;self.stage=None
         self.store=FileDropStore(owner.path/'file_drop_settings.json')
         self.destinations=DestinationStore(owner.path/'file_destinations.json',self.store)
         self.completed.connect(self.finished)
@@ -36,12 +36,14 @@ class FileDropController(QObject):
                 and c.pending_reaction is None and not (c.bubble.isVisible() and c.bubble.current=='one_shot'))
 
     def cancel_pending(self):
-        if not self.busy:self.pending=self.rule=self.identity=self.stage=None
+        if not self.busy:self.pending=self.rule=self.identity=self.pending_kind=self.stage=None
 
     def drop(self,path):
         if not self.allowed():return
         self.cancel_pending()
-        try:self.pending=dropped_item(path);self.identity=file_identity(self.pending)
+        try:
+            self.pending=dropped_item(path);self.identity=file_identity(self.pending)
+            self.pending_kind='folder' if self.pending.is_dir() else 'file'
         except (FileDropError,OSError):
             self.message('通常のファイルかフォルダーを1つドロップしてください。リンクは対象外です。');return
         self.store.__init__(self.store.path)
@@ -98,7 +100,12 @@ class FileDropController(QObject):
                 or c.bubble.current!='file_drop' or c.hidden or c.user_hidden or self.store.error or not self.store.data['enabled']):return
         try:
             path=dropped_item(self.pending)
-            if file_identity(path)!=self.identity:raise FileDropError('変更されています。')
+            if self.stage=='action' and action=='shelve':
+                # A launcher stores the current path, not a content snapshot.
+                # Keep the original file/folder kind while allowing saves.
+                if ('folder' if path.is_dir() else 'file')!=self.pending_kind:
+                    raise FileDropError('種類が変更されています。')
+            elif file_identity(path)!=self.identity:raise FileDropError('変更されています。')
         except (FileDropError,OSError):
             self.message('ファイルを確認できないか、変更されています。もう一度ドロップしてください。');return
         if self.stage=='action':
@@ -143,7 +150,7 @@ class FileDropController(QObject):
         threading.Thread(target=work,name='Yohaku-file-operation',daemon=False).start()
 
     def finished(self, result, error):
-        self.busy = False; self.pending = None; self.rule = None; self.identity = None; self.stage = None
+        self.busy = False; self.pending = None; self.rule = None; self.identity = None; self.pending_kind = None; self.stage = None
         self.owner.resident.clear_props()
         if self.closed:
             return

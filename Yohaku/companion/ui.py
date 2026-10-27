@@ -1136,6 +1136,9 @@ class InteractionBubble(Bubble):
         self.text.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
         self.text.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         layout.addWidget(self.content_scroll)
+        self.shelf_mail = MessageLabel()
+        self.shelf_mail.setStyleSheet('background: #e7f1ff; color: #315878; border-radius: 5px; padding: 6px;')
+        layout.addWidget(self.shelf_mail);self.shelf_mail.hide()
         self.file_links=QListWidget()
         self.file_links.setAccessibleName('今日開いたファイルのリンク。クリックすると開きます')
         self.file_links.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -1244,7 +1247,7 @@ class InteractionBubble(Bubble):
             return True
         if (event.type()==QEvent.Type.MouseButtonRelease and event.button()==Qt.MouseButton.LeftButton
                 and (getattr(self,'current',None) in ('activity','calendar') or getattr(self,'kind',None)=='menu' and getattr(self,'current',None)!='one_shot')
-                and watched in (self,self.text,self.content_scroll,self.content_scroll.viewport(),getattr(self,'choice_row',None))):
+                and watched in (self,self.text,self.content_scroll,self.content_scroll.viewport(),getattr(self,'shelf_mail',None),getattr(self,'choice_row',None))):
             self.dismiss();return True
         if (event.type()==QEvent.Type.MouseButtonRelease and event.button()==Qt.MouseButton.LeftButton
                 and getattr(self,'kind',None)=='calendar' and watched is self.text):
@@ -2329,8 +2332,8 @@ class Controller(QObject):
         self.motion.react(rule['expression'], speaking=True)
         self.mail_burst_notice = Notice('', self.engine.phrase('mail_received'), True, rule['expression'], 'notification')
         if self.bubble.isVisible() and self.bubble.current == 'shelf':
-            self.bubble.text.set_message('預けたものはこちらです。\n'+self.mail_burst_notice.text)
-            self.bubble.resize_text();self.position();self.resident.raise_mail();return
+            self.shelf_service.show_mail(self.mail_burst_notice)
+            self.resident.raise_mail();return
         if self.bubble.isVisible() and self.bubble.current == 'file_drop':
             self.bubble.drop_notice.set_message(self.mail_burst_notice.text)
             self.bubble.drop_notice.show(); self.bubble.resize_text(); self.position()
@@ -2347,6 +2350,7 @@ class Controller(QObject):
 
     def shutdown(self):
         self.shelf_service.timer.stop()
+        self.shelf_service.cancel_mail()
         self.file_drop_service.closed = True
         if self.file_drop_service.print_dialog:
             self.file_drop_service.print_dialog.reject()

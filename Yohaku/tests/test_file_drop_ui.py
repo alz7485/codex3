@@ -326,6 +326,36 @@ class FileDropUITests(unittest.TestCase):
             QTest.mouseDClick(widget.viewport(),Qt.MouseButton.LeftButton,pos=point)
             opened.assert_called_once_with(QUrl.fromLocalFile(str(path)))
 
+    def test_deposit_accepts_updates_while_move_and_print_keep_snapshot_checks(self):
+        self.c.panel.shelf_period.setCurrentIndex(self.c.panel.shelf_period.findData('forever'))
+        source=self.file('autosaved.pdf');service=self.c.file_drop_service
+        with patch('companion.file_drop_ui.execute') as moving,patch('companion.pdf_print.print_pdf') as printing:
+            for action in ('move','print_pdf','shelve'):
+                service.drop(source);source.write_bytes(source.read_bytes()+b' saved')
+                self.c.bubble.drop_buttons[action].click()
+                if action=='shelve':self.assertIn('預かりました',self.c.bubble.text.text())
+                else:self.assertIn('変更',self.c.bubble.text.text())
+            moving.assert_not_called();printing.assert_not_called()
+        folder=self.root/'live-folder';folder.mkdir();service.drop(folder)
+        (folder/'new.txt').write_bytes(b'keep')
+        info=folder.stat();os.utime(folder,ns=(info.st_atime_ns,info.st_mtime_ns+2_000_000_000))
+        self.c.bubble.drop_buttons['shelve'].click()
+        self.assertIn('預かりました',self.c.bubble.text.text())
+        self.assertEqual(len(self.c.shelf_service.store.data['items']),2)
+        self.assertEqual(source.read_bytes(),b'content saved saved saved')
+        self.assertEqual((folder/'new.txt').read_bytes(),b'keep')
+
+    def test_deposit_still_rejects_missing_retyped_and_link_targets(self):
+        service=self.c.file_drop_service
+        for name in ('missing','retyped','linked'):
+            source=self.file(name);service.drop(source)
+            if name=='missing':source.unlink()
+            elif name=='retyped':source.unlink();source.mkdir()
+            with patch('companion.file_drop.is_link',return_value=name=='linked'):
+                self.c.bubble.drop_buttons['shelve'].click()
+            self.assertIn('確認できないか、変更',self.c.bubble.text.text())
+            self.assertFalse(self.c.shelf_service.store.data['items'])
+
     def test_shelf_right_click_menu_and_delete_touch_only_registry(self):
         self.c.panel.shelf_period.setCurrentIndex(self.c.panel.shelf_period.findData('forever'))
         from PySide6.QtGui import QDesktopServices
@@ -367,7 +397,41 @@ class FileDropUITests(unittest.TestCase):
         self.c.settings.outlook_enabled=self.c.settings.mail_enabled=True
         self.c.mail_result(self.c.mail_generation,{'messages':[{'kind':'mail'}]},'')
         self.assertEqual(self.c.bubble.current,'shelf');self.assertEqual(self.c.bubble.file_links.count(),1)
-        self.assertIn('メール',self.c.bubble.text.text());self.assertFalse(self.c.bubble.timer.isActive())
+        self.assertIn('メール',self.c.bubble.shelf_mail.text());self.assertTrue(self.c.bubble.shelf_mail.isVisible())
+        self.assertTrue(self.c.shelf_service.mail_timer.isActive())
+        self.assertEqual(self.c.shelf_service.mail_timer.interval(),60000)
+        self.assertFalse(self.c.bubble.timer.isActive())
+
+    def test_shelf_mail_expires_without_resetting_the_list_or_its_message(self):
+        self.c.panel.shelf_period.setCurrentIndex(self.c.panel.shelf_period.findData('forever'))
+        service=self.c.shelf_service;bubble=self.c.bubble
+        service.deposit(self.file('first.txt'));service.deposit(self.file('second.txt'))
+        self.c.select_content('shelf');bubble.file_links.setCurrentRow(1)
+        service.report('開けませんでした。登録は残しています。');original=bubble.text.text()
+        ids=[bubble.file_links.item(n).data(Qt.ItemDataRole.UserRole) for n in range(2)]
+        service.show_mail(Notice('','メールが届きました。',True,kind='notification'))
+        self.assertEqual(bubble.text.text(),original)
+        # Shorten only the test wait; production's 60000ms is checked above.
+        service.mail_timer.start(1);QTest.qWait(100)
+        self.assertFalse(service.mail_timer.isActive());self.assertFalse(bubble.shelf_mail.isVisible())
+        self.assertTrue(bubble.isVisible());self.assertEqual(bubble.current,'shelf')
+        self.assertEqual(bubble.text.text(),original);self.assertEqual(bubble.file_links.currentRow(),1)
+        self.assertEqual([bubble.file_links.item(n).data(Qt.ItemDataRole.UserRole) for n in range(2)],ids)
+
+    def test_shelf_mail_timeout_cannot_overwrite_new_content_or_reopen_a_hidden_bubble(self):
+        service=self.c.shelf_service;bubble=self.c.bubble
+        for next_view in ('notification','hidden'):
+            self.c.select_content('shelf')
+            service.show_mail(Notice('','メールが届きました。',True,kind='notification'))
+            self.assertTrue(service.mail_timer.isActive())
+            notice=Notice('','次の通知です。',True,kind='reminder')
+            if next_view=='notification':bubble.display(notice)
+            else:QTest.mouseClick(bubble.shelf_mail,Qt.MouseButton.LeftButton)
+            self.assertFalse(service.mail_timer.isActive());self.assertFalse(bubble.shelf_mail.isVisible())
+            service.mail_timer.timeout.emit()
+            if next_view=='notification':self.assertIs(bubble.notice,notice);self.assertEqual(bubble.text.raw_text,notice.text)
+            else:self.assertFalse(bubble.isVisible())
+        self.c.select_content('shelf');self.assertFalse(bubble.shelf_mail.isVisible())
 
     def test_shelf_browsing_does_not_block_due_notifications(self):
         self.c.panel.shelf_period.setCurrentIndex(self.c.panel.shelf_period.findData('forever'))

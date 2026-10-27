@@ -13,12 +13,28 @@ class ShelfController(QObject):
         super().__init__(owner);self.owner=owner;self.popup=None;self.store=ShelfStore(owner.path/'shelf.json')
         owner.bubble.hidden.connect(self.close_popup)
         owner.bubble.content_changing.connect(self.close_popup)
+        self.mail_timer=QTimer(self);self.mail_timer.setSingleShot(True);self.mail_timer.setInterval(60000)
+        self.mail_timer.timeout.connect(self.expire_mail)
+        owner.bubble.hidden.connect(self.cancel_mail)
+        owner.bubble.content_changing.connect(self.cancel_mail)
         owner.bubble.shelf_open_requested.connect(self.open_item)
         owner.bubble.shelf_context_requested.connect(self.context_menu)
         owner.panel.shelf_period_requested.connect(self.change_period)
         self.timer=QTimer(self);self.timer.setInterval(60000);self.timer.timeout.connect(self.expire)
         self.sync_setting();self.expire();self.timer.start()
     def now(self):return datetime.now().astimezone()
+    def cancel_mail(self):
+        self.mail_timer.stop();self.owner.bubble.shelf_mail.hide()
+    def expire_mail(self):
+        self.cancel_mail();c=self.owner
+        if c.bubble.isVisible() and c.bubble.current=='shelf':
+            c.bubble.resize_text();c.position()
+    def show_mail(self,notice):
+        c=self.owner
+        if not c.bubble.isVisible() or c.bubble.current!='shelf':return
+        c.bubble.shelf_mail.set_message(notice.text,styles=notice.styles)
+        c.bubble.shelf_mail.show();self.mail_timer.start(60000)
+        c.bubble.resize_text();c.position()
     def sync_setting(self):
         field=self.owner.panel.shelf_period
         blocked=field.blockSignals(True);field.setCurrentIndex(field.findData(self.store.data['period']));field.blockSignals(blocked)
