@@ -1,4 +1,4 @@
-Yohaku v0.26.0
+Yohaku v0.26.1
 
 現在のソースZIP・onedirビルド用ZIPはいずれも24MB以内の単一ファイルです。
 新しい空の場所に展開し、ONEDIR_COMMAND.txtの5行を使用してください。

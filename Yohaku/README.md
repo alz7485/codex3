@@ -4,9 +4,11 @@
 
 **仕事に、ひと呼吸。** 予定とファイル履歴をそっと知らせる、デスクトップの小さな同僚です。
 
-[onedirビルド用ZIP（1つ）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.26.0-onedir-build.zip) · [specファイル](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku.spec)
+[onedirビルド用ZIP（1つ）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.26.1-onedir-build.zip) · [specファイル](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku.spec)
 
 **ビルド用ZIPだけを新しいフォルダーに展開してください。** testsは不要で、同梱のONEDIR_COMMAND.txtの5行でEXEを作れます。テキスト化していません。
+
+v0.26.1では、Windowsドライバーが余白を含む用紙レイアウトを拒否する場合に印刷できない問題を修正しました。用紙と向きを個別に設定し、実際の設定値を読み戻して確認します。
 
 v0.26.0では、PDFを渡すと「移動する・印刷する・キャンセル」、その他のファイルとフォルダーは「移動する・キャンセル」を表示します。移動するを選ぶと登録済みの移動先の表示名を選択。「移動先を編集する」で吹き出しを閉じ、表示名とフルパスを＋ボタンで追加する編集画面を開きます。JSONに保存します。PDF印刷はA4・A3・用紙サイズに合わせる、から選ぶと既定プリンターへ直接送信。サイズとカラー／モノクロを自動判定します。[操作とJSON](docs/FILE_DROP.md) · [表示例](https://raw.githubusercontent.com/alz7485/codex3/main/Yohaku/docs/file-drop.png)
 
@@ -230,12 +232,12 @@ py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements-build.txt
 .\.venv\Scripts\python.exe -m PyInstaller --noconfirm --clean Yohaku.spec
 .\.venv\Scripts\python.exe scripts\collect_licenses.py dist\Yohaku
-.\.venv\Scripts\python.exe -c "import shutil; shutil.make_archive('Yohaku-v0.26.0-windows-x64-onedir', 'zip', 'dist', 'Yohaku')"
+.\.venv\Scripts\python.exe -c "import shutil; shutil.make_archive('Yohaku-v0.26.1-windows-x64-onedir', 'zip', 'dist', 'Yohaku')"
 ```
 
 Python 3.12の場合は、1行目を `py -3.12 -m venv .venv` に変更します。
 
-3行目がonedirを作るコマンドです。`Yohaku.spec`にフォルダー形式、アイコン、3体とアニメーション素材、製品名・版を定義しています。出力は `dist\Yohaku\Yohaku.exe`。5行目で作るZIPは作業フォルダー直下の `Yohaku-v0.26.0-windows-x64-onedir.zip` です。
+3行目がonedirを作るコマンドです。`Yohaku.spec`にフォルダー形式、アイコン、3体とアニメーション素材、製品名・版を定義しています。出力は `dist\Yohaku\Yohaku.exe`。5行目で作るZIPは作業フォルダー直下の `Yohaku-v0.26.1-windows-x64-onedir.zip` です。
 
 | 同梱ファイル | 用途 |
 |---|---|
@@ -253,7 +255,7 @@ Python 3.12の場合は、1行目を `py -3.12 -m venv .venv` に変更します
 py -3.11 scripts/build_onedir.py
 ```
 
-ビルドヘルパーの場合の出力は `dist\Yohaku\Yohaku.exe` と `release\Yohaku-v0.26.0-windows-x64-onedir.zip` です。**EXEだけを取り出さず、ZIPをすべて展開して実行してください。** DLL・Qt・画像は同じフォルダーの`_internal`に入ります。配布物には依存ソフトウェアのライセンス文書もコピーします。署名・社内パッケージ化は含みません。LinuxからWindows EXEを作ったものではありません。
+ビルドヘルパーの場合の出力は `dist\Yohaku\Yohaku.exe` と `release\Yohaku-v0.26.1-windows-x64-onedir.zip` です。**EXEだけを取り出さず、ZIPをすべて展開して実行してください。** DLL・Qt・画像は同じフォルダーの`_internal`に入ります。配布物には依存ソフトウェアのライセンス文書もコピーします。署名・社内パッケージ化は含みません。LinuxからWindows EXEを作ったものではありません。
 
 ビルド素材の確認だけなら `python scripts/build_onedir.py --check`、ビルド環境の準備だけなら `py -3.11 scripts/build_onedir.py --setup-only` を使います。Windows用ビルドはWindows上で実行してください。
 

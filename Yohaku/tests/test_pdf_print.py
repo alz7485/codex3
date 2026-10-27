@@ -10,7 +10,7 @@ from PySide6.QtGui import QColor,QPageLayout,QPageSize,QPainter,QPdfWriter
 from PySide6.QtPdf import QPdfDocument
 from PySide6.QtPrintSupport import QPrinter,QPrintDialog
 from companion.file_drop import FileDropError
-from companion.pdf_print import page_layout,print_pdf
+from companion.pdf_print import configure_page,page_layout,print_pdf
 from companion.ui import create_application
 
 class DirectPrintTests(unittest.TestCase):
@@ -71,3 +71,22 @@ class DirectPrintTests(unittest.TestCase):
         from PySide6.QtPrintSupport import QPrinterInfo
         with patch('companion.pdf_print.QPrinterInfo.defaultPrinter',return_value=QPrinterInfo()):
             with self.assertRaisesRegex(FileDropError,'既定プリンター'):default_printer()
+
+    def test_native_driver_rejecting_full_layout_uses_individual_properties(self):
+        class NativeDriver:
+            def __init__(self):self.layout=QPageLayout();self.layout.setPageSize(QPageSize(QPageSize.PageSizeId.A4))
+            def pageLayout(self):return QPageLayout(self.layout)
+            def setPageLayout(self,layout):raise AssertionError('Full layout must not be submitted')
+            def setPageSize(self,size):self.layout.setPageSize(size);return False  # Return code alone is not authoritative.
+            def setPageOrientation(self,value):self.layout.setOrientation(value)
+        printer=NativeDriver();size=QPageSize(QPageSize.PageSizeId.A3)
+        configure_page(printer,size,QPageLayout.Orientation.Landscape)
+        self.assertEqual(printer.pageLayout().pageSize().id(),QPageSize.PageSizeId.A3)
+        self.assertEqual(printer.pageLayout().orientation(),QPageLayout.Orientation.Landscape)
+
+    def test_driver_that_ignores_size_change_is_rejected_before_printing(self):
+        from unittest.mock import Mock
+        layout=QPageLayout();layout.setPageSize(QPageSize(QPageSize.PageSizeId.A4))
+        driver=Mock();driver.pageLayout.return_value=layout
+        with self.assertRaises(FileDropError):configure_page(driver,QPageSize(QPageSize.PageSizeId.A3),QPageLayout.Orientation.Portrait)
+        driver.setPageLayout.assert_not_called()
