@@ -1,8 +1,10 @@
-# Yohaku v0.26.1
+# Yohaku v0.26.2
 
-**[onedir用ZIP（約11.1MB）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.26.1-onedir-build.zip)**
+履歴の行間を詰め、内容に応じて吹き出しの高さを拡張しました。[表示例](../../Yohaku/docs/compact-history.png)
 
-[spec単体](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku.spec) · [5行のコマンドと手順](BUILD_ONEDIR.txt) · [SHA-256](Yohaku-v0.26.1-onedir-build.zip.sha256)
+**[onedir用ZIP（約11.1MB）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.26.2-onedir-build.zip)**
+
+[spec単体](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku.spec) · [5行のコマンドと手順](BUILD_ONEDIR.txt) · [SHA-256](Yohaku-v0.26.2-onedir-build.zip.sha256)
 
 ZIPを新しい空の場所へ展開し、Yohaku.specとmain.pyが並ぶYohakuフォルダーでONEDIR_COMMAND.txtの5行を順番に実行します。Windows 11の64bit Python 3.11/3.12を使用し、バッチや仮想環境の有効化は不要です。testsは同梱・要求しません。検査マニフェストは実際のビルド用ファイルだけです。_internalを含むdist/Yohakuフォルダー全体を配布してください。テキスト化・分割はしていません。
 
