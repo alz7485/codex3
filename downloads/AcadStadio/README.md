@@ -1,10 +1,17 @@
-# AcadStadio 1.28.0 — 分類別コマンド追加・中心線の改善・試用版25
+# AcadStadio 1.28.1 — ブロック編集の表示領域を拡大・試用版26
 
-**[試用版25 ZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.28.0_CommandGroupsTrial25.zip)** ／ [SHA256](AcadStadio_v1.28.0_CommandGroupsTrial25.zip.sha256)
+**[試用版26 ZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.28.1_CompactBlockTrial26.zip)** ／ [SHA256](AcadStadio_v1.28.1_CompactBlockTrial26.zip.sha256)
 
 Excel / CSVの行と作図コマンドからAutoCAD用SCRを生成するローカルアプリです。このZIPはソース版です。
 
-## 分類別に追加
+## 今回の画面整理
+
+- ブロック編集の「コマンド」「プレビュー」の見出しを削除し、右の表示領域を上端まで広げました。
+- 「選択したコマンドまで表示」を、左の一覧下の「条件を追加」の右へ移動しました。
+- 通常/最小画面/左幅320pxでも同じ1行に収まり、条件の開閉でも右の高さは変わりません。
+- 作図内容はTrial25から変更していません。
+
+## 分類別の追加（前版から継続）
 
 ブロック編集の上部に、分類ごとの3つの追加アイコンを配置しました。各▼でメニューを開き、マウスを重ねるかTabで操作名を表示します。編集・複製・削除・上下・Undo/Redoも同じ1行です。
 
