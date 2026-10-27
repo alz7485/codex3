@@ -114,7 +114,7 @@ def button(text, callback=None, name=None):
     return result
 
 
-@lru_cache(maxsize=5)
+@lru_cache(maxsize=6)
 def speech_action_icon(action):
     """Small matching line icons, without relying on emoji fonts or external files."""
     icon = QIcon()
@@ -135,6 +135,10 @@ def speech_action_icon(action):
             painter.drawLine(6, 11, 8, 11)
             painter.drawLine(12, 11, 14, 11)
             painter.drawLine(6, 14, 8, 14)
+        elif action == 'shelf':
+            painter.drawRoundedRect(QRectF(3,7,14,10),2,2)
+            painter.drawLine(2,7,18,7);painter.drawLine(7,11,13,11)
+            path.moveTo(4,7);path.lineTo(6,3);path.lineTo(14,3);path.lineTo(16,7)
         elif action == 'activity':
             path.moveTo(2, 6)
             path.lineTo(2, 4)
@@ -429,6 +433,7 @@ class Panel(QMainWindow):
     reminders_requested = Signal()
     clear_usage_requested = Signal()
     context_options_requested = Signal()
+    shelf_period_requested = Signal(str)
     file_drop_requested = Signal()
 
     def __init__(self, settings, dialogue=None):
@@ -617,6 +622,15 @@ class Panel(QMainWindow):
         self.profile_description = label(self.profile(self.settings.character)[1], "muted", True)
         chooser.addWidget(self.profile_description)
         chooser.addWidget(button('ドロップしたファイルの処理を設定', self.file_drop_requested.emit))
+        chooser.addWidget(label('預けたものの保持期間', 'section'))
+        self.shelf_period = QComboBox()
+        self.shelf_period.setAccessibleName('預けたファイル・フォルダーの保持期間')
+        for key,title in (('day','1日（朝5:00でリセット）'),('week','1週間（月曜0:00でリセット）'),('month','1ヶ月（1日0:00でリセット）'),('forever','無期限')):
+            self.shelf_period.addItem(title,key)
+        self.shelf_period.currentIndexChanged.connect(lambda:self.shelf_period_requested.emit(self.shelf_period.currentData()))
+        chooser.addWidget(self.shelf_period)
+        self.shelf_status=label('本体は移動・削除せず、登録した場所への参照を保持します。','muted',True)
+        chooser.addWidget(self.shelf_status)
         chooser.addWidget(label('ファイルやフォルダーを渡すと移動先を選べます。PDFはA4・A3・用紙に合わせる印刷も選べます。', 'muted', True))
         self.animation_check = QCheckBox("表情・まばたきのアニメーション")
         self.animation_check.setChecked(self.settings.animation)
@@ -1101,6 +1115,8 @@ class InteractionBubble(Bubble):
     one_shot_requested = Signal()
     file_action_requested = Signal(str)
     file_settings_requested = Signal()
+    shelf_open_requested = Signal(str)
+    shelf_context_requested = Signal(QPoint)
 
     def __init__(self):
         super().__init__()
@@ -1126,14 +1142,16 @@ class InteractionBubble(Bubble):
         self.file_links.setStyleSheet('QListWidget { background: transparent; border: none; } QListWidget::item { padding: 2px 2px; }')
         self.file_links.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.file_links.setTextElideMode(Qt.TextElideMode.ElideRight)
-        self.file_links.itemClicked.connect(lambda item:self.file_requested.emit(item.data(Qt.ItemDataRole.UserRole)))
+        self.file_links.setIconSize(QSize(18,18))
+        self.file_links.itemClicked.connect(lambda item:self.file_requested.emit(item.data(Qt.ItemDataRole.UserRole)) if self.current!='shelf' else None)
+        self.file_links.itemDoubleClicked.connect(lambda item:self.shelf_open_requested.emit(item.data(Qt.ItemDataRole.UserRole)) if self.current=='shelf' else None)
         layout.addWidget(self.file_links);self.file_links.hide()
         self.choice_row = QWidget(objectName="speechChoiceRow")
         choices = QVBoxLayout(self.choice_row)
         choices.setContentsMargins(0, 0, 0, 0)
         choices.setSpacing(6)
         self.buttons = {}
-        for key, title in (("calendar", "予定を聞く"), ("activity", "ファイル起動履歴を見る"), ("settings", "設定を開く"), ("one_shot", "通知を設定する"), ("hide", "非表示にする")):
+        for key, title in (("shelf", "預けたものを見る"), ("calendar", "予定を聞く"), ("activity", "ファイル起動履歴を見る"), ("settings", "設定を開く"), ("one_shot", "通知を設定する"), ("hide", "非表示にする")):
             choice = button(title, lambda checked=False, k=key: self.selected.emit(k), "speechChoice")
             choice.setIcon(speech_action_icon(key))
             choice.setIconSize(QSize(18, 18))
@@ -1146,7 +1164,7 @@ class InteractionBubble(Bubble):
         self.drop_notice = MessageLabel(); self.drop_notice.setTextFormat(Qt.TextFormat.PlainText)
         drop_layout.addWidget(self.drop_notice); self.drop_notice.hide()
         self.drop_buttons = {}
-        for key in ('move', 'print_pdf', 'move_extract'):
+        for key in ('shelve','move', 'print_pdf', 'move_extract'):
             choice = button('', lambda checked=False, action=key: self.file_action_requested.emit(action), 'speechChoice')
             self.drop_buttons[key] = choice; drop_layout.addWidget(choice)
         self.drop_settings_button = button('移動先・パスワードなどを設定', self.file_settings_requested.emit, 'speechChoice')
@@ -1211,10 +1229,18 @@ class InteractionBubble(Bubble):
             widget.installEventFilter(self)
 
     def eventFilter(self, watched, event):
+        if getattr(self,'current',None)=='shelf' and watched in (self.file_links,self.file_links.viewport()):
+            if event.type()==QEvent.Type.MouseButtonPress and event.button()==Qt.MouseButton.RightButton:
+                point=event.position().toPoint()
+                if watched is self.file_links:point=self.file_links.viewport().mapFrom(self.file_links,point)
+                self.shelf_context_requested.emit(point);return True
+            if event.type()==QEvent.Type.ContextMenu:return True
         if (event.type()==QEvent.Type.KeyPress and watched is getattr(self,'file_links',None)
                 and event.key() in (Qt.Key.Key_Return,Qt.Key.Key_Enter)):
             item=self.file_links.currentItem()
-            if item:self.file_requested.emit(item.data(Qt.ItemDataRole.UserRole))
+            if item:
+                signal=self.shelf_open_requested if self.current=='shelf' else self.file_requested
+                signal.emit(item.data(Qt.ItemDataRole.UserRole))
             return True
         if (event.type()==QEvent.Type.MouseButtonRelease and event.button()==Qt.MouseButton.LeftButton
                 and (getattr(self,'current',None) in ('activity','calendar') or getattr(self,'kind',None)=='menu' and getattr(self,'current',None)!='one_shot')
@@ -1295,7 +1321,7 @@ class InteractionBubble(Bubble):
         self.show()
         self.raise_()
         self.activateWindow()
-        self.buttons["calendar"].setFocus()
+        self.buttons["shelf"].setFocus()
 
     def content(self, key, heading, text):
         self.display(Notice(heading, text, kind="calendar" if key == "calendar" else "message"))
@@ -1340,11 +1366,11 @@ class InteractionBubble(Bubble):
         self.drop_extra_buttons={};self.drop_targets_scroll.hide();self.drop_settings_button.hide()
         self.drop_cancel.setEnabled(True)
         if stage=='action':
-            choices={'move':'移動する'}
+            choices={'shelve':'フォルダを預ける' if path.is_dir() else 'ファイルを預ける','move':'移動する'}
             if not path.is_dir() and path.suffix.lower()=='.pdf':choices['print_pdf']='印刷する'
             for key,title in choices.items():
                 choice=self.drop_buttons[key];choice.setText(title);choice.setEnabled(not error);choice.show()
-                choice.setIcon(speech_action_icon('activity'))
+                choice.setIcon(speech_action_icon('shelf' if key=='shelve' else 'activity'))
         else:
             choices=([(f'destination:{row["id"]}',row['name'],row['path']) for row in destinations] if stage=='destination'
                      else [('paper:a4','A4で印刷する',''),('paper:a3','A3で印刷する',''),('paper:auto','用紙サイズに合わせる','')])
@@ -1417,8 +1443,19 @@ class InteractionBubble(Bubble):
         self.reminder_bounds_timer.stop()
         super().hideEvent(event)
 
+    def show_shelf(self,rows,error=''):
+        from .props import item_icon
+        text=error or ('預けたものはこちらです。\nダブルクリックで開きます。' if rows else '今は何も預かっていません。\nファイルやフォルダを渡して「預ける」を選んでください。')
+        self.display(Notice('',text));self.current='shelf';self.interactive=True;self.set_kind('menu');self.timer.stop()
+        self.file_links.setAccessibleName('預けたもの。ダブルクリックで開く、右クリックで登録を削除')
+        for row in rows:
+            path=Path(row['path']);item=QListWidgetItem(item_icon(path),path.name or str(path))
+            item.setData(Qt.ItemDataRole.UserRole,row['id']);item.setToolTip(row['path']);self.file_links.addItem(item)
+        self.file_links.setVisible(bool(rows));self.resize_text();self.file_links.scrollToTop()
+
     def show_file_history(self,text,rows):
         self.display(Notice('',text))
+        self.file_links.setAccessibleName('今日開いたファイルのリンク。クリックすると開きます')
         self.current='activity';self.interactive=True
         for name,path in rows:
             item=QListWidgetItem(name);item.setData(Qt.ItemDataRole.UserRole,path);item.setToolTip(path)
@@ -1711,6 +1748,8 @@ class Controller(QObject):
         self.tray.setContextMenu(self.menu)
         self.tray.activated.connect(self.tray_activated)
         self.tray.show()
+        from .shelf_ui import ShelfController
+        self.shelf_service = ShelfController(self)
         from .file_drop_ui import FileDropController
         self.file_drop_service = FileDropController(self)
         self.panel.share_button.setEnabled(QSystemTrayIcon.isSystemTrayAvailable())
@@ -1961,7 +2000,7 @@ class Controller(QObject):
         self.panel.sync_behavior()
         self.panel.refresh_dialogue()
         self.bubble.duration_ms = self.dialogue.data['options']['bubble_seconds'] * 1000
-        if self.bubble.current in ('one_shot', 'file_drop') or self.pending_reaction is not None and self.bubble.notice is self.pending_reaction:
+        if self.bubble.current in ('one_shot', 'file_drop', 'shelf') or self.pending_reaction is not None and self.bubble.notice is self.pending_reaction:
             self.bubble.timer.stop()
         elif self.bubble.isVisible():
             self.bubble.timer.start(self.bubble.display_duration_ms())
@@ -2289,6 +2328,9 @@ class Controller(QObject):
         self.engine.last_display = now
         self.motion.react(rule['expression'], speaking=True)
         self.mail_burst_notice = Notice('', self.engine.phrase('mail_received'), True, rule['expression'], 'notification')
+        if self.bubble.isVisible() and self.bubble.current == 'shelf':
+            self.bubble.text.set_message('預けたものはこちらです。\n'+self.mail_burst_notice.text)
+            self.bubble.resize_text();self.position();self.resident.raise_mail();return
         if self.bubble.isVisible() and self.bubble.current == 'file_drop':
             self.bubble.drop_notice.set_message(self.mail_burst_notice.text)
             self.bubble.drop_notice.show(); self.bubble.resize_text(); self.position()
@@ -2304,6 +2346,7 @@ class Controller(QObject):
         self.position()
 
     def shutdown(self):
+        self.shelf_service.timer.stop()
         self.file_drop_service.closed = True
         if self.file_drop_service.print_dialog:
             self.file_drop_service.print_dialog.reject()
@@ -2326,7 +2369,7 @@ class Controller(QObject):
     def show_message(self):
         if self.file_drop_service.busy:
             return
-        if self.bubble.isVisible() and self.bubble.current in ('one_shot', 'file_drop'):
+        if self.bubble.isVisible() and self.bubble.current in ('one_shot', 'file_drop', 'shelf'):
             return
         if self.hidden or self.user_hidden or self.pending_reaction is not None:
             return
@@ -2459,13 +2502,15 @@ class Controller(QObject):
             return
         now = datetime.now().astimezone()
         self.engine.last_display = now
-        if key in ('calendar', 'activity', 'settings', 'one_shot'):
+        if key in ('shelf','calendar', 'activity', 'settings', 'one_shot'):
             self.interaction.timer.stop()
             self.interaction.hide()
             self.interaction.choice_row.hide()
             self.interaction.current = None
             self.interaction.interactive = False
-        if key == "calendar":
+        if key == "shelf":
+            self.shelf_service.show()
+        elif key == "calendar":
             self.motion.react(self.dialogue.rule("calendar_intro")["expression"], speaking=True)
             fresh = self.connected_at is not None and (now - self.connected_at).total_seconds() < 300
             if not self.connected or not fresh:
@@ -2804,7 +2849,7 @@ class Controller(QObject):
         try:
             notice = self.engine.next_notice(now, self.events, self.hidden or self.user_hidden, self.connected and fresh,
                                              allow_chatter=not (self.pending_reaction is not None or self.interaction.isVisible() or self.panel.isVisible() or self.history_window.isVisible() or (self.editor is not None and self.editor.isVisible()) or (self.reminder_editor is not None and self.reminder_editor.isVisible()) or (self.context_editor is not None and self.context_editor.isVisible())),
-                                             allow_reminders=not (self.pending_reaction is not None or self.bubble.isVisible()))
+                                             allow_reminders=not (self.pending_reaction is not None or self.bubble.isVisible() and self.bubble.current!='shelf'))
         except OSError:
             self.panel.calendar_detail.setText("通知履歴を保存できません。保存先の権限をご確認ください。")
             self.panel.reminders_status.setText('通知履歴を保存できません。保存先の権限をご確認ください。')

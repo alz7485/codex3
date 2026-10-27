@@ -87,6 +87,15 @@ def check_bundle():
         finally:staged_bubble.hide();destination_editor.hide()
         pdf = root/'sample.pdf'; writer = QPdfWriter(str(pdf)); painter = QPainter(writer)
         painter.drawText(30, 100, 'Yohaku'); painter.end(); del writer
+        from .shelf import ShelfStore
+        shelf=ShelfStore(root/'shelf.json');shelf.set_period('forever',datetime.now().astimezone())
+        shelf_id=shelf.add(pdf,datetime.now().astimezone());shelf_bubble=InteractionBubble()
+        try:
+            shelf_bubble.show_shelf(shelf.data['items'])
+            if shelf_bubble.grab().isNull():raise ValueError('Shelf rendering failed')
+            shelf.remove(shelf_id)
+            if not pdf.exists():raise ValueError('Shelf changed a document')
+        finally:shelf_bubble.hide()
         pdf_document = QPdfDocument()
         pdf_device = QFile(str(pdf))
         try:
@@ -101,7 +110,7 @@ def check_bundle():
     return {'version': VERSION, 'python': platform.python_version(), 'qt': qVersion(),
             'platform': sys.platform, 'success': True, 'character_frames_rendered': rendered,
             'topics': len(document['rules']), 'voices': len(document['phrases']),
-            'encrypted_zip_checked': True, 'pdf_render_checked': True, 'prop_poses_rendered': prop_rendered, 'drop_stages_rendered': 3, 'destination_editor_checked': True}
+            'encrypted_zip_checked': True, 'pdf_render_checked': True, 'prop_poses_rendered': prop_rendered, 'drop_stages_rendered': 3, 'destination_editor_checked': True, 'shelf_launcher_checked': True}
 
 
 def run(output):

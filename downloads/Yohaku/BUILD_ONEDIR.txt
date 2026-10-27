@@ -1,4 +1,4 @@
-﻿# Yohaku v0.26.2 onedirビルド用セット
+﻿# Yohaku v0.27.0 onedirビルド用セット
 
 このZIPだけを新しい空のフォルダーへ展開してください。testsフォルダーは不要です。
 Windows 11の64bit Python 3.11または3.12を使用します。
@@ -9,14 +9,15 @@ py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements-build.txt
 .\.venv\Scripts\python.exe -m PyInstaller --noconfirm --clean Yohaku.spec
 .\.venv\Scripts\python.exe scripts\collect_licenses.py dist\Yohaku
-.\.venv\Scripts\python.exe -c "import shutil; shutil.make_archive('Yohaku-v0.26.2-windows-x64-onedir', 'zip', 'dist', 'Yohaku')"
+.\.venv\Scripts\python.exe -c "import shutil; shutil.make_archive('Yohaku-v0.27.0-windows-x64-onedir', 'zip', 'dist', 'Yohaku')"
 ```
 
 Python 3.12の場合は1行目を `py -3.12 -m venv .venv` に変更します。
-出力はdist/Yohaku/Yohaku.exeとYohaku-v0.26.2-windows-x64-onedir.zipです。
+出力はdist/Yohaku/Yohaku.exeとYohaku-v0.27.0-windows-x64-onedir.zipです。
 _internalを含むdist/Yohakuフォルダー全体を配布してください。
 
-PDFは吹き出しから移動・印刷、その他のファイル／フォルダーは移動を選べます。
+ファイル／フォルダーを「預ける」で一時ランチャーに登録できます。本体は移動・削除しません。保持は1日・1週間・1ヶ月・無期限から設定します。
+PDFは吹き出しから預ける・移動・印刷、その他のファイル／フォルダーは預ける・移動を選べます。
 移動先は表示名とフルパスを登録し、PDF印刷はA4・A3・用紙サイズに合わせる、から選択します。
 印刷はWindowsの既定プリンターへ直接送信し、カラー／モノクロは文書から自動判定します。
 つづり・ビット・ペギーの3体と全7性格を含みます。

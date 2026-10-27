@@ -721,7 +721,7 @@ class UserInterfaceTests(unittest.TestCase):
     def test_app_has_brand_name_version_and_windows_icon(self):
         c = self.controller
         self.assertEqual(self.app.applicationDisplayName(), "Yohaku")
-        self.assertEqual(self.app.applicationVersion(), "0.26.2")
+        self.assertEqual(self.app.applicationVersion(), "0.27.0")
         self.assertFalse(c.brand_icon.isNull())
         self.assertEqual(c.panel.windowIcon().cacheKey(), c.brand_icon.cacheKey())
         c.panel.character_buttons["B"].click()
@@ -742,7 +742,7 @@ class UserInterfaceTests(unittest.TestCase):
             self.assertIs(c.interaction, c.bubble)
             self.assertIn(c.bubble.text.text(), PHRASES[voice_for(c.settings)]["call"])
             window_id = int(c.bubble.winId())
-            self.assertEqual(set(c.interaction.buttons), {"calendar", "activity", "settings", "one_shot", "hide"})
+            self.assertEqual(set(c.interaction.buttons), {"shelf", "calendar", "activity", "settings", "one_shot", "hide"})
             self.assertTrue(c.interaction.timer.isActive())
             self.assertEqual(c.interaction.timer.interval(), 20000)
             c.interaction.buttons["calendar"].click()
@@ -863,7 +863,7 @@ class UserInterfaceTests(unittest.TestCase):
         self.assertEqual(int(c.bubble.winId()), window_id)
         self.assertEqual(c.bubble.width(), width)
         self.assertTrue(c.bubble.choice_row.isVisible())
-        self.assertEqual([b.text() for b in c.bubble.buttons.values()], ["予定を聞く", "ファイル起動履歴を見る", "設定を開く", "通知を設定する", "非表示にする"])
+        self.assertEqual([b.text() for b in c.bubble.buttons.values()], ["預けたものを見る", "予定を聞く", "ファイル起動履歴を見る", "設定を開く", "通知を設定する", "非表示にする"])
         self.assertTrue(all(not b.isCheckable() for b in c.bubble.buttons.values()))
         self.app.processEvents()
         rows = [b.geometry() for b in c.bubble.buttons.values()]

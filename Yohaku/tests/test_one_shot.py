@@ -211,10 +211,10 @@ class OneShotInterfaceTests(unittest.TestCase):
             self.assertEqual(b.reminder_time.time(), QTime(0, 0))
             self.assertTrue(b.reminder_ok.isEnabled())
 
-    def test_five_actions_and_today_default_with_no_auto_dismissal_or_headers(self):
+    def test_six_actions_and_today_default_with_no_auto_dismissal_or_headers(self):
         from PySide6.QtCore import QDate
         b=self.c.bubble
-        self.assertEqual(list(b.buttons),['calendar','activity','settings','one_shot','hide'])
+        self.assertEqual(list(b.buttons),['shelf','calendar','activity','settings','one_shot','hide'])
         self.assertEqual(b.reminder_date.date(),QDate.currentDate())
         self.assertFalse(b.choice_row.isVisible());self.assertTrue(b.one_shot_form.isVisible())
         self.assertFalse(b.timer.isActive());self.assertFalse(b.heading.isVisible())
