@@ -158,7 +158,7 @@
   "tests/test_self_check.py": "a0862f13c92ff26acfa49bc9c464aecaac399c0bc27255aa84b3e60d22ce9588",
   "tests/test_shelf.py": "fc0be7877bcf8b8d225f1ec93bc668d1fb963e5dd79d330ac835c7940e7b77e0",
   "tests/test_source_check.py": "ab8cce35e3acb46d4470a6ebf504a01537e46f825c7bd3d286833d22f24308ce",
-  "tests/test_storage.py": "a0ba5ccc518b72e251203d9c2fa842e16a1ba1d6a6b78d7fc0956ac0cebcc36f",
+  "tests/test_storage.py": "9d07a9d2e7908cb891b033d3e626d57c08f3ca3a4819e9e64fac87c3ae4c301f",
   "tests/test_ui.py": "30cacda3ce052ed5e95799c29cdd1271cfddeb55c9770e6755d500190a750cdd",
   "tests/test_walk_animation.py": "e1b5024b2ca29e3c7381cf55751ab126ae5e65b7e140d1ea39258cf1bf66bd52"
 }

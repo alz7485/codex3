@@ -25,9 +25,9 @@ class StorageTests(unittest.TestCase):
 
     def test_exe_and_source_paths_ignore_internal_folder_python_and_working_directory(self):
         with patch.object(sys,'frozen',True,create=True),patch.object(sys,'executable',str(self.app/'Yohaku.exe')),patch.object(sys,'_MEIPASS',str(self.app/'_internal'),create=True):
-            self.assertEqual(storage.data_directory(),self.data)
+            self.assertEqual(storage.data_directory(),self.data.resolve())
         with patch.object(sys,'frozen',False,create=True),patch.object(storage,'__file__',str(self.app/'companion'/'storage.py')):
-            self.assertEqual(storage.data_directory(),self.data)
+            self.assertEqual(storage.data_directory(),self.data.resolve())
 
     def test_fresh_install_creates_only_the_data_folder_and_no_legacy_folder(self):
         missing=self.root/'missing'/'Yohaku'
