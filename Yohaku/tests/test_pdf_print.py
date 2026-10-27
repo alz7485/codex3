@@ -75,6 +75,7 @@ class DirectPrintTests(unittest.TestCase):
     def test_native_driver_rejecting_full_layout_uses_individual_properties(self):
         class NativeDriver:
             def __init__(self):self.layout=QPageLayout();self.layout.setPageSize(QPageSize(QPageSize.PageSizeId.A4))
+            def printerState(self):return QPrinter.PrinterState.Idle
             def pageLayout(self):return QPageLayout(self.layout)
             def setPageLayout(self,layout):raise AssertionError('Full layout must not be submitted')
             def setPageSize(self,size):self.layout.setPageSize(size);return False  # Return code alone is not authoritative.
@@ -90,3 +91,23 @@ class DirectPrintTests(unittest.TestCase):
         driver=Mock();driver.pageLayout.return_value=layout
         with self.assertRaises(FileDropError):configure_page(driver,QPageSize(QPageSize.PageSizeId.A3),QPageLayout.Orientation.Portrait)
         driver.setPageLayout.assert_not_called()
+
+    def test_active_windows_job_queues_engine_properties_for_next_sheet(self):
+        from PySide6.QtPrintSupport import QPrintEngine
+        class ActiveNativeDriver:
+            def __init__(self):self.layout=QPageLayout();self.layout.setPageSize(QPageSize(QPageSize.PageSizeId.A4));self.calls=[]
+            def pageLayout(self):return QPageLayout(self.layout)
+            def printerState(self):return QPrinter.PrinterState.Active
+            def outputFormat(self):return QPrinter.OutputFormat.NativeFormat
+            def setPageSize(self,value):raise AssertionError('Public setter rejects active native jobs')
+            def setPageOrientation(self,value):raise AssertionError('Public setter rejects active native jobs')
+            def printEngine(self):return self
+            def setProperty(self,key,value):
+                self.calls.append(key)
+                if key==QPrintEngine.PrintEnginePropertyKey.PPK_QPageSize:self.layout.setPageSize(value)
+                else:self.layout.setOrientation(QPageLayout.Orientation(value))
+        driver=ActiveNativeDriver()
+        configure_page(driver,QPageSize(QPageSize.PageSizeId.A3),QPageLayout.Orientation.Landscape)
+        self.assertEqual(len(driver.calls),2)
+        self.assertEqual(driver.layout.pageSize().id(),QPageSize.PageSizeId.A3)
+        self.assertEqual(driver.layout.orientation(),QPageLayout.Orientation.Landscape)

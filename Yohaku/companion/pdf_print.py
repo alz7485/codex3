@@ -3,7 +3,7 @@ import math
 from PySide6.QtCore import QFile, QIODevice, QRectF, QSize
 from PySide6.QtGui import QPageLayout, QPageSize, QPainter
 from PySide6.QtPdf import QPdfDocument
-from PySide6.QtPrintSupport import QPrinter, QPrinterInfo
+from PySide6.QtPrintSupport import QPrintEngine, QPrinter, QPrinterInfo
 from .file_drop import FileDropError, regular_file
 
 
@@ -44,8 +44,16 @@ def configure_page(printer,size,orientation):
     current=printer.pageLayout()
     if current.pageSize().isEquivalentTo(size) and current.orientation()==orientation:
         return
-    printer.setPageSize(size)
-    printer.setPageOrientation(orientation)
+    if printer.printerState()==QPrinter.PrinterState.Active and printer.outputFormat()==QPrinter.OutputFormat.NativeFormat:
+        # Qt 6.8 public setters reject an active native job. The Windows engine
+        # supports these properties and defers ResetDC until newPage(), after
+        # EndPage and before StartPage. Queue only the next sheet's properties.
+        engine=printer.printEngine()
+        engine.setProperty(QPrintEngine.PrintEnginePropertyKey.PPK_QPageSize,size)
+        engine.setProperty(QPrintEngine.PrintEnginePropertyKey.PPK_Orientation,orientation.value)
+    else:
+        printer.setPageSize(size)
+        printer.setPageOrientation(orientation)
     current=printer.pageLayout()
     actual=current.pageSize()
     wanted=size.size(QPageSize.Unit.Point);got=actual.size(QPageSize.Unit.Point)
