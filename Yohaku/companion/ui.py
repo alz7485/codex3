@@ -2195,6 +2195,7 @@ class Controller(QObject):
         from .walk_animation import RIGS
         scale=min((self.resident.width()-6)/self.resident.pixmap.width(),(self.resident.height()-6)/self.resident.pixmap.height())
         self.motion.stride_pixels=4*RIGS[self.settings.character]['stride']*scale
+        self.motion.walk_speed=RIGS[self.settings.character]['speed']
         self.motion_x = self.motion.advance(dt, self.motion_x if self.motion_x is not None else upper,
                                           lower, upper, self.settings.walking and not blocked)
         frame = self.motion.frame()

@@ -64,6 +64,7 @@ class Motion:
         self.speed = 0.0
         self.gait = 0.0
         self.stride_pixels = WALK_CYCLE_PIXELS
+        self.walk_speed = 20.0
         self.walk_weight = 0.0
         self.expression = None
         self.expression_until = 0.0
@@ -144,7 +145,7 @@ class Motion:
                     elif x <= lower + 4:
                         self.direction = 1
                 # Accelerate gently; slow down over the last 12 pixels.
-                target = 20 * min(1.0, max(0.12, self.distance / 12))
+                target = self.walk_speed * min(1.0, max(0.12, self.distance / 12))
                 self.speed += (target - self.speed) * (1 - math.exp(-dt * 6))
                 amount = min(self.speed * dt, self.distance)
                 next_x = min(upper, max(lower, x + amount * self.direction))
