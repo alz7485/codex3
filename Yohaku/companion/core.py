@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta
 import json
-import os
 from pathlib import Path
 import random
 import re
@@ -15,11 +14,7 @@ from .motion import ClickReactions
 from .reminders import ReminderStore, due_time
 from .one_shot import OneShotStore
 from .characters import CHARACTERS
-
-
-def data_directory() -> Path:
-    base = Path(os.environ.get("LOCALAPPDATA", Path.home() / ".local" / "share"))
-    return base / "Yohaku"
+from .storage import data_directory
 
 
 def save_json(path: Path, value: dict) -> None:

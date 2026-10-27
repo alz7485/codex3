@@ -1682,11 +1682,13 @@ class HistoryWindow(QMainWindow):
 
 
 class Controller(QObject):
-    def __init__(self, app):
+    def __init__(self, app, data_path=None):
         super().__init__()
         self.app = app
-        self.path = data_directory()
+        self.path = Path(data_path) if data_path is not None else data_directory()
         self.settings = Settings.load(self.path / "settings.json")
+        if not (self.path/'settings.json').exists():
+            save_json(self.path/'settings.json',asdict(self.settings))
         self.dialogue = DialogueStore(self.path / "dialogue.json", self.settings.interval)
         self.settings.interval = self.dialogue.data["options"]["interval_minutes"]
         preset = PRESETS.get(self.settings.comfort_preset)
@@ -2976,19 +2978,34 @@ def create_application():
     return app
 
 
+def lock_data_directory(path):
+    from .storage import StorageError,legacy_directory,prepare_data_directory
+    path=Path(path);initial=legacy_lock=None
+    try:
+        if not path.exists():
+            initial=QLockFile(str(path.parent/'.Yohaku.init.lock'))
+            if not initial.tryLock(0):raise StorageError('Dataの準備中か、アプリのフォルダに書き込めません。起動中のYohakuと配置先をご確認ください。')
+        legacy=legacy_directory()
+        if not path.exists() and legacy.is_dir():
+            legacy_lock=QLockFile(str(legacy/'instance.lock'))
+            if not legacy_lock.tryLock(0):raise StorageError('旧版のYohakuが起動中か、旧保存先を使用できません。旧版を終了してから起動してください。')
+        prepare_data_directory(path,legacy)
+        lock=QLockFile(str(path/'instance.lock'))
+        if not lock.tryLock(0):raise StorageError('Yohakuはすでに起動しているか、Dataに書き込めません。タスクトレイと配置先をご確認ください。')
+        return lock
+    finally:
+        if legacy_lock is not None:legacy_lock.unlock()
+        if initial is not None:initial.unlock()
+
+
 def run():
     app = create_application()
-    path = data_directory()
     try:
-        path.mkdir(parents=True, exist_ok=True)
-    except OSError:
-        QMessageBox.critical(None, "Yohaku", "設定の保存先を作成できません。ユーザーフォルダーの権限をご確認ください。")
+        lock=lock_data_directory(data_directory())
+        controller = Controller(app)
+    except OSError as error:
+        QMessageBox.critical(None,'Yohaku',str(error))
         return
-    lock = QLockFile(str(path / "instance.lock"))
-    if not lock.tryLock(0):
-        QMessageBox.information(None, "Yohaku", "Yohakuはすでに起動しているか、保存先を使用できません。タスクトレイをご確認ください。")
-        return
-    controller = Controller(app)
     app.aboutToQuit.connect(controller.bubble.hide)
     app.aboutToQuit.connect(controller.history_window.hide)
     sys.exit(app.exec())

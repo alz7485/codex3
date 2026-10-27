@@ -143,7 +143,7 @@ class ComfortInterfaceTests(unittest.TestCase):
         root = Path(self.temp.name) / 'Yohaku'
         save_json(root / 'settings.json', asdict(Settings(context_enabled=False, mail_enabled=False,
                                                        animation=False, quiet_start='00:00', quiet_end='00:00')))
-        self.c = Controller(self.app)
+        self.c = Controller(self.app,data_path=Path(os.environ["LOCALAPPDATA"])/"Yohaku")
         self.c.panel.hide()
 
     def tearDown(self):

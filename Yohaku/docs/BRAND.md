@@ -19,7 +19,7 @@
 
 - 表示名：Yohaku
 - Windows実行ファイル：`Yohaku.exe`
-- 設定・履歴の保存先：`%LOCALAPPDATA%\Yohaku`（以前の設定を引き継ぎます）
+- 設定・履歴の保存先：`Data`（以前の設定を引き継ぎます）
 - PNG：`companion/assets/app/yohaku.png`
 - Windows ICO：`companion/assets/app/yohaku.ico`（16 / 24 / 32 / 48 / 64 / 128 / 256px）
 - アプリ情報と版：`companion/metadata.py`

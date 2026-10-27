@@ -18,13 +18,15 @@ EXCLUDED_DIRS = {".git", ".venv", "__pycache__", "build", "dist", "release", ".p
 PRIVATE_NAMES = {"settings.json", "history.json", "instance.lock", ".env", "smoke-report.json", "dialogue.json", "dialogue.json.bak", "dialogue.json.tmp", "Yohaku-conversation.json", "usage.json", "usage.tmp", "settings.tmp", "history.tmp", "reminders.json", "reminders.json.bak", "reminders.json.tmp"}
 PRIVATE_NAMES.update({name+suffix for name in ("context_options", "topic_preferences", "one_shot_notifications") for suffix in (".json", ".json.bak", ".json.tmp")})
 PRIVATE_NAMES.update({name+suffix for name in ('file_drop_settings','file_destinations','shelf') for suffix in ('.json','.json.bak','.json.tmp')})
+PRIVATE_NAMES.add('.yohaku.init.lock')
 
 
 def source_files(project):
     result = []
     for path in sorted(project.rglob("*")):
         relative = path.relative_to(project)
-        if any(part in EXCLUDED_DIRS for part in relative.parts):
+        if relative.parts[0].casefold()=='data':continue
+        if any(part.casefold() in EXCLUDED_DIRS or part.casefold().startswith('.yohaku-data-') for part in relative.parts):
             continue
         if not path.is_file() or path.is_symlink() or path.name.casefold() in {name.casefold() for name in PRIVATE_NAMES} or path.name.casefold().startswith(".env."):
             continue

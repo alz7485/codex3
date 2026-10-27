@@ -106,7 +106,7 @@ class OneShotInterfaceTests(unittest.TestCase):
     def setUp(self):
         from companion.ui import Controller
         self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
-        with patch.dict(os.environ,{'LOCALAPPDATA':self.temp.name}):self.c=Controller(self.app)
+        with patch.dict(os.environ,{'LOCALAPPDATA':self.temp.name}):self.c=Controller(self.app,data_path=Path(os.environ["LOCALAPPDATA"])/"Yohaku")
         c=self.c
         for timer in (c.tick_timer,c.poll_timer,c.animation_timer,c.activity_timer,c.context_timer):timer.stop()
         c.panel.hide();c.settings.quiet_start=c.settings.quiet_end='00:00'

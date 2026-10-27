@@ -20,6 +20,7 @@ class BundleCheckTests(unittest.TestCase):
             env.update(LOCALAPPDATA=str(root/'user-data'), QT_QPA_PLATFORM='offscreen',
                        PYTHONDONTWRITEBYTECODE='1')
             main = Path(__file__).resolve().parents[1]/'main.py'
+            portable_existed=(main.parent/'Data').exists()
             process = subprocess.run([sys.executable, str(main), '--self-check', str(report)],
                                      env=env, capture_output=True, timeout=30)
             self.assertEqual(process.returncode, 0, process.stderr.decode('utf-8', errors='replace'))
@@ -33,6 +34,7 @@ class BundleCheckTests(unittest.TestCase):
             self.assertEqual(result['topics'], 76)
             self.assertEqual(result['voices'], 7)
             self.assertFalse((root/'user-data').exists())
+            if not portable_existed:self.assertFalse((main.parent/'Data').exists())
 
     def test_failure_report_omits_exception_details_and_has_failing_exit_status(self):
         with tempfile.TemporaryDirectory() as temporary:

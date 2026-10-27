@@ -21,7 +21,7 @@
 
 ## 話題を選ぶ条件
 
-7種の各性格に217、合計1,519の定型文があります。セリフ・キャラ設定・発生ロジックは `companion/assets/dialogue/default_dialogue.json` に収録しています。アプリの会話編集画面で変更すると `%LOCALAPPDATA%\Yohaku\dialogue.json` に保存し、再起動なしで反映します。
+7種の各性格に217、合計1,519の定型文があります。セリフ・キャラ設定・発生ロジックは `companion/assets/dialogue/default_dialogue.json` に収録しています。アプリの会話編集画面で変更すると `Data\dialogue.json` に保存し、再起動なしで反映します。
 
 | 話題 | 候補になる条件 |
 |---|---|

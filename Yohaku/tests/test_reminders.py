@@ -253,7 +253,7 @@ class ReminderInterfaceTests(unittest.TestCase):
             settings = Settings(context_enabled=False, mail_enabled=False, chatter=False, animation=False,
                                 quiet_start='00:00', quiet_end='00:00')
             save_json(root / 'settings.json', asdict(settings))
-            controller = Controller(self.app)
+            controller = Controller(self.app,data_path=Path(os.environ["LOCALAPPDATA"])/"Yohaku")
         c = controller
         try:
             c.panel.hide()
