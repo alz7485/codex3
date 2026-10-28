@@ -52,3 +52,5 @@ Yohaku/
 更新先に既存のDataがある場合はバックアップし、使いたいDataを選んで配置してください。アプリは既存のDataを優先します。Dataを持ち越さない新しい配置先では、旧LocalAppDataのコピーまたは初期設定からの起動となります。
 
 配布ソースZIP・onedirビルド用ZIP・EXEの素材には、使用中のDataを同梱しません。ビルドしたアプリで自分の設定を継続する場合も、使用中のDataをEXEの隣へ別途コピーしてください。
+
+成長システムの進行はData/growth.json、編集コンテンツはData/content、診断はData/growth-content.logに保存します。これらもData全体と一緒にバックアップ・更新先へコピーしてください。

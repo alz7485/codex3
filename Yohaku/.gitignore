@@ -47,3 +47,7 @@ shelf.json.tmp
 /[Dd][Aa][Tt][Aa]/
 .Yohaku-Data-*/
 .Yohaku.init.lock
+growth.json
+growth.json.bak
+growth.json.tmp
+.editor.lock
