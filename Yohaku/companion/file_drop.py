@@ -12,7 +12,7 @@ import tempfile
 
 from .context_options import ContextOptionsStore
 
-ACTIONS = {'move': '移動する', 'print_pdf': 'PDFを印刷する', 'move_extract': '移動して解凍する'}
+ACTIONS = {'move': '移動する', 'print_pdf': 'PDFを印刷する', 'move_extract': '移動して解凍する', 'extract': '解凍する'}
 ARCHIVE_EXTENSIONS = {'.zip'}
 MAX_ENTRIES = 10000
 MAX_EXPANDED_BYTES = 1024 ** 3
@@ -81,7 +81,7 @@ def validate(document):
             seen.add(row['action'])
             if row['action'] == 'print_pdf' and items != ['.pdf']:
                 raise FileDropError('印刷は.pdf専用のルールに設定してください。')
-            if row['action'] == 'move_extract' and not set(items) <= ARCHIVE_EXTENSIONS:
+            if row['action'] in ('move_extract','extract') and not set(items) <= ARCHIVE_EXTENSIONS:
                 raise FileDropError('解凍は対応する圧縮形式だけのルールに設定してください。')
     return deepcopy(document)
 
@@ -298,7 +298,7 @@ def archive_members(archive):
     return result
 
 
-def move_extract(source, rule, now):
+def move_extract(source, rule, now, move_source=True):
     import pyzipper
     source = regular_file(source)
     if source.suffix.lower() not in ARCHIVE_EXTENSIONS:
@@ -306,7 +306,7 @@ def move_extract(source, rule, now):
     folder = destination(rule); target = folder/source.name; final = folder/source.stem
     if final.exists() or final.is_symlink() or final == target:
         raise FileDropError('同名の解凍先があります。上書きせず中止しました。')
-    if source.resolve() != target.resolve() and (target.exists() or target.is_symlink()):
+    if move_source and source.resolve() != target.resolve() and (target.exists() or target.is_symlink()):
         raise FileDropError('移動先に同名の圧縮ファイルがあります。上書きせず中止しました。')
     before = file_identity(source)
     password = password_value(rule['password_template'], now).encode('utf-8') or None
@@ -331,7 +331,7 @@ def move_extract(source, rule, now):
                             raise FileDropError('圧縮データのサイズが不正です。')
             if source.is_symlink() or file_identity(source) != before:
                 raise FileDropError('処理中に圧縮ファイルが変更されました。中止しました。')
-            moved = move_file(source, target)
+            moved = move_file(source, target) if move_source else source
             try:
                 if final.exists() or final.is_symlink():
                     raise OSError()
@@ -347,7 +347,7 @@ def move_extract(source, rule, now):
         raise
     except (OSError, RuntimeError, ValueError, NotImplementedError, pyzipper.BadZipFile):
         raise FileDropError('解凍できません。パスワード・圧縮データ・空き容量・権限を確認してください。元ファイルは移動していません。') from None
-    return {'path': str(target), 'extracted': str(final)}
+    return {'path': str(target if move_source else source), 'extracted': str(final),'source_preserved':not move_source}
 
 
 def execute(action, path, rule, now=None):
@@ -364,6 +364,6 @@ def execute(action, path, rule, now=None):
         raise FileDropError('ファイルの拡張子とルールが一致しません。')
     if action == 'move':
         return {'path': str(move_file(source, destination(rule)/source.name))}
-    if action == 'move_extract':
-        return move_extract(source, rule, now or datetime.now().astimezone())
+    if action in ('move_extract','extract'):
+        return move_extract(source, rule, now or datetime.now().astimezone(),move_source=action=='move_extract')
     raise FileDropError('印刷は画面の印刷ダイアログから実行してください。')

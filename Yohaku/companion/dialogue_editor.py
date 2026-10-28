@@ -317,7 +317,9 @@ class DialogueEditor(QMainWindow):
         if row>=len(self.draft['rules']):
             key=self.phrase_topics.item(row).data(Qt.ItemDataRole.UserRole)
             if writable and 'system_phrases' not in self.draft:self.draft['system_phrases']=deepcopy(self.system_fallback)
-            return self.draft.get('system_phrases',self.system_fallback)[self.voice.currentText()][key]
+            topics=self.draft.get('system_phrases',self.system_fallback)[self.voice.currentText()]
+            if writable and key not in topics:topics[key]=deepcopy(self.system_fallback[self.voice.currentText()][key])
+            return topics.get(key,self.system_fallback[self.voice.currentText()][key])
         key = self.draft['rules'][row]['id']
         return self.draft['phrases'][self.voice.currentText()][key]
 

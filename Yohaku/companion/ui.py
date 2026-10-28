@@ -1452,7 +1452,7 @@ class InteractionBubble(Bubble):
             self.calendar_presented.emit()
 
     def show_drop_stage(self, path, stage, destinations=(), error=''):
-        prompts={'action':'drop_action','destination':'drop_destination','paper':'drop_paper'}
+        prompts={'action':'drop_action','destination':'drop_destination','paper':'drop_paper','extract_destination':'extract_destination'}
         text=path.name+'\n'+self.system_phrase(prompts[stage])
         if error:text+='\n\n'+error
         self.display(Notice('',text));self.current='file_drop';self.interactive=True;self.set_kind('menu');self.timer.stop()
@@ -1464,19 +1464,23 @@ class InteractionBubble(Bubble):
         self.drop_cancel.setEnabled(True)
         if stage=='action':
             choices={'shelve':'フォルダを預ける' if path.is_dir() else 'ファイルを預ける','move':'移動する'}
+            if not path.is_dir() and path.suffix.lower()=='.zip':choices={'extract':'解凍する','move':'移動する'}
             if not path.is_dir() and path.suffix.lower()=='.pdf':choices['print_pdf']='印刷する'
             for key,title in choices.items():
+                if key not in self.drop_buttons:
+                    self.drop_buttons[key]=button(title,lambda checked=False,action=key:self.file_action_requested.emit(action),'speechChoice')
+                    self.drop_row.layout().insertWidget(0,self.drop_buttons[key])
                 choice=self.drop_buttons[key];choice.setText(title);choice.setEnabled(not error);choice.show()
                 choice.setIcon(speech_action_icon('shelf' if key=='shelve' else 'activity'))
         else:
-            choices=([(f'destination:{row["id"]}',row['name'],row['path']) for row in destinations] if stage=='destination'
+            choices=([(f'destination:{row["id"]}',row['name'],row['path']) for row in destinations] if stage in ('destination','extract_destination')
                      else [('paper:a4','A4で印刷する',''),('paper:a3','A3で印刷する',''),('paper:auto','用紙サイズに合わせる','')])
             for key,title,tooltip in choices:
                 choice=button(title,lambda checked=False,action=key:self.file_action_requested.emit(action),'speechChoice')
                 choice.setToolTip(tooltip);choice.setEnabled(not error);self.drop_targets_layout.addWidget(choice);self.drop_extra_buttons[key]=choice
             self.drop_targets_scroll.setFixedHeight(min(250,max(42,len(choices)*42)))
             self.drop_targets_scroll.show()
-            if stage=='destination':
+            if stage in ('destination','extract_destination'):
                 self.drop_settings_button.setText('移動先を編集する');self.drop_settings_button.setEnabled(True);self.drop_settings_button.show()
                 if not destinations and not error:self.drop_notice.setText(self.system_phrase('destination_empty'));self.drop_notice.show()
         self.drop_row.show();self.resize_text();self.activateWindow()

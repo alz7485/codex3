@@ -50,6 +50,7 @@ def condition_title(condition,catalog):
 
 def condition_rows(item,progress,now,metrics,calendar,catalog,work):
     rows=[]
+    metrics=dict(metrics,_growth_costumes=catalog.items['costumes']) if '_growth_character' in metrics else metrics
     for condition in item['conditions']:
         kind=condition['type'];value=None;known=catalog.config is not None
         if known and kind in NUMERIC:
@@ -65,6 +66,7 @@ def condition_rows(item,progress,now,metrics,calendar,catalog,work):
 
 def trophy_text(key,catalog,progress,character,now,metrics,calendar,work,active):
     if not active:metrics={}
+    metrics=dict(metrics,_growth_character=character)
     item=catalog.items['trophies'].get(key);record=progress['trophies'].get(key)
     if item is None:
         return key+'\n\n取得済みの記録を保持しています。パックを再読み込みすると名前や説明を確認できます。'+('\n取得日時：'+record['at'] if record else '')

@@ -16,7 +16,7 @@ from .core import Notice
 from .costumes import CostumeRenderer
 from .dialogue import voice_for
 from .growth import GrowthEngine, GrowthStore, session_locked
-from .growth_content import load_catalog, seed_content
+from .growth_content import load_catalog, seed_content,seed_examples
 from .growth_editor_widgets import frame_caption
 from .exp_popup import ExpPopup
 from .growth_records import collection_rows,next_unlocks,trophy_text
@@ -254,7 +254,7 @@ class GrowthService:
     def __init__(self,host):
         self.host=host;self.window=None;self.error='';self.closed=False;self.notifications=[]
         self.content_root=host.path/'content';self.store=GrowthStore(host.path/'growth.json')
-        try:seed_content(self.content_root)
+        try:seed_content(self.content_root);seed_examples(self.content_root)
         except OSError as e:self.error='サンプルパックを準備できません。保存先をご確認ください。'
         self.engine=GrowthEngine(self.store,load_catalog(self.content_root))
         self.exp_popup=ExpPopup(host.resident,allowed=self.exp_visible,animated=lambda:host.settings.animation)

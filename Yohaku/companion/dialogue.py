@@ -215,8 +215,12 @@ def upgrade(document):
 
 
 def upgrade_system_phrases(document):
-    if 'system_phrases' in document:return document
-    result=deepcopy(document);result['system_phrases']=system_defaults()
+    result=deepcopy(document);stock=system_defaults()
+    if 'system_phrases' not in result:result['system_phrases']=stock
+    elif isinstance(result['system_phrases'],dict):
+        for voice,bank in result['system_phrases'].items():
+            if voice in stock and isinstance(bank,dict):
+                for key in ('extracted_only','extract_destination'):bank.setdefault(key,stock[voice][key])
     # Keep a valid document at its size limit readable; runtime has stock speech.
     return result if document_size(result)<=MAX_BYTES else document
 
