@@ -1,8 +1,10 @@
-# Yohaku v0.34.0
+# Yohaku v0.34.1
 
-**[onedirビルド用ZIP（約14MB）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.34.0-onedir-build.zip)**
+**[onedirビルド用ZIP（約14MB）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.34.1-onedir-build.zip)**
 
-[spec単体](Yohaku.spec) · [5行のコマンド](BUILD_ONEDIR.txt) · [SHA-256](Yohaku-v0.34.0-onedir-build.zip.sha256) · [全ソース](Yohaku-v0.34.0-source.zip)
+[spec単体](Yohaku.spec) · [5行のコマンド](BUILD_ONEDIR.txt) · [SHA-256](Yohaku-v0.34.1-onedir-build.zip.sha256) · [全ソース](Yohaku-v0.34.1-source.zip)
+
+育成のステータス画面をリニューアルしました。キャラ・レベル・EXPのカード、成長の数字、解放予定と衣装の案内をまとめています。
 
 育成ホーム・解放一覧・トロフィーの条件と現在値・衣装の試着を追加しました。衣装は組み合わせを確認してから一括装着できます。[育成画面](../../Yohaku/docs/GROWTH.md)
 

@@ -4,6 +4,7 @@ from PySide6.QtCore import Qt,Signal
 from PySide6.QtWidgets import (QComboBox,QHBoxLayout,QLabel,QLineEdit,QPlainTextEdit,QPushButton,QSplitter,QTreeWidget,QTreeWidgetItem,QVBoxLayout,QWidget)
 from .dialogue import voice_for
 from .growth_records import KIND_LABELS,collection_rows,collection_text
+from .growth_presentation import GrowthCombo
 
 
 def set_detail(widget,text):
@@ -17,10 +18,10 @@ class GrowthCollection(QWidget):
         super().__init__(parent);self.service=service;self.character=None;self.rows={};self.signature=None
         layout=QVBoxLayout(self);filters=QHBoxLayout();layout.addLayout(filters)
         self.search=QLineEdit();self.search.setPlaceholderText('名前・パック名で検索');self.search.setAccessibleName('解放したものを検索');filters.addWidget(self.search,1)
-        self.kind=QComboBox();self.kind.addItem('すべての種類','')
+        self.kind=GrowthCombo();self.kind.addItem('すべての種類','')
         for key,name in KIND_LABELS.items():self.kind.addItem(name,key)
         self.kind.addItem('未読込の記録','missing');filters.addWidget(self.kind)
-        self.state=QComboBox()
+        self.state=GrowthCombo()
         for title,value in [('すべての状態',''),('解放済み','unlocked'),('未解放','locked')]:self.state.addItem(title,value)
         filters.addWidget(self.state)
         self.count=QLabel();layout.addWidget(self.count)
