@@ -34,6 +34,8 @@ class BundleCheckTests(unittest.TestCase):
             self.assertTrue(result['growth_restore_checked'])
             self.assertTrue(result['content_editor_checked'])
             self.assertTrue(result['costume_layers_checked'])
+            self.assertTrue(result['floating_exp_checked'])
+            self.assertTrue(result['editor_preview_checked'])
             self.assertEqual(result['topics'], 76)
             self.assertEqual(result['voices'], 7)
             self.assertFalse((root/'user-data').exists())

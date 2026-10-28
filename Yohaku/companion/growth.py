@@ -171,7 +171,8 @@ class GrowthEngine:
         self.store = store; self.catalog = catalog; self.clock = clock; self.random = chooser
         self.last_clock = clock(); self.last_wall = None; self.last_character = None
         self.data=deepcopy(store.data);self.last_save=self.last_clock
-        self.active_seconds = 0.; self.next_event = self.last_clock + 60
+        self.active_seconds = 0.; self.last_event_check=self.last_clock
+        self.next_event = self.last_clock + (catalog.config['event_interval_seconds'] if catalog.config else 60)
         self.pending = []
 
     def progress(self, character): return self.data['characters'].get(character, fresh_progress())
@@ -214,6 +215,7 @@ class GrowthEngine:
         else: self.active_seconds = 0.
         metrics = dict(metrics, growth_active_minutes=self.active_seconds/60)
         candidate = deepcopy(self.data); p = candidate['characters'].setdefault(character, fresh_progress())
+        previous_exp=p['exp']
         new_day=now.date().isoformat() not in p['days']
         p['seconds'] += dt;p['exp_seconds'] += dt
         interval=config['exp_interval_seconds'];grants=int((p['exp_seconds']+1e-7)//interval)
@@ -233,11 +235,14 @@ class GrowthEngine:
         if candidate != self.data:
             if grants or notifications or new_day or clock-self.last_save>=interval:self.commit(candidate)
             else:self.data=candidate
+        earned=p['exp']-previous_exp
+        if earned>0:notifications.append(dict(kind='exp',amount=earned,character=character))
         return notifications
 
     def choose_event(self, character, voice, now, metrics, calendar, work=('08:30','17:30')):
         clock = self.clock()
         if not self.catalog.config or not self.store.writable or clock < self.next_event: return None
+        self.last_event_check=clock
         self.next_event = clock + self.catalog.config['event_interval_seconds']
         p = self.progress(character); candidates = []
         for kind in ('lines', 'events'):
@@ -274,4 +279,15 @@ class GrowthEngine:
         else: p['equipped'].pop(slot,None)
         self.commit(candidate)
 
-    def reload(self, catalog): self.catalog = catalog  # Progress is never reset.
+    def reload(self, catalog):
+        self.catalog=catalog
+        if catalog.config:
+            self.next_event=max(self.clock(),self.last_event_check+catalog.config['event_interval_seconds'])
+        if not catalog.config or not self.store.writable:return []
+        candidate=deepcopy(self.data);notifications=[]
+        # Existing EXP/seconds and uncredited time are unchanged. New content
+        # becomes available immediately for every already-created character.
+        for character,progress in candidate['characters'].items():
+            if self.update_unlocks(progress,character):notifications.append(dict(kind='level',level=progress['level'],character=character))
+        if candidate!=self.data:self.commit(candidate)
+        return notifications

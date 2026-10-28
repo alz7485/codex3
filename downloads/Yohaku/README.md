@@ -1,23 +1,17 @@
-# Yohaku v0.30.0
+# Yohaku v0.31.0
 
-成長システムの基盤と独立エディタを追加しました。経験値はEXP、起動時間による付与と保存は5分ごと（初期5 EXP）。3キャラの進行を独立保存します。タスクトレイの「一緒に過ごした記録・衣装」から操作し、YohakuContentEditor.exeでパックを編集できます。[使い方・パック追加](../../Yohaku/docs/GROWTH.md)。導入前は[yohaku-v0.29.0-before-growth](https://github.com/alz7485/codex3/tree/yohaku-v0.29.0-before-growth/Yohaku)で保存しています。
+**[onedirビルド用ZIP（約14MB）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.31.0-onedir-build.zip)**
 
-成長システムの基盤と独立エディタを追加しました。経験値はEXP、起動時間による付与と保存は5分ごと（初期5 EXP）。3キャラの進行を独立保存します。タスクトレイの「一緒に過ごした記録・衣装」から操作し、YohakuContentEditor.exeでパックを編集できます。[使い方・パック追加](../../Yohaku/docs/GROWTH.md)。導入前は[yohaku-v0.30.0-before-growth](https://github.com/alz7485/codex3/tree/yohaku-v0.30.0-before-growth/Yohaku)で保存しています。
+[spec単体](Yohaku.spec) · [5行のコマンド](BUILD_ONEDIR.txt) · [SHA-256](Yohaku-v0.31.0-onedir-build.zip.sha256) · [全ソース](Yohaku-v0.31.0-source.zip)
 
-成長システムの基盤と独立エディタを追加しました。経験値はEXP、起動時間による付与と保存は5分ごと（初期5 EXP）。3キャラの進行を独立保存します。タスクトレイの「一緒に過ごした記録・衣装」から操作し、YohakuContentEditor.exeでパックを編集できます。[使い方・パック追加](../../Yohaku/docs/GROWTH.md)。導入前は[yohaku-v0.30.0-before-growth](https://github.com/alz7485/codex3/tree/yohaku-v0.30.0-before-growth/Yohaku)で保存しています。
+EXP獲得時、キャラの頭付近に「+5 EXP」など実際の獲得量をフェードイン・フェードアウトしながら下から上へ表示します。通常は5分ごとに5 EXPを付与・JSON保存します。同時の実績報酬は合計し、吹き出しや操作を遮りません。[アニメーション](../../Yohaku/docs/growth-exp.gif) · [レベルアップ](../../Yohaku/docs/growth-level-up.png) · [ステータス画面](../../Yohaku/docs/growth-status.png)
 
-ユーザー設定・会話・通知・履歴をYohaku.exeの隣の **Data** に保存します。Dataがない初回は旧LocalAppDataからコピーし、既存のDataは上書きしません。更新時はDataも新しいEXEの隣へ持ち越してください。[保存先と移行・更新手順](../../Yohaku/docs/PORTABLE_DATA.md)
+タスクトレイの「一緒に過ごした記録・衣装」でキャラ別の進行と装備を確認します。独立したYohakuContentEditor.exeで会話・演出・実績・レベル報酬・衣装を編集できます。衣装の連続プレビュー、報酬の名前検索、保存競合後の同じパックの再読み込みに対応します。[編集画面](../../Yohaku/docs/growth-editor.png) · [使い方・追加方法・制約](../../Yohaku/docs/GROWTH.md)
 
-つづりを中心に、足の付け根が滑る動きを見直しました。付け根から靴までをつなぎ、小さな歩幅で歩きます。[歩行GIF](../../Yohaku/docs/walk-alternation.gif) · [歩行の説明](../../Yohaku/docs/TIMING_MOTION.md) ドラッグ中のつままれた姿と通知入力中のメモ動作も継続します。[表示例](../../Yohaku/docs/action-poses.png) · [動作](../../Yohaku/docs/ACTION_POSES.md) 「預ける」と「預けたものを見る」の一時ランチャーを使えます。本体は移動・削除せず、アイコン付き一覧からダブルクリックで開きます。保持期間を1日・1週間・1ヶ月・無期限から設定できます。[使い方とリセット](../../Yohaku/docs/SHELF.md) · [表示例](../../Yohaku/docs/shelf.png)
+ZIPを新しい空の場所に展開し、Yohaku.specとmain.pyが並ぶYohakuフォルダでONEDIR_COMMAND.txtの5行を順に実行します。Windows 11・64bit Python 3.11/3.12を使用し、バッチや仮想環境の有効化は不要です。testsは要求しません。Yohaku.exeとYohakuContentEditor.exeを同じdist/Yohaku内に作成します。_internalを含むフォルダ全体を配布してください。
 
-**[onedir用ZIP（約14MB）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.30.0-onedir-build.zip)**
+ユーザー設定・成長・編集したパックは、EXEの隣のDataに保存します。更新時は使用中のData全体も新しいEXEの隣へ持ち越してください。編集済みのbaseパックは上書きしません。[保存先・移行](../../Yohaku/docs/PORTABLE_DATA.md)
 
-[spec単体](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku.spec) · [5行のコマンドと手順](BUILD_ONEDIR.txt) · [SHA-256](Yohaku-v0.30.0-onedir-build.zip.sha256)
+成長システム導入前の保存地点は **[yohaku-v0.29.0-before-growth](https://github.com/alz7485/codex3/tree/yohaku-v0.29.0-before-growth/Yohaku)** です。タグは維持しており、実PCのDataは別途バックアップしてください。
 
-ZIPを新しい空の場所へ展開し、Yohaku.specとmain.pyが並ぶYohakuフォルダーでONEDIR_COMMAND.txtの5行を順番に実行します。Windows 11の64bit Python 3.11/3.12を使用し、バッチや仮想環境の有効化は不要です。testsは同梱・要求しません。検査マニフェストは実際のビルド用ファイルだけです。_internalを含むdist/Yohakuフォルダー全体を配布してください。テキスト化・分割はしていません。
-
-PDFを渡すと「ファイルを預ける・移動する・印刷する・キャンセル」、その他のファイル・フォルダーは「預ける・移動する・キャンセル」。次の吹き出しで移動先の表示名を選びます。「移動先を編集する」は吹き出しを閉じ、名前とフルパスを＋ボタンで追加する編集画面を開きます。JSONに保存します。
-
-PDFの印刷は、次の吹き出しからA4・A3・用紙サイズに合わせる、を押すとWindowsの既定プリンターへ直接送信します。A4を超えるページはA3に収め、文書の色も自動判定します。ZIPも含むその他のファイルは移動のみです。3体の小道具ポーズ・全7性格・通知の文字装飾は継続します。
-
-[操作・JSON・印刷の詳細](../../Yohaku/docs/FILE_DROP.md) · [吹き出しの表示例](../../Yohaku/docs/file-drop.png) · [移動先の編集画面](../../Yohaku/docs/file-drop-settings.png) · [Windows検証](https://github.com/alz7485/codex3/actions/workflows/yohaku-windows.yml)
+つづり・ビット・ペギーの3体と全7性格、予定・メール・ファイル履歴・一時ランチャー・ファイル移動・PDF印刷を継続します。[ファイル処理](../../Yohaku/docs/FILE_DROP.md) · [預ける機能](../../Yohaku/docs/SHELF.md) · [Windows検証](https://github.com/alz7485/codex3/actions/workflows/yohaku-windows.yml)

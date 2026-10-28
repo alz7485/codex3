@@ -63,3 +63,15 @@ class ContentTests(unittest.TestCase):
     def test_atomic_save_leaves_no_temporary_file_and_partial_read_never_occurs(self):
         atomic_json(self.path,self.doc);self.assertEqual(read_json(self.path),self.doc)
         self.assertFalse(list(self.folder.glob('.*.tmp')))
+    def test_atomic_save_hash_matches_exact_utf8_bytes_and_oversized_save_keeps_original(self):
+        from companion.growth_content import MAX_JSON,read_json_snapshot
+        import hashlib
+        digest=atomic_json(self.path,self.doc)
+        original=self.path.read_bytes();self.assertEqual(digest,hashlib.sha256(original).hexdigest())
+        self.assertNotIn(b'\r\n',original);self.assertEqual(read_json_snapshot(self.path),(self.doc,digest))
+        self.assertRaises(ContentError,atomic_json,self.path,{'text':'x'*MAX_JSON})
+        self.assertEqual(self.path.read_bytes(),original)
+    def test_unreadable_pack_directory_is_reported_without_crashing_or_using_default_config(self):
+        from unittest.mock import patch
+        with patch.object(Path,'iterdir',side_effect=PermissionError('synthetic')):catalog=load_catalog(self.root)
+        self.assertIsNone(catalog.config);self.assertTrue(catalog.errors)

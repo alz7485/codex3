@@ -2,6 +2,7 @@
 from copy import deepcopy
 from datetime import date
 import json
+import hashlib
 import math
 from pathlib import Path, PurePosixPath
 import re
@@ -46,21 +47,29 @@ def atomic_json(path, value):
     """Unique temp files allow the editor and reader to coexist safely."""
     path = Path(path); path.parent.mkdir(parents=True, exist_ok=True)
     payload = json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False) + '\n'
+    require(len(payload.encode('utf-8'))<=MAX_JSON,'JSONは2MBまでです。')
     temporary = None
     try:
-        with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', dir=path.parent,
+        with tempfile.NamedTemporaryFile(mode='w', encoding='utf-8', newline='\n', dir=path.parent,
                                          prefix='.'+path.name+'-', suffix='.tmp', delete=False) as f:
             temporary = Path(f.name); f.write(payload); f.flush()
             import os
             os.fsync(f.fileno())
         temporary.replace(path)
+        return hashlib.sha256(payload.encode('utf-8')).hexdigest()
     finally:
         if temporary is not None: temporary.unlink(missing_ok=True)
 
 
 def read_json(path):
-    require(path.stat().st_size <= MAX_JSON, 'JSONは2MBまでです。')
-    return json.loads(path.read_text(encoding='utf-8-sig'), parse_constant=lambda _: (_ for _ in ()).throw(ContentError('有限の数値を指定してください。')))
+    return read_json_snapshot(path)[0]
+
+
+def read_json_snapshot(path):
+    with Path(path).open('rb') as stream:payload=stream.read(MAX_JSON+1)
+    require(len(payload)<=MAX_JSON,'JSONは2MBまでです。')
+    document=json.loads(payload.decode('utf-8-sig'),parse_constant=lambda _: (_ for _ in ()).throw(ContentError('有限の数値を指定してください。')))
+    return document,hashlib.sha256(payload).hexdigest()
 
 
 def asset_path(root, value):
@@ -194,7 +203,9 @@ def load_catalog(content_root):
     catalog = Catalog(); candidates = []
     root = Path(content_root)
     if root.is_dir():
-        folders = sorted(root.iterdir())
+        try:folders = sorted(root.iterdir())
+        except OSError:
+            catalog.errors.append('コンテンツ保存先の一覧を読み込めません。保存先の権限をご確認ください。');folders=[]
         if len(folders) > 100: catalog.errors.append('パックは100個までです。超過分は読み込みません。')
         for folder in folders[:100]:
             if not folder.is_dir() or folder.is_symlink() or folder.name.startswith('.'): continue

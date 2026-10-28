@@ -141,7 +141,19 @@ def check_bundle():
             content_editor.fields['name'].setText('編集したサンプル')
             if not content_editor.save() or content_editor.grab().isNull():raise ValueError('Content editor failed')
             if load_catalog(content).items['lines']['base:company']['name']!='編集したサンプル':raise ValueError('Edited content reload failed')
+            content_editor.kind.setCurrentIndex(content_editor.kind.findData('costumes'))
+            if not content_editor.update_preview():raise ValueError('Costume editor preview failed')
+            content_editor.toggle_preview();app.processEvents()
+            if not content_editor.preview_timer.isActive() or content_editor.preview.grab().isNull():raise ValueError('Animated costume preview failed')
+            content_editor.stop_preview()
         finally:content_editor.hide();content_editor.deleteLater()
+        from .exp_popup import ExpPopup
+        exp_mascot=Mascot();exp_mascot.show();exp_clock=[1000.]
+        exp_popup=ExpPopup(exp_mascot,clock=lambda:exp_clock[0])
+        try:
+            exp_popup.show_gain(10);exp_clock[0]+=.6;exp_popup.advance()
+            if exp_popup.grab().isNull():raise ValueError('Floating EXP rendering failed')
+        finally:exp_popup.cancel();exp_mascot.hide();exp_mascot.deleteLater()
     return {'version': VERSION, 'python': platform.python_version(), 'qt': qVersion(),
             'platform': sys.platform, 'success': True, 'character_frames_rendered': rendered,
             'walk_frames_rendered':walk_rendered,
@@ -149,7 +161,8 @@ def check_bundle():
             'encrypted_zip_checked': True, 'pdf_render_checked': True, 'prop_poses_rendered': prop_rendered,
             'pickup_poses_rendered':pickup_rendered,'note_poses_rendered':notes_rendered,
             'drop_stages_rendered': 3, 'destination_editor_checked': True, 'shelf_launcher_checked': True,
-            'growth_restore_checked':True,'costume_layers_checked':True,'content_editor_checked':True}
+            'growth_restore_checked':True,'costume_layers_checked':True,'content_editor_checked':True,
+            'floating_exp_checked':True,'editor_preview_checked':True}
 
 
 def run(output):
