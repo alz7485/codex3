@@ -67,9 +67,20 @@ class GrowthUiTests(unittest.TestCase):
         try:
             host.panel.hide();service=host.growth_service;service.notifications=[dict(kind='level',level=2,character='A')]
             host.bubble.show_one_shot_form();self.assertIsNone(service.next_notice(datetime.now().astimezone()))
+            self.assertFalse(host.resident.level_up.active)
             host.bubble.hide();host.engine.paused_until=None
             with patch('companion.core.is_quiet',return_value=False):notice=service.next_notice(datetime.now().astimezone())
             self.assertIsNotNone(notice);self.assertIn('Lv.2',notice.text)
+            self.assertTrue(host.resident.level_up.active)
+            before_x=host.resident.x();host.animate();self.assertEqual(host.resident.x(),before_x)
+            host.resident.raise_mail();self.assertFalse(host.resident.level_up.active)
+            service.notifications=[dict(kind='level',level=3,character='A')]
+            with patch('companion.core.is_quiet',return_value=False):
+                self.assertIsNone(service.next_notice(datetime.now().astimezone()))
+                self.assertEqual(len(service.notifications),1)
+                host.resident.clear_props();host.settings.animation=False
+                self.assertIn('Lv.3',service.next_notice(datetime.now().astimezone()).text)
+                self.assertFalse(host.resident.level_up.active)
             host.engine.context_options.error='synthetic corrupt calendar'
             self.assertIsNone(service.calendar());host.engine.context_options.error=''
             self.assertTrue((data/'growth.json').exists());before=deepcopy(service.store.data);service.reload();self.assertEqual(service.store.data,before)
