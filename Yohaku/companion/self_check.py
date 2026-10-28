@@ -153,6 +153,12 @@ def check_bundle():
         try:
             exp_popup.show_gain(10);exp_clock[0]+=.6;exp_popup.advance()
             if exp_popup.grab().isNull():raise ValueError('Floating EXP rendering failed')
+            for character in ('A','B','E'):
+                exp_mascot.set_character(character)
+                exp_mascot.level_up.clock=lambda:exp_clock[0]
+                exp_mascot.level_up.start();exp_clock[0]+=.5
+                if not exp_mascot.level_up.active or exp_mascot.grab().isNull():raise ValueError('Level-up animation failed')
+                exp_mascot.level_up.cancel()
         finally:exp_popup.cancel();exp_mascot.hide();exp_mascot.deleteLater()
     return {'version': VERSION, 'python': platform.python_version(), 'qt': qVersion(),
             'platform': sys.platform, 'success': True, 'character_frames_rendered': rendered,
@@ -162,7 +168,7 @@ def check_bundle():
             'pickup_poses_rendered':pickup_rendered,'note_poses_rendered':notes_rendered,
             'drop_stages_rendered': 3, 'destination_editor_checked': True, 'shelf_launcher_checked': True,
             'growth_restore_checked':True,'costume_layers_checked':True,'content_editor_checked':True,
-            'floating_exp_checked':True,'editor_preview_checked':True}
+            'floating_exp_checked':True,'editor_preview_checked':True,'level_up_animation_checked':True}
 
 
 def run(output):

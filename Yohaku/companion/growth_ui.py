@@ -214,12 +214,17 @@ class GrowthService:
                 h.preview,h.menu,h.file_drop_service.editor,h.file_drop_service.destination_editor,h.file_drop_service.print_dialog)):return None
         if QApplication.activeModalWidget() is not None or QApplication.activePopupWidget() is not None or session_locked():return None
         if h.file_drop_service.busy:return None
+        if (not h.resident.isVisible() or h.resident.press_position is not None or h.resident.drop_hover or h.resident.dragging
+                or h.resident.mail_raised or h.resident.calendar_checking or h.resident.taking_notes
+                or h.resident.held_icon is not None):return None
         if h.dialogue.data['options']['suppress_during_meetings'] and any(e.start<=now<e.end for e in h.events):return None
         voice=voice_for(h.settings,h.dialogue.data)
         self.notifications=[n for n in self.notifications if n['character']==h.settings.character]
         if self.notifications:
             n=self.notifications.pop(0)
             if n['kind']=='level':
+                h.motion.start_soon()
+                if h.settings.animation:h.resident.level_up.start()
                 # Do not inject another personality through status notifications.
                 return Notice('',f'Lv.{n["level"]}になりました。\n一緒に過ごした記録から、解放したものを確認できます。',True,expression='happy',kind='notification')
             item=self.engine.catalog.items['trophies'].get(n['key'])
@@ -238,6 +243,7 @@ class GrowthService:
         if self.closed:return
         self.sample();self.closed=True;self.timer.stop()
         self.exp_popup.cancel()
+        self.host.resident.level_up.cancel()
         try:self.engine.flush()
         except (OSError,ValueError):self.error='終了時の成長記録を保存できませんでした。';self.write_errors()
         if self.window:self.window.hide()

@@ -51,9 +51,28 @@ def exp_scene(app,output):
     popup.cancel();mascot.hide();popup.deleteLater();mascot.deleteLater()
 
 
+def level_animation_scene(app,output):
+    clock=[1000.];mascots=[];folder=output/'level-frames';folder.mkdir(exist_ok=True)
+    for character in ('A','B','E'):
+        mascot=Mascot(100,character=character);mascot.show();app.processEvents()
+        mascot.level_up.clock=lambda:clock[0];mascot.level_up.start();mascot.level_up.timer.stop();mascots.append(mascot)
+    for index in range(57):
+        clock[0]=1000.+index*.05
+        scene=QPixmap(680,300);scene.fill(QColor('#edf2ef'));p=QPainter(scene)
+        p.setFont(QFont(app.font().family(),13));p.setPen(QColor('#344e44'));p.drawText(28,38,'レベルアップ：3体それぞれの喜ぶ動き')
+        p.fillRect(0,260,680,40,QColor('#fafcfb'));p.setPen(QColor('#cdd8d1'));p.drawLine(0,260,680,260)
+        for n,mascot in enumerate(mascots):
+            x=100+n*190;p.drawPixmap(x,160,mascot.grab());p.setPen(QColor('#344e44'))
+            p.drawText(x,285,('つづり','ビット','ペギー')[n])
+        p.end();scene.save(str(folder/f'level_{index:02}.png'))
+        if index==10:scene.save(str(output/'level-animation.png'))
+    for mascot in mascots:mascot.level_up.cancel();mascot.hide();mascot.deleteLater()
+
+
 def capture(output):
     output=Path(output);output.mkdir(parents=True,exist_ok=True);app=create_application()
     exp_scene(app,output)
+    level_animation_scene(app,output)
     message_scene(app,output/'level-up.png',Notice('','Lv.2になりました。\n一緒に過ごした記録から、解放したものを確認できます。',True,expression='happy',kind='notification'),'レベルアップ：実装済みのメッセージ',2)
     with TemporaryDirectory(prefix='yohaku-growth-preview-') as temporary:
         root=Path(temporary);seed_content(root/'content');catalog=load_catalog(root/'content')

@@ -286,6 +286,8 @@ class Mascot(QWidget):
         self.setFixedSize(size, size)
         self.frame_index = None
         self.costumes = None
+        from .level_up_animation import LevelUpAnimation
+        self.level_up = LevelUpAnimation(self)
         self.growth_effect_until = 0.0
         self.growth_effect_timer = QTimer(self)
         self.growth_effect_timer.setInterval(33)
@@ -316,6 +318,7 @@ class Mascot(QWidget):
         self.set_character(character)
 
     def transition_prop(self, previous, target):
+        self.level_up.cancel()
         self.prop_timer.stop()
         self.prop_from = previous; self.prop_target = target
         self.prop_started = time.monotonic()
@@ -388,6 +391,7 @@ class Mascot(QWidget):
         self.transition_prop(previous, self.visible_prop())
 
     def set_character(self, character):
+        self.level_up.cancel()
         self.character = character if character in CHARACTERS else "A"
         self.pixmap = character_pixmap(self.character)
         self.previous_frame = None
@@ -411,6 +415,10 @@ class Mascot(QWidget):
     def start_growth_effect(self):
         self.growth_effect_until=time.monotonic()+4
         self.growth_effect_timer.start();self.update()
+
+    def hideEvent(self,event):
+        self.level_up.cancel()
+        super().hideEvent(event)
 
     def advance_growth_effect(self):
         if time.monotonic()>=self.growth_effect_until or not self.isVisible():self.growth_effect_timer.stop()
@@ -441,6 +449,8 @@ class Mascot(QWidget):
             size = prop.size().scaled(QSize(self.width()-6, self.height()-6), Qt.AspectRatioMode.KeepAspectRatio)
             target = QRectF((self.width()-size.width())/2, self.height()-size.height()-self.bottom_padding, size.width(), size.height())
             p.drawPixmap(target, prop, QRectF(prop.rect())); p.end(); return
+        if self.level_up.active:
+            self.level_up.draw(p,character_frames(self.character));p.end();return
         p.translate(self.subpixel, self.bob)
         p.translate(self.width() / 2, self.height() - 4)
         p.rotate(self.sway)
@@ -927,6 +937,7 @@ class Resident(Mascot):
 
     def dragEnterEvent(self, event):
         if self.drop_allowed() and self.dropped_path(event) and event.possibleActions() & Qt.DropAction.CopyAction:
+            self.level_up.cancel()
             self.drop_hover = True
             event.setDropAction(Qt.DropAction.CopyAction); event.accept()
         else:
@@ -949,6 +960,7 @@ class Resident(Mascot):
             event.ignore()
 
     def mousePressEvent(self, event):
+        self.level_up.cancel()
         if event.button() == Qt.MouseButton.RightButton:
             self.context_requested.emit(event.globalPosition().toPoint())
         elif event.button() == Qt.MouseButton.LeftButton:
@@ -2182,6 +2194,7 @@ class Controller(QObject):
                 self.animation_timer.start()
         else:
             self.animation_timer.stop()
+            self.resident.level_up.cancel()
             # Keep unread reactions pinned. Ordinary static poses use their
             # wall-clock timer to restore the neutral front pose.
             if self.pending_reaction is not None and self.bubble.notice is self.pending_reaction:
@@ -2204,6 +2217,8 @@ class Controller(QObject):
             return
         now = time.monotonic()
         dt, self.last_motion_time = now - self.last_motion_time, now
+        if self.resident.level_up.active:
+            return
         if self.resident.press_position is not None:
             return  # Keep both the native window and its pose still under the pointer.
         area = self.resident_area()
@@ -2937,6 +2952,7 @@ class Controller(QObject):
             return  # Keep scheduled messages from replacing unfinished input.
         departure = self.engine.departure_notice(now, self.hidden or self.user_hidden, system_uptime_seconds)
         if departure:
+            self.resident.level_up.cancel()
             try:
                 self.engine.persist(now)
             except OSError:
@@ -2957,6 +2973,7 @@ class Controller(QObject):
             self.panel.reminders_status.setText('通知履歴を保存できません。保存先の権限をご確認ください。')
             return
         if notice:
+            self.resident.level_up.cancel()
             self.motion.react(notice.expression, speaking=True)
             self.bubble.display(notice)
             self.position()
