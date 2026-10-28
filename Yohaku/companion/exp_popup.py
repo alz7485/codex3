@@ -15,7 +15,7 @@ def visual_state(elapsed,animated=True):
     t=max(0.,min(1.,elapsed/DURATION))
     if not animated:return 0.,1.
     opacity=max(0.,min(1.,elapsed/.20,(DURATION-elapsed)/.50))
-    return 34*t,opacity
+    return 28*t,opacity
 
 
 def exp_text(amount):
