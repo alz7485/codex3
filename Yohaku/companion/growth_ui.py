@@ -122,15 +122,19 @@ class GrowthService:
             now=datetime.now().astimezone();locked=session_locked();notices=[]
             previous=self.engine.last_character
             if previous is not None and previous!=h.settings.character:
-                notices+=self.engine.step(previous,now,h.engine.context,h.engine.context_options.calendar(),self.work(),locked=locked)
+                notices+=self.engine.step(previous,now,h.engine.context,self.calendar(),self.work(),locked=locked)
             notices+=self.engine.step(h.settings.character,now,h.engine.context,
-                       h.engine.context_options.calendar(),self.work(),locked=locked)
+                       self.calendar(),self.work(),locked=locked)
             self.notifications=(self.notifications+notices)[-20:];self.error='';self.apply_costumes()
         except (OSError,ValueError,TypeError,KeyError) as e:
             self.error='成長を保存できませんでした。保存先とData/growth.jsonをご確認ください。';self.write_errors()
         if self.window and self.window.isVisible():self.window.refresh()
 
     def work(self):return tuple(self.host.dialogue.data['options'][k] for k in ('work_start','work_end'))
+
+    def calendar(self):
+        options=self.host.engine.context_options
+        return None if options.error else options.calendar()
 
     def apply_costumes(self):
         h=self.host;p=self.engine.progress(h.settings.character)
@@ -175,7 +179,7 @@ class GrowthService:
             item=self.engine.catalog.items['trophies'].get(n['key'])
             if item:return Notice('',item['texts'].get(voice,item['texts'].get('*',item['name']))+'\n「'+item['name']+'」を記録しました。',True,expression=item['expression'],kind='notification')
             return None
-        try:item=self.engine.choose_event(h.settings.character,voice,now,h.engine.context,h.engine.context_options.calendar(),self.work())
+        try:item=self.engine.choose_event(h.settings.character,voice,now,h.engine.context,self.calendar(),self.work())
         except (OSError,ValueError,TypeError,KeyError):self.error='演出の記録を保存できませんでした。';return None
         if item:
             self.notifications=(self.notifications+self.engine.pending)[-20:];self.engine.pending=[]

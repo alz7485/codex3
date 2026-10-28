@@ -142,7 +142,9 @@ def condition_value(c, progress, now, metrics, calendar, config, work):
     if kind == 'continuous_input': return metrics.get('growth_active_minutes')
     if kind == 'app_count': return metrics.get('visible_apps')
     if kind == 'total_minutes': return progress['seconds']/60
-    if kind == 'streak_days': return streak_days(progress['days'], now, calendar, config['streak_mode'])
+    if kind == 'streak_days':
+        if config['streak_mode']=='business' and calendar is None:return None
+        return streak_days(progress['days'], now, calendar, config['streak_mode'])
     if kind == 'event_count': return progress['events'].get(c['event_id'], {}).get('count', 0)
     return None
 
@@ -157,9 +159,9 @@ def condition_matches(c, progress, now, metrics, calendar, config, work):
         clock = now.strftime('%H:%M'); start, end = c['start'], c['end']
         return start <= clock <= end if start <= end else clock >= start or clock <= end
     if kind == 'date_range': return c['start'] <= now.date().isoformat() <= c['end']
-    if kind == 'day_kind': return calendar.is_business_day(now.date()) == (c['value'] == 'business')
+    if kind == 'day_kind': return calendar is not None and calendar.is_business_day(now.date()) == (c['value'] == 'business')
     if kind == 'outside_hours':
-        return (metrics.get('idle_minutes') is not None and metrics['idle_minutes']*60 < config['idle_threshold_seconds']
+        return (calendar is not None and number(metrics.get('idle_minutes'),0,1e9) and metrics['idle_minutes']*60 < config['idle_threshold_seconds']
                 and (not calendar.is_business_day(now.date()) or not work[0] <= now.strftime('%H:%M') < work[1]))
     return False
 

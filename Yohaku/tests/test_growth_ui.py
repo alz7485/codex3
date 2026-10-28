@@ -69,6 +69,8 @@ class GrowthUiTests(unittest.TestCase):
             host.bubble.hide();host.engine.paused_until=None
             with patch('companion.core.is_quiet',return_value=False):notice=service.next_notice(datetime.now().astimezone())
             self.assertIsNotNone(notice);self.assertIn('Lv.2',notice.text)
+            host.engine.context_options.error='synthetic corrupt calendar'
+            self.assertIsNone(service.calendar());host.engine.context_options.error=''
             self.assertTrue((data/'growth.json').exists());before=deepcopy(service.store.data);service.reload();self.assertEqual(service.store.data,before)
             service.show();self.assertTrue(service.window.isVisible());self.assertIn('EXP',service.window.summary.text())
         finally:

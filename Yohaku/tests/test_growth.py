@@ -127,6 +127,12 @@ class GrowthTests(unittest.TestCase):
         self.assertFalse(condition_matches(c,p,self.now,{},self.calendar,self.catalog.config,('08:30','17:30')))
         c=dict(type='metric',metric='until_work_end_minutes',op='<=',value=-5)
         self.assertTrue(condition_matches(c,p,self.now,{'until_work_end_minutes':-10},self.calendar,self.catalog.config,('08:30','17:30')))
+    def test_missing_calendar_never_awards_holiday_outside_hours_or_business_streak(self):
+        p=fresh_progress();p['days']=[self.now.date().isoformat()];config=dict(self.catalog.config,streak_mode='business')
+        for c in (dict(type='day_kind',value='business'),dict(type='day_kind',value='holiday'),dict(type='outside_hours'),dict(type='streak_days',op='>=',value=0)):
+            self.assertFalse(condition_matches(c,p,self.now.replace(hour=22),{'idle_minutes':0},None,config,('08:30','17:30')))
+        config['streak_mode']='calendar'
+        self.assertTrue(condition_matches(dict(type='streak_days',op='>=',value=1),p,self.now,{},None,config,('08:30','17:30')))
     def test_overnight_date_range_day_kind_and_event_count_conditions(self):
         p=fresh_progress();cases=[dict(type='time_range',start='22:00',end='06:00'),dict(type='date_range',start='2026-10-01',end='2026-10-31'),dict(type='day_kind',value='business'),dict(type='event_count',event_id='base:small_sparkle',op='>=',value=1)]
         p['events']['base:small_sparkle']={'count':1}
