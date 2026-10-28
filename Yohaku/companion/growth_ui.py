@@ -6,10 +6,10 @@ import sys
 import time
 import math
 
-from PySide6.QtCore import QTimer, Qt
+from PySide6.QtCore import QSize, QTimer, Qt
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QFormLayout, QHBoxLayout, QLabel,
-    QMainWindow, QPlainTextEdit, QPushButton, QProgressBar, QSplitter, QTabWidget, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget)
+    QMainWindow, QPlainTextEdit, QPushButton, QProgressBar, QScrollArea, QSplitter, QStyle, QTabWidget, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget)
 
 from .characters import CHARACTERS
 from .core import Notice
@@ -21,62 +21,94 @@ from .growth_editor_widgets import frame_caption
 from .exp_popup import ExpPopup
 from .growth_records import collection_rows,next_unlocks,trophy_text
 from .growth_records_ui import GrowthCollection,set_detail
+from .growth_presentation import GROWTH_STYLE,GrowthCombo,MetricCard,PortraitStage,card,text_label
 
 
 class GrowthWindow(QMainWindow):
     def __init__(self, service):
-        super().__init__(); self.service = service
-        self.setWindowTitle('Yohaku — 一緒に過ごした記録'); self.resize(960,780);self.setMinimumSize(800,650)
-        root = QWidget(); self.setCentralWidget(root); layout = QVBoxLayout(root)
-        self.character = QComboBox()
-        for key,name in CHARACTERS.items(): self.character.addItem(name,key)
-        self.character.setCurrentIndex(list(CHARACTERS).index(service.host.settings.character))
+        super().__init__();self.service=service
+        self.setWindowTitle('Yohaku — 一緒に過ごした記録');self.setMinimumSize(800,650)
+        area=self.screen().availableGeometry();self.resize(min(980,max(800,area.width()-48)),min(820,max(650,area.height()-48)))
+        self.setStyleSheet(GROWTH_STYLE)
+        root=QWidget();root.setObjectName('growthRoot');self.setCentralWidget(root)
+        layout=QVBoxLayout(root);layout.setContentsMargins(24,22,24,20);layout.setSpacing(15)
+        header=QHBoxLayout();layout.addLayout(header)
+        title=QVBoxLayout();title.setSpacing(4);header.addLayout(title,1)
+        title.addWidget(text_label('一緒に過ごした記録','growthTitle'))
+        self.subtitle=text_label('少しずつ育つ、いつもの相棒。','growthSubtitle');title.addWidget(self.subtitle)
+        header.addWidget(text_label('記録を見るキャラ'))
+        self.character=GrowthCombo();self.character.setMinimumWidth(155);self.character.setIconSize(QSize(24,24));self.character.setAccessibleName('記録を見るキャラクター')
+        from .ui import Mascot,character_pixmap
+        for key,name in CHARACTERS.items():self.character.addItem(QIcon(character_pixmap(key)),name,key)
+        self.character.setCurrentIndex(list(CHARACTERS).index(service.host.settings.character));header.addWidget(self.character)
         self.character.currentIndexChanged.connect(self.refresh)
-        layout.addWidget(self.character)
-        self.summary = QLabel(); self.summary.setWordWrap(True); layout.addWidget(self.summary)
-        self.exp_bar=QProgressBar();self.exp_bar.setRange(0,1000);self.exp_bar.setTextVisible(False);self.exp_bar.setMaximumHeight(9);layout.addWidget(self.exp_bar)
-        self.status = QLabel(); self.status.setWordWrap(True); layout.addWidget(self.status)
-        tabs = QTabWidget();self.tabs=tabs;layout.addWidget(tabs,1)
-        from .ui import Mascot
-        home=QWidget();hl=QVBoxLayout(home);top=QHBoxLayout();hl.addLayout(top)
-        self.home_preview=Mascot(126);self.home_preview.frame_index=24;top.addWidget(self.home_preview)
-        facts=QVBoxLayout();top.addLayout(facts,1)
-        self.next_level=QLabel();self.next_level.setWordWrap(True);self.next_level.setStyleSheet('font-size:18px; font-weight:600; color:#355e4e;');facts.addWidget(self.next_level)
-        self.collection_summary=QLabel();self.collection_summary.setWordWrap(True);facts.addWidget(self.collection_summary)
-        heading=QLabel('次に解放されるもの');heading.setStyleSheet('font-size:16px; font-weight:600;');hl.addWidget(heading)
-        self.next_reward=QLabel();self.next_reward.setWordWrap(True);self.next_reward.setTextFormat(Qt.TextFormat.PlainText);hl.addWidget(self.next_reward)
-        library_button=QPushButton('解放一覧を見る');hl.addWidget(library_button)
-        note=QLabel('一緒に過ごした時間が、少しずつEXPになります。\n会話や衣装はレベルに応じて増え、性格は選んだままです。\n追加したパックの内容は「パックを再読み込み」で反映できます。');note.setWordWrap(True);hl.addWidget(note);hl.addStretch()
+
+        hero,hero_layout=card('growthHero',16);layout.addWidget(hero)
+        hero_row=QHBoxLayout();hero_row.setSpacing(22);hero_layout.addLayout(hero_row)
+        self.portrait_stage=PortraitStage();self.home_preview=Mascot(126);self.home_preview.frame_index=24
+        self.portrait_stage.content.addWidget(self.home_preview,alignment=Qt.AlignmentFlag.AlignCenter);hero_row.addWidget(self.portrait_stage)
+        hero_info=QVBoxLayout();hero_info.setContentsMargins(0,5,12,5);hero_info.setSpacing(10);hero_row.addLayout(hero_info,1)
+        identity=QHBoxLayout();self.hero_name=text_label('','growthName');identity.addWidget(self.hero_name)
+        self.level_badge=text_label('','growthLevel');self.level_badge.setAlignment(Qt.AlignmentFlag.AlignCenter);identity.addStretch();identity.addWidget(self.level_badge);hero_info.addLayout(identity)
+        exp_row=QHBoxLayout();self.next_level=text_label('','growthNext');exp_row.addWidget(self.next_level,1)
+        self.exp_value=text_label();self.exp_value.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignVCenter);exp_row.addWidget(self.exp_value);hero_info.addLayout(exp_row)
+        self.exp_bar=QProgressBar();self.exp_bar.setRange(0,1000);self.exp_bar.setTextVisible(False);self.exp_bar.setFixedHeight(10);self.exp_bar.setAccessibleName('次のレベルまでのEXP');hero_info.addWidget(self.exp_bar)
+        self.summary=text_label();hero_info.addWidget(self.summary)
+
+        tabs=QTabWidget();self.tabs=tabs;tabs.setDocumentMode(True);tabs.tabBar().setDrawBase(False);layout.addWidget(tabs,1)
+        home=QScrollArea();home.setWidgetResizable(True);home.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        home_body=QWidget();home.setWidget(home_body);hl=QVBoxLayout(home_body);hl.setContentsMargins(0,1,2,2);hl.setSpacing(14)
+        stats=QHBoxLayout();stats.setSpacing(12);hl.addLayout(stats)
+        self.metrics={}
+        for key,label in (('time','一緒に過ごした時間'),('speech','会話・演出'),('costumes','衣装'),('trophies','トロフィー')):
+            metric=MetricCard(label);self.metrics[key]=metric;stats.addWidget(metric,1)
+        cards=QHBoxLayout();cards.setSpacing(14);hl.addLayout(cards)
+        reward,reward_layout=card();cards.addWidget(reward,3)
+        reward_heading=QHBoxLayout();reward_heading.addWidget(text_label('次に解放されるもの','growthSection'));reward_heading.addStretch()
+        self.reward_level=text_label('','growthRewardLevel');reward_heading.addWidget(self.reward_level);reward_layout.addLayout(reward_heading)
+        self.next_reward=text_label('','growthSection');reward_layout.addWidget(self.next_reward);reward_layout.addStretch()
+        library_button=QPushButton('解放一覧を見る');library_button.setObjectName('growthPrimary');reward_layout.addWidget(library_button)
+        wardrobe,wardrobe_layout=card();cards.addWidget(wardrobe,2)
+        wardrobe_layout.addWidget(text_label('いまの装い','growthSection'));self.equipment_summary=text_label();wardrobe_layout.addWidget(self.equipment_summary);wardrobe_layout.addStretch()
+        costume_button=QPushButton('衣装を試す');wardrobe_layout.addWidget(costume_button)
+        hl.addWidget(text_label('自分のペースで、一緒の時間を重ねていきましょう。'));hl.addStretch()
         tabs.addTab(home,'育成ホーム')
-        trophy_page = QWidget(); tl = QVBoxLayout(trophy_page)
+
+        trophy_page=QWidget();tl=QVBoxLayout(trophy_page);tl.setContentsMargins(0,1,0,0)
         trophy_split=QSplitter(Qt.Orientation.Vertical);tl.addWidget(trophy_split)
-        self.trophies = QTreeWidget(); self.trophies.setHeaderLabels(['トロフィー','状態・日時','説明／最高値'])
-        self.trophies.setColumnWidth(0,180); self.trophies.setColumnWidth(1,180);trophy_split.addWidget(self.trophies)
-        self.trophy_detail=QPlainTextEdit();self.trophy_detail.setReadOnly(True);trophy_split.addWidget(self.trophy_detail);trophy_split.setSizes([240,230])
-        self.trophies.currentItemChanged.connect(self.show_trophy_detail)
-        tabs.addTab(trophy_page,'トロフィー')
+        self.trophies=QTreeWidget();self.trophies.setHeaderLabels(['トロフィー','状態・日時','説明／最高値'])
+        self.trophies.setColumnWidth(0,185);self.trophies.setColumnWidth(1,180);self.trophies.setRootIsDecorated(False);trophy_split.addWidget(self.trophies)
+        self.trophy_detail=QPlainTextEdit();self.trophy_detail.setReadOnly(True);self.trophy_detail.setAccessibleName('トロフィーの条件と記録');trophy_split.addWidget(self.trophy_detail);trophy_split.setSizes([180,170])
+        self.trophies.currentItemChanged.connect(self.show_trophy_detail);tabs.addTab(trophy_page,'トロフィー')
         self.collection=GrowthCollection(service);self.collection.try_requested.connect(self.try_costume);tabs.addTab(self.collection,'解放一覧')
         library_button.clicked.connect(lambda:tabs.setCurrentWidget(self.collection))
-        costume_page = QWidget(); cl = QVBoxLayout(costume_page)
-        self.costume_page=costume_page
-        self.preview = Mascot(200); self.preview.frame_index=24; cl.addWidget(self.preview,alignment=Qt.AlignmentFlag.AlignCenter)
-        self.frame = QComboBox()
-        for n in range(28): self.frame.addItem(frame_caption(n),n)
-        self.frame.setCurrentIndex(24); self.frame.currentIndexChanged.connect(self.preview_frame); cl.addWidget(self.frame)
-        form=QFormLayout(); cl.addLayout(form); self.slots={}
+
+        costume_page=QScrollArea();costume_page.setWidgetResizable(True);costume_page.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.costume_page=costume_page;costume_body=QWidget();costume_page.setWidget(costume_body)
+        cl=QHBoxLayout(costume_body);cl.setContentsMargins(0,1,2,2);cl.setSpacing(16)
+        fitting,fitting_layout=card();cl.addWidget(fitting,2)
+        self.preview=Mascot(180);self.preview.frame_index=24;fitting_layout.addWidget(self.preview,alignment=Qt.AlignmentFlag.AlignCenter)
+        self.frame=GrowthCombo();self.frame.setAccessibleName('衣装を確認する動作')
+        for n in range(28):self.frame.addItem(frame_caption(n),n)
+        self.frame.setCurrentIndex(24);self.frame.currentIndexChanged.connect(self.preview_frame);fitting_layout.addWidget(self.frame);fitting_layout.addStretch()
+        controls,controls_layout=card();cl.addWidget(controls,3)
+        controls_layout.addWidget(text_label('衣装を組み合わせる','growthSection'))
+        form=QFormLayout();form.setSpacing(12);controls_layout.addLayout(form);self.slots={}
         for slot,name in (('head','頭'),('body','体'),('accessory','アクセサリー')):
-            combo=QComboBox();self.slots[slot]=combo;form.addRow(name,combo)
+            combo=GrowthCombo();combo.setAccessibleName(name+'の試着');self.slots[slot]=combo;form.addRow(name,combo)
             combo.currentIndexChanged.connect(lambda _,s=slot:self.equip(s))
-        trial_row=QHBoxLayout();cl.addLayout(trial_row)
-        self.apply_equipment=QPushButton('この組み合わせを装着');self.apply_equipment.clicked.connect(self.save_equipment);trial_row.addWidget(self.apply_equipment)
-        reset=QPushButton('装着中に戻す');reset.clicked.connect(self.reset_equipment);trial_row.addWidget(reset)
-        self.trial_status=QLabel();self.trial_status.setWordWrap(True);cl.addWidget(self.trial_status)
-        note=QLabel('衣装は自動装着しません。対応していないフレーム・小道具の動作中は非表示です。\n無効・削除したパックの取得記録も保持します。');note.setWordWrap(True);cl.addWidget(note);cl.addStretch()
-        tabs.addTab(costume_page,'衣装')
-        self.packs=QTreeWidget();self.packs.setHeaderLabels(['パック','状態']);tabs.addTab(self.packs,'コンテンツ')
-        row=QHBoxLayout();layout.addLayout(row)
-        reload_button=QPushButton('パックを再読み込み');reload_button.clicked.connect(service.reload);row.addWidget(reload_button)
-        edit=QPushButton('別ウィンドウでコンテンツを編集');edit.clicked.connect(service.open_editor);row.addWidget(edit)
+        self.apply_equipment=QPushButton('この組み合わせを装着');self.apply_equipment.setObjectName('growthPrimary');self.apply_equipment.clicked.connect(self.save_equipment);controls_layout.addWidget(self.apply_equipment)
+        reset=QPushButton('装着中に戻す');reset.clicked.connect(self.reset_equipment);controls_layout.addWidget(reset)
+        self.trial_status=text_label();controls_layout.addWidget(self.trial_status)
+        controls_layout.addWidget(text_label('対応していない動作では衣装を非表示にします。'));controls_layout.addStretch()
+        tabs.addTab(costume_page,'衣装');costume_button.clicked.connect(lambda:tabs.setCurrentWidget(costume_page))
+        self.packs=QTreeWidget();self.packs.setHeaderLabels(['パック','状態']);self.packs.setRootIsDecorated(False);tabs.addTab(self.packs,'コンテンツ')
+
+        self.status=text_label('','growthError');self.status.hide();layout.addWidget(self.status)
+        footer=QHBoxLayout();layout.addLayout(footer)
+        footer.addWidget(text_label('Yohaku  /  育成と装い'));footer.addStretch()
+        reload_button=QPushButton('再読み込み');reload_button.setToolTip('追加・編集したコンテンツパックを再読み込みします。');reload_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_BrowserReload));reload_button.clicked.connect(service.reload);footer.addWidget(reload_button)
+        edit=QPushButton('コンテンツを編集');edit.setToolTip('独立したコンテンツエディタを開きます。');edit.clicked.connect(service.open_editor);footer.addWidget(edit)
         self.refresh()
 
     def preview_frame(self): self.preview.frame_index=self.frame.currentData();self.preview.update()
@@ -85,18 +117,22 @@ class GrowthWindow(QMainWindow):
         service=self.service;character=self.character.currentData();p=service.engine.progress(character)
         config=service.engine.catalog.config
         threshold=config['level_thresholds'][p['level']] if config and p['level']<len(config['level_thresholds']) else None
-        self.summary.setText(f'{CHARACTERS[character]}  Lv.{p["level"]}    EXP {p["exp"]:.1f}'+(f' / 次のレベル {threshold:g}' if threshold is not None else '')+
-                             f'\n一緒に過ごした時間：{int(p["seconds"]//3600)}時間{int(p["seconds"]%3600//60)}分')
+        self.hero_name.setText(CHARACTERS[character]);self.level_badge.setText(f'Lv.{p["level"]}')
+        self.exp_value.setText(f'{p["exp"]:g}'+(f' / {threshold:g} EXP' if threshold is not None else ' EXP'))
         if config:
             remaining=max(0,math.ceil(config['exp_interval_seconds']-p['exp_seconds']))
-            self.summary.setText(self.summary.text()+f'\n起動時間のEXP：次の獲得まであと{remaining//60}分{remaining%60:02}秒（スリープ・ロック中は初期設定で停止）')
+            self.summary.setText(f'次のEXP獲得まで あと{remaining//60}分{remaining%60:02}秒')
+            self.summary.setToolTip('このキャラを常駐キャラに選んでいる間に進みます。EXPは一定間隔でまとめて獲得し、スリープ中は停止します。'+('ロック中も加算する設定です。' if config['count_locked'] else 'ロック中も停止します。'))
+        else:self.summary.setText('EXPの計測は停止中です。コンテンツの設定をご確認ください。')
         self.exp_bar.setVisible(threshold is not None)
         if threshold is not None:
             base=config['level_thresholds'][p['level']-1]
             self.exp_bar.setValue(round(max(0,min(1,(p['exp']-base)/(threshold-base)))*1000))
         self.refresh_home(character,p,threshold)
         self.collection.refresh(character)
-        self.status.setText(service.error_text())
+        has_error=bool(getattr(service,'error','') or service.store.error or service.engine.catalog.errors)
+        self.status.setVisible(has_error)
+        self.status.setText(service.error_text() if has_error else '')
         selected=self.trophies.currentItem()
         selected=selected.data(0,Qt.ItemDataRole.UserRole) if selected is not None else None
         scroll=self.trophies.verticalScrollBar().value()
@@ -173,20 +209,33 @@ class GrowthWindow(QMainWindow):
 
     def refresh_home(self,character,p,threshold):
         catalog=self.service.engine.catalog
-        self.next_level.setText(f'次のレベルまで あと{max(0,threshold-p["exp"]):g} EXP' if threshold is not None else '現在の設定では、次のレベルはありません。' if catalog.config else '育成コンテンツの設定を確認してください。')
-        rows=collection_rows(catalog,p,character);counts=[]
-        for kind,title in (('lines','会話'),('events','演出'),('costumes','衣装')):
-            items=[row for row in rows if row['kind']==kind];counts.append(f'{title} {sum(row["unlocked"] for row in items)}/{len(items)}')
-        self.collection_summary.setText('解放したもの：'+'　'.join(counts)+f'\n取得した実績：{len(p["trophies"])}件')
+        self.next_level.setText(f'次のレベルまで あと{max(0,threshold-p["exp"]):g} EXP' if threshold is not None else '現在のレベル上限に到達' if catalog.config else '育成コンテンツの設定を確認してください。')
+        rows=collection_rows(catalog,p,character)
+        counts={kind:sum(row['unlocked'] for row in rows if row['kind']==kind) for kind in ('lines','events','costumes')}
+        hours,minutes=divmod(int(p['seconds']//60),60)
+        self.metrics['time'].value.setText((f'{hours:,}時間' if hours else '')+(f'{minutes}分' if minutes or not hours else ''))
+        self.metrics['time'].hint.setText('このキャラとの累計')
+        self.metrics['speech'].value.setText(f'{counts["lines"]+counts["events"]:,} 種類')
+        self.metrics['speech'].hint.setText(f'会話 {counts["lines"]} ・ 演出 {counts["events"]}')
+        self.metrics['costumes'].value.setText(f'{counts["costumes"]:,} 点')
+        self.metrics['costumes'].hint.setText('全'+str(sum(row['kind']=='costumes' for row in rows))+'点のうち解放済み')
+        self.metrics['trophies'].value.setText(f'{len(p["trophies"]):,} 個');self.metrics['trophies'].hint.setText('これまでに取得')
+        clothing=[]
+        for slot,title in (('head','頭'),('body','体'),('accessory','アクセサリー')):
+            key=p['equipped'].get(slot);name=catalog.items['costumes'].get(key,{}).get('name','記録を保持した衣装') if key else '装着なし'
+            clothing.append(title+'　'+name)
+        self.equipment_summary.setText('\n'.join(clothing))
         upcoming=next_unlocks(catalog,p,character)
+        self.reward_level.setVisible(bool(upcoming))
         if upcoming:
+            self.reward_level.setText(f'Lv.{upcoming[0]["level"]}')
             names='\n'.join('・'+row['name'] for row in upcoming[:5])
             if len(upcoming)>5:names+=f'\nほか{len(upcoming)-5}件'
-            self.next_reward.setText(f'Lv.{upcoming[0]["level"]}\n'+names)
+            self.next_reward.setText(names)
         else:self.next_reward.setText('現在のパックには、この先の解放予定はありません。\nコンテンツエディタで追加できます。' if catalog.config else '有効な育成パックが読み込めると表示します。')
         signature=(id(catalog),character,tuple(sorted(p['equipped'].items())),tuple(p['unlocked']))
         if signature!=getattr(self,'home_signature',None):
-            self.home_signature=signature;self.home_preview.set_character(character)
+            self.home_signature=signature;self.home_preview.set_character(character);self.portrait_stage.set_character(character)
             renderer=CostumeRenderer();renderer.configure(catalog,p,character);self.home_preview.costumes=renderer;self.home_preview.update()
 
     def show_trophy_detail(self,*_):
