@@ -53,7 +53,9 @@ class ContentTests(unittest.TestCase):
         self.doc['enabled']=False;self.save();c=load_catalog(self.root)
         self.assertIsNone(c.config);self.assertFalse(c.items['events']);self.assertIn('base',c.packs)
     def test_level_curve_and_sample_exp_fields_use_exp(self):
-        self.assertNotIn('xp',json.dumps(self.doc));c=deepcopy(self.doc['config']);c['level_thresholds']=[0,10,10]
+        self.assertNotIn('"xp"',json.dumps(self.doc));self.assertIn('exp_per_hour',self.doc['config'])
+        self.assertEqual(self.doc['config']['exp_interval_seconds'],300)
+        c=deepcopy(self.doc['config']);c['level_thresholds']=[0,10,10]
         self.assertRaises(ContentError,validate_config,c)
     def test_invalid_entry_does_not_stop_neighboring_entries(self):
         self.doc['lines'].append(dict(id='bad',enabled=True));self.save();c=load_catalog(self.root)

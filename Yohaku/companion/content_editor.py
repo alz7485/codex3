@@ -122,6 +122,7 @@ class ContentEditor(QMainWindow):
         for folder in sorted(self.root.iterdir()):
             if folder.is_dir() and not folder.name.startswith('.') and (folder/'pack.json').is_file():self.pack_combo.addItem(folder.name,str(folder))
         if select:self.pack_combo.setCurrentIndex(max(0,self.pack_combo.findData(str(select))))
+        else:self.pack_combo.setCurrentIndex(max(0,self.pack_combo.findData(str(self.root/'base'))))
         self.pack_combo.blockSignals(False);self.open_selected_pack()
 
     def open_selected_pack(self):
@@ -135,7 +136,11 @@ class ContentEditor(QMainWindow):
         try:
             document=read_json(Path(folder)/'pack.json');_,errors=inspect_pack(document,Path(folder))
             require(not errors,'このパックには不正な項目があります。\n'+'\n'.join(errors[:10]))
-        except (OSError,ValueError,TypeError) as e:self.status.setText(str(e));return
+        except (OSError,ValueError,TypeError) as e:
+            self.status.setText(str(e))
+            if self.folder is not None:
+                self.pack_combo.blockSignals(True);self.pack_combo.setCurrentIndex(self.pack_combo.findData(str(self.folder)));self.pack_combo.blockSignals(False)
+            return
         self.folder=Path(folder);self.document=document;self.saved_document=deepcopy(document)
         self.original_hash=hashlib.sha256((self.folder/'pack.json').read_bytes()).hexdigest()
         self.current_index=-1;self.current_kind=self.kind.currentData();self.pack_name.setText(document['name']);self.pack_enabled.setChecked(document['enabled']);self.dirty=False
@@ -259,6 +264,7 @@ class ContentEditor(QMainWindow):
             c['level_thresholds']=[w.value() for w in self.level_values]
 
     def add_item(self):
+        if self.document is None:return
         self.flush();ids={i.get('id') for kind in KINDS for i in self.document[kind] if isinstance(i,dict)};n=1
         while 'item_'+str(n) in ids:n+=1
         self.document[self.current_kind].append(sample_item(self.current_kind,'item_'+str(n)));self.fill_list(len(self.document[self.current_kind])-1)
@@ -326,6 +332,7 @@ class ContentEditor(QMainWindow):
         except (OSError,ValueError,TypeError) as e:self.status.setText(str(e))
 
     def validate_document(self):
+        require(self.document is not None,'有効なパックを開くか、新しいパックを作ってください。')
         self.flush();valid,errors=inspect_pack(self.document,self.folder)
         require(not errors,'\n'.join(errors[:20]))
         catalog=load_catalog(self.root);known={key:kind for kind,items in catalog.items.items() for key in items if not key.startswith(self.document['id']+':')}

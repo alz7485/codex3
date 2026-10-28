@@ -2,6 +2,8 @@
 
 成長システムの基盤と独立エディタを追加しました。経験値はEXP、起動時間による付与と保存は5分ごと（初期5 EXP）。3キャラの進行を独立保存します。タスクトレイの「一緒に過ごした記録・衣装」から操作し、YohakuContentEditor.exeでパックを編集できます。[使い方・パック追加](../../Yohaku/docs/GROWTH.md)。導入前は[yohaku-v0.29.0-before-growth](https://github.com/alz7485/codex3/tree/yohaku-v0.29.0-before-growth/Yohaku)で保存しています。
 
+成長システムの基盤と独立エディタを追加しました。経験値はEXP、起動時間による付与と保存は5分ごと（初期5 EXP）。3キャラの進行を独立保存します。タスクトレイの「一緒に過ごした記録・衣装」から操作し、YohakuContentEditor.exeでパックを編集できます。[使い方・パック追加](../../Yohaku/docs/GROWTH.md)。導入前は[yohaku-v0.30.0-before-growth](https://github.com/alz7485/codex3/tree/yohaku-v0.30.0-before-growth/Yohaku)で保存しています。
+
 ユーザー設定・会話・通知・履歴をYohaku.exeの隣の **Data** に保存します。Dataがない初回は旧LocalAppDataからコピーし、既存のDataは上書きしません。更新時はDataも新しいEXEの隣へ持ち越してください。[保存先と移行・更新手順](../../Yohaku/docs/PORTABLE_DATA.md)
 
 つづりを中心に、足の付け根が滑る動きを見直しました。付け根から靴までをつなぎ、小さな歩幅で歩きます。[歩行GIF](../../Yohaku/docs/walk-alternation.gif) · [歩行の説明](../../Yohaku/docs/TIMING_MOTION.md) ドラッグ中のつままれた姿と通知入力中のメモ動作も継続します。[表示例](../../Yohaku/docs/action-poses.png) · [動作](../../Yohaku/docs/ACTION_POSES.md) 「預ける」と「預けたものを見る」の一時ランチャーを使えます。本体は移動・削除せず、アイコン付き一覧からダブルクリックで開きます。保持期間を1日・1週間・1ヶ月・無期限から設定できます。[使い方とリセット](../../Yohaku/docs/SHELF.md) · [表示例](../../Yohaku/docs/shelf.png)

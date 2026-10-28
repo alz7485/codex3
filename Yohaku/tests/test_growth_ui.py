@@ -42,6 +42,10 @@ class GrowthUiTests(unittest.TestCase):
     def test_editor_rejects_duplicate_ids_and_bad_image_without_writing(self):
         e=self.editor();original=(e.folder/'pack.json').read_bytes();e.fields['id'].setText('small_sparkle');self.assertFalse(e.save())
         self.assertEqual((e.folder/'pack.json').read_bytes(),original)
+    def test_editor_with_corrupt_base_reports_problem_and_does_not_save_over_it(self):
+        seed_content(self.root/'content');path=self.root/'content/base/pack.json';path.write_text('{bad')
+        e=self.editor();self.assertIsNone(e.document);self.assertFalse(e.save());e.add_item()
+        self.assertEqual(path.read_text(),'{bad')
     def test_costumes_compose_supported_frames_only_and_keep_original_assets(self):
         seed_content(self.root/'content');c=load_catalog(self.root/'content');renderer=CostumeRenderer()
         renderer.configure(c,dict(equipped={'accessory':'base:welcome_pin'},unlocked=['base:welcome_pin']),'A')

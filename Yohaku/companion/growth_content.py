@@ -171,6 +171,7 @@ def inspect_pack(document, root):
     """Return individual valid entries plus errors; malformed entries are isolated."""
     require(isinstance(document, dict) and type(document.get('schema_version')) is int and document['schema_version'] == 1,
             'パックのschema_versionは1です。')
+    require(len(json.dumps(document,ensure_ascii=False,allow_nan=False).encode('utf-8'))<=MAX_JSON,'JSONは2MBまでです。')
     require(identifier(document.get('id')) and text(document.get('name'), 80) and type(document.get('enabled')) is bool, 'パックのID・表示名・有効状態が不正です。')
     valid = {k: [] for k in KINDS}; errors = []; seen = set()
     # Duplicate IDs invalidate ALL conflicting entries, not just the last one.
