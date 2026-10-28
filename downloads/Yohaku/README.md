@@ -1,8 +1,10 @@
-# Yohaku v0.34.1
+# Yohaku v0.35.0
 
-**[onedirビルド用ZIP（約14MB）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.34.1-onedir-build.zip)**
+**[onedirビルド用ZIP（約14MB）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.35.0-onedir-build.zip)**
 
-[spec単体](Yohaku.spec) · [5行のコマンド](BUILD_ONEDIR.txt) · [SHA-256](Yohaku-v0.34.1-onedir-build.zip.sha256) · [全ソース](Yohaku-v0.34.1-source.zip)
+[spec単体](Yohaku.spec) · [5行のコマンド](BUILD_ONEDIR.txt) · [SHA-256](Yohaku-v0.35.0-onedir-build.zip.sha256) · [全ソース](Yohaku-v0.35.0-source.zip)
+
+トロフィー条件24種類と達成例16件を追加しました。ZIPは解凍・移動・キャンセルから選び、解凍では元ZIPを残します。[追加条件とZIP処理](../../Yohaku/docs/GROWTH_EXPANDED.md)
 
 育成のステータス画面をリニューアルしました。キャラ・レベル・EXPのカード、成長の数字、解放予定と衣装の案内をまとめています。
 

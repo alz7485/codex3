@@ -18,7 +18,7 @@ def system_fields(key):
 def validate_system_phrases(bank):
     if not isinstance(bank,dict) or set(bank)!=set(_DATA['phrases']):raise ValueError('操作案内には全7性格が必要です。')
     for voice,topics in bank.items():
-        if not isinstance(topics,dict) or set(topics)!=set(SYSTEM_LABELS):raise ValueError(f'{voice}: 操作案内の項目が不足しています。')
+        if not isinstance(topics,dict) or set(topics) not in (set(SYSTEM_LABELS),set(SYSTEM_LABELS)-{'extracted_only','extract_destination'}):raise ValueError(f'{voice}: 操作案内の項目が不足しています。')
         for key,lines in topics.items():
             if (not isinstance(lines,list) or not 1<=len(lines)<=200
                     or any(not isinstance(s,str) or not s.strip() or len(s)>1000 for s in lines)):
@@ -30,7 +30,7 @@ def validate_system_phrases(bank):
 
 def render_system_phrase(voice,key,document=None,replacements=None,choose=lambda lines:lines[0]):
     bank=(document or {}).get('system_phrases',_DATA['phrases'])
-    lines=bank[voice][key];template=lines[choose(list(range(len(lines))))]
+    lines=bank[voice].get(key,_DATA['phrases'][voice][key]);template=lines[choose(list(range(len(lines))))]
     values={k:str(v) for k,v in (replacements or {}).items()}
     # Substitute once: braces in file names or user text stay literal.
     text=re.sub(r'\{([a-z_]+)\}',lambda m:values.get(m[1],m[0]),template)

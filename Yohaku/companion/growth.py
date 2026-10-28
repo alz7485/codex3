@@ -9,7 +9,7 @@ import sys
 import time
 
 from .characters import CHARACTERS
-from .growth_content import atomic_json, number, read_json, require
+from .growth_content import METRIC_CONDITIONS,NUMERIC,atomic_json, number, read_json, require
 
 
 def awake_clock():
@@ -138,6 +138,13 @@ def streak_days(days, now, calendar, mode):
 
 def condition_value(c, progress, now, metrics, calendar, config, work):
     kind = c['type']
+    if kind in METRIC_CONDITIONS:return metrics.get(METRIC_CONDITIONS[kind])
+    if kind=='total_days':return len(set(progress['days']))
+    if kind=='level':return progress['level']
+    if kind=='trophy_count':return len(progress['trophies'])
+    if kind=='costume_count':return sum(key in progress['unlocked'] and character in item['characters'] for key,item in metrics.get('_growth_costumes',{}).items() for character in [metrics.get('_growth_character')]) if '_growth_costumes' in metrics else None
+    if kind=='weekday':return now.weekday()
+    if kind=='month':return now.month
     if kind == 'metric': return metrics.get(c['metric'])
     if kind == 'continuous_input': return metrics.get('growth_active_minutes')
     if kind == 'app_count': return metrics.get('visible_apps')
@@ -151,7 +158,7 @@ def condition_value(c, progress, now, metrics, calendar, config, work):
 
 def condition_matches(c, progress, now, metrics, calendar, config, work):
     kind = c['type']
-    if kind in ('metric', 'continuous_input', 'app_count', 'total_minutes', 'streak_days', 'event_count'):
+    if kind in NUMERIC:
         value = condition_value(c, progress, now, metrics, calendar, config, work)
         if not number(value, -1e15, 1e15): return False
         return {'>=': value >= c['value'], '<=': value <= c['value'], '==': value == c['value']}[c['op']]
@@ -213,7 +220,7 @@ class GrowthEngine:
         if dt and number(idle, 0, 1e9) and idle*60 < config['idle_threshold_seconds']:
             self.active_seconds += dt
         else: self.active_seconds = 0.
-        metrics = dict(metrics, growth_active_minutes=self.active_seconds/60)
+        metrics = dict(metrics, growth_active_minutes=self.active_seconds/60,_growth_costumes=self.catalog.items['costumes'],_growth_character=character)
         candidate = deepcopy(self.data); p = candidate['characters'].setdefault(character, fresh_progress())
         previous_exp=p['exp']
         new_day=now.date().isoformat() not in p['days']
@@ -245,6 +252,7 @@ class GrowthEngine:
         self.last_event_check=clock
         self.next_event = clock + self.catalog.config['event_interval_seconds']
         p = self.progress(character); candidates = []
+        metrics=dict(metrics,_growth_costumes=self.catalog.items['costumes'],_growth_character=character)
         for kind in ('lines', 'events'):
             for key, item in self.catalog.items[kind].items():
                 if character not in item['characters'] or key not in p['unlocked']: continue

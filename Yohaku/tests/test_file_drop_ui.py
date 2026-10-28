@@ -70,6 +70,22 @@ class FileDropUITests(unittest.TestCase):
         self.c.resident.dropEvent(drop)
         return enter, drop
 
+    def test_zip_choices_extract_to_selected_destination_and_keep_source_with_month_password(self):
+        import pyzipper
+        source=self.root/'archive.zip';password='prefix'+datetime.now().astimezone().strftime('%m')
+        with pyzipper.AESZipFile(source,'w',encryption=pyzipper.WZ_AES) as archive:
+            archive.setpassword(password.encode());archive.writestr('note.txt',b'content')
+        doc=self.c.file_drop_service.store.data
+        for row in doc['rules']:
+            if '.zip' in row['extensions']:row['password_template']='prefix{month}'
+        self.c.file_drop_service.store.save(doc);self.c.file_drop_service.drop(source)
+        self.assertTrue(self.c.bubble.drop_buttons['extract'].isVisible());self.assertFalse(self.c.bubble.drop_buttons['shelve'].isVisible())
+        self.assertTrue(self.c.bubble.drop_buttons['move'].isVisible())
+        self.c.bubble.drop_buttons['extract'].click();self.assertIn('解凍',self.c.bubble.text.text())
+        self.c.bubble.drop_extra_buttons['destination:out'].click();self.wait_worker()
+        self.assertTrue(source.exists());self.assertEqual((self.output/'archive/note.txt').read_bytes(),b'content')
+        self.assertFalse((self.output/'archive.zip').exists());self.assertIn('ZIP',self.c.bubble.text.text())
+
     def test_drop_does_not_execute_until_the_user_chooses_move_and_executes_only_once(self):
         source = self.file('資料.txt')
         enter, drop = self.gesture([QUrl.fromLocalFile(str(source))])

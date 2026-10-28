@@ -8,7 +8,7 @@ from PySide6.QtCore import QObject, Signal
 
 
 from .core import Notice
-from .file_drop import FileDropError, FileDropStore, execute, file_identity, dropped_item
+from .file_drop import ARCHIVE_EXTENSIONS,FileDropError, FileDropStore, execute, file_identity, dropped_item
 from .file_destinations import DestinationStore
 
 
@@ -49,13 +49,13 @@ class FileDropController(QObject):
         self.store.__init__(self.store.path)
         if not self.store.data['enabled']:
             self.cancel_pending();return
-        self.stage='action';self.show_choices()
+        self.rule=deepcopy(self.store.matching_rule(self.pending));self.stage='action';self.show_choices()
 
     def show_choices(self):
         c=self.owner
         if self.pending is None or c.hidden or c.user_hidden or self.busy:return
-        if self.stage=='destination':self.destinations.__init__(self.destinations.path,self.store)
-        error=self.store.error or (self.destinations.error if self.stage=='destination' else '')
+        if self.stage in ('destination','extract_destination'):self.destinations.__init__(self.destinations.path,self.store)
+        error=self.store.error or (self.destinations.error if self.stage in ('destination','extract_destination') else '')
         c.bubble.show_drop_stage(self.pending,self.stage,self.destinations.data['destinations'],error)
         c.resident.hold_item(self.pending);c.engine.last_display=datetime.now().astimezone()
         c.motion.face_front();c.resident.frame_index=24;c.resident.update();c.position()
@@ -116,10 +116,11 @@ class FileDropController(QObject):
                     self.cancel_pending()
                 except (ValueError,OSError):self.message(c.engine.system_phrase('deposit_failed'))
                 return
-            if action=='move':self.stage='destination';self.show_choices()
+            if action=='extract' and path.is_file() and path.suffix.lower() in ARCHIVE_EXTENSIONS:self.stage='extract_destination';self.show_choices()
+            elif action=='move':self.stage='destination';self.show_choices()
             elif action=='print_pdf' and path.is_file() and path.suffix.lower()=='.pdf':self.stage='paper';self.show_choices()
             return
-        if self.stage=='destination' and action.startswith('destination:'):
+        if self.stage in ('destination','extract_destination') and action.startswith('destination:'):
             if self.destinations.error:return
             identifier=action.removeprefix('destination:')
             # Use the exact displayed snapshot, never a newly changed JSON path.
@@ -127,7 +128,10 @@ class FileDropController(QObject):
             if row is None:return
             rule=dict(id='selected',label=row['name'],extensions=['<folder>'] if path.is_dir() else ['*'],
                       destination=row['path'],password_template='',actions=[dict(action='move',label='移動する')])
-            task=lambda:execute('move',path,deepcopy(rule),datetime.now().astimezone())
+            operation='extract' if self.stage=='extract_destination' else 'move'
+            if operation=='extract':
+                rule.update(extensions=[path.suffix.lower()],password_template=(self.rule or {}).get('password_template',''),actions=[dict(action='extract',label='解凍する')])
+            task=lambda:execute(operation,path,deepcopy(rule),datetime.now().astimezone())
         elif self.stage=='paper' and action in ('paper:a4','paper:a3','paper:auto'):
             paper=action.removeprefix('paper:')
             def task():
@@ -160,7 +164,7 @@ class FileDropController(QObject):
         elif 'printed' in result:
             text = phrase('print_sent' if result['printed'] else 'print_cancelled')
         elif result.get('extracted'):
-            text = phrase('extracted',{'path':result['extracted']})
+            text = phrase('extracted_only' if result.get('source_preserved') else 'extracted',{'path':result['extracted']})
         else:
             text = phrase('moved',{'path':result.get('path','')})
             if result.get('source_retained'):

@@ -23,7 +23,17 @@ CONDITIONS = {
     'day_kind': '営業日・休日', 'outside_hours': '所定時間外のPC利用',
     'date_range': '日付の範囲', 'event_count': '演出との遭遇回数',
 }
-NUMERIC = ('metric', 'continuous_input', 'app_count', 'streak_days', 'total_minutes', 'event_count')
+METRIC_CONDITIONS = {
+    'idle_minutes':'idle_minutes','daily_active_minutes':'daily_active_minutes','daily_idle_minutes':'daily_idle_minutes',
+    'observed_minutes':'observed_minutes','office_files':'open_office_files','desktop_files':'desktop_files',
+    'repeat_file':'file_open_count','weekly_events':'weekly_events','daily_events':'daily_events',
+    'unread_mail':'unread_mail_count','cpu_percent':'cpu_percent','memory_percent':'memory_percent',
+    'battery_percent':'battery_percent','remaining_meetings':'remaining_meetings','completed_meetings':'completed_meetings',
+    'meeting_minutes':'daily_meeting_minutes','meeting_gap':'next_meeting_gap_minutes','until_work_end':'until_work_end_minutes',
+}
+CONDITIONS.update({key:METRICS[metric] for key,metric in METRIC_CONDITIONS.items()})
+CONDITIONS.update(total_days='記録に残っている起動日数',level='キャラのレベル',trophy_count='取得した実績数',costume_count='解放した衣装数',weekday='曜日（0=月曜〜6=日曜）',month='月（1〜12月）')
+NUMERIC = ('metric', 'continuous_input', 'app_count', 'streak_days', 'total_minutes', 'event_count')+tuple(METRIC_CONDITIONS)+('total_days','level','trophy_count','costume_count','weekday','month')
 
 
 class ContentError(ValueError): pass
@@ -98,6 +108,8 @@ def validate_condition(c):
     kind = c['type']
     if kind in NUMERIC:
         require(c.get('op') in ('>=', '<=', '==') and number(c.get('value'), -1e9 if kind=='metric' else 0, 1e9), '条件の比較・値が不正です。')
+    if kind in ('weekday','month'):
+        require(number(c.get('value'),0 if kind=='weekday' else 1,6 if kind=='weekday' else 12) and c['value']==int(c['value']),'曜日は0〜6、月は1〜12の整数です。')
     if kind == 'metric': require(c.get('metric') in METRICS, '未知のPC状態項目です。')
     if kind == 'event_count': require(text(c.get('event_id'), 130), '演出IDが必要です。')
     if kind == 'time_range':
@@ -246,11 +258,24 @@ def load_catalog(content_root):
 def seed_content(root):
     """Install a sample once. Never overwrite an existing user-edited base pack."""
     root = Path(root); root.mkdir(parents=True, exist_ok=True)
-    if (root/'base').exists(): return
-    source = Path(__file__).parent/'assets/growth/base'
-    with tempfile.TemporaryDirectory(prefix='.base-', dir=root) as temp:
-        staged = Path(temp)/'base'; shutil.copytree(source, staged)
-        if not (root/'base').exists():
-            try:staged.rename(root/'base')
-            except OSError:
-                if not (root/'base').is_dir():raise
+    _seed_packs(root,('base',))
+
+
+def seed_examples(root):
+    root=Path(root);marker=root/'.daily-trophies-installed'
+    if marker.exists():return
+    _seed_packs(root,('daily_trophies',))
+    marker.touch(exist_ok=True)
+
+
+def _seed_packs(root,names):
+    root.mkdir(parents=True,exist_ok=True)
+    for name in names:
+        if (root/name).exists():continue
+        source=Path(__file__).parent/'assets/growth'/name
+        with tempfile.TemporaryDirectory(prefix='.'+name+'-',dir=root) as temp:
+            staged=Path(temp)/name;shutil.copytree(source,staged)
+            if not (root/name).exists():
+                try:staged.rename(root/name)
+                except OSError:
+                    if not (root/name).is_dir():raise
