@@ -137,3 +137,55 @@ class GrowthTests(unittest.TestCase):
         p=fresh_progress();cases=[dict(type='time_range',start='22:00',end='06:00'),dict(type='date_range',start='2026-10-01',end='2026-10-31'),dict(type='day_kind',value='business'),dict(type='event_count',event_id='base:small_sparkle',op='>=',value=1)]
         p['events']['base:small_sparkle']={'count':1}
         for c in cases:self.assertTrue(condition_matches(c,p,self.now.replace(hour=23),{},self.calendar,self.catalog.config,('08:30','17:30')))
+    def test_reload_unlocks_new_content_for_created_characters_without_granting_exp_or_time(self):
+        self.catalog.config['exp_interval_seconds']=300
+        self.step(10);self.step(5,character='B');self.step(10,character='B')
+        before=deepcopy(self.engine.data);catalog=load_catalog(self.root/'content')
+        item=deepcopy(catalog.items['costumes']['base:welcome_pin']);item.update(id='added',key='base:added',level=1)
+        catalog.items['costumes']['base:added']=item
+        self.assertEqual(self.engine.reload(catalog),[])
+        for char in ('A','B'):
+            after=self.engine.progress(char)
+            self.assertIn('base:added',after['unlocked'])
+            for key in ('exp','exp_seconds','seconds','days','trophies','equipped'):self.assertEqual(after[key],before['characters'][char][key])
+        self.assertNotIn('E',self.engine.data['characters'])
+        self.assertEqual(GrowthStore(self.store.path).data,self.engine.data)
+        with patch.object(self.store,'save',wraps=self.store.save) as save:self.engine.reload(catalog);save.assert_not_called()
+    def test_reload_recalculates_level_once_and_retains_progress_on_save_failure(self):
+        self.step(10);before=deepcopy(self.engine.data);catalog=deepcopy(self.catalog);catalog.config['level_thresholds']=[0,.1]
+        with patch.object(self.store,'save',side_effect=OSError('locked')):self.assertRaises(OSError,self.engine.reload,catalog)
+        self.assertEqual(self.engine.data,before)
+        notices=self.engine.reload(catalog);self.assertEqual(notices,[dict(kind='level',level=2,character='A')])
+        self.assertEqual(self.engine.progress('A')['exp'],before['characters']['A']['exp'])
+        self.assertEqual(self.engine.reload(catalog),[])
+    def test_reload_with_invalid_base_preserves_saved_progress(self):
+        self.step();before=deepcopy(self.engine.data);catalog=deepcopy(self.catalog);catalog.config=None
+        self.assertEqual(self.engine.reload(catalog),[]);self.assertEqual(self.engine.data,before)
+    def test_configured_event_interval_applies_at_startup_and_after_reload_without_extra_roll(self):
+        self.catalog.items['lines'].clear();self.catalog.config['event_interval_seconds']=30
+        event=self.catalog.items['events']['base:small_sparkle'];event.update(probability=1,daily_limit=10,cooldown_minutes=1)
+        self.step();self.engine=GrowthEngine(self.store,self.catalog,lambda:self.clock,lambda:0)
+        self.clock+=29;self.now+=timedelta(seconds=29)
+        self.assertIsNone(self.engine.choose_event('A','冷静な案内役',self.now,{},self.calendar))
+        self.clock+=1;self.now+=timedelta(seconds=1)
+        self.assertIsNotNone(self.engine.choose_event('A','冷静な案内役',self.now,{},self.calendar))
+        catalog=deepcopy(self.catalog);catalog.config['event_interval_seconds']=3600;self.engine.reload(catalog)
+        self.clock+=60;self.now+=timedelta(seconds=60)
+        self.assertIsNone(self.engine.choose_event('A','冷静な案内役',self.now,{},self.calendar))
+        catalog.config['event_interval_seconds']=30;self.engine.reload(catalog)
+        self.assertIsNotNone(self.engine.choose_event('A','冷静な案内役',self.now,{},self.calendar))
+        self.engine.reload(catalog)
+        self.assertIsNone(self.engine.choose_event('A','冷静な案内役',self.now,{},self.calendar))
+    def test_committed_time_and_trophy_exp_produce_one_combined_gain_signal(self):
+        self.catalog.config['exp_interval_seconds']=300
+        p=fresh_progress();p.update(exp=55.,seconds=3595.,exp_seconds=295.,days=[self.now.date().isoformat()])
+        self.engine.data['characters']['A']=p;self.engine.last_character='A'
+        notices=self.step(5);gains=[n for n in notices if n['kind']=='exp']
+        self.assertEqual(gains,[dict(kind='exp',amount=10.,character='A')])
+        self.assertEqual(GrowthStore(self.store.path).data['characters']['A']['exp'],65.)
+        self.assertFalse(any(n['kind']=='exp' for n in self.step(5)))
+    def test_failed_exp_save_cannot_return_a_gain_signal_or_advance_saved_balance(self):
+        self.catalog.config['exp_interval_seconds']=300
+        p=fresh_progress();p.update(exp_seconds=295.,seconds=295.,days=[self.now.date().isoformat()]);self.engine.data['characters']['A']=p
+        with patch.object(self.store,'save',side_effect=OSError('synthetic')):self.assertRaises(OSError,self.step,5)
+        self.assertEqual(self.engine.progress('A')['exp'],0);self.assertEqual(self.engine.progress('A')['exp_seconds'],295.)

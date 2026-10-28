@@ -6,8 +6,9 @@ import json
 from pathlib import Path
 import shutil
 import tempfile
+import time
 
-from PySide6.QtCore import QDate, QLockFile, Qt, QTime
+from PySide6.QtCore import QDate, QLockFile, Qt, QTime, QTimer
 from PySide6.QtWidgets import (QCheckBox, QComboBox, QDateEdit, QDialog, QDialogButtonBox,
     QDoubleSpinBox, QFileDialog, QFormLayout, QHBoxLayout, QInputDialog, QLabel, QLineEdit,
     QListWidget, QMainWindow, QMessageBox, QPlainTextEdit, QPushButton, QScrollArea,
@@ -17,9 +18,10 @@ from .characters import CHARACTERS
 from .costumes import CostumeRenderer
 from .dialogue import VOICE_NAMES
 from .growth_content import (CONDITIONS, EXPRESSIONS, KINDS, NUMERIC, ContentError, asset_path,
-    atomic_json, identifier, inspect_pack, load_catalog, read_json, require, seed_content,
+    atomic_json, identifier, inspect_pack, load_catalog, read_json, read_json_snapshot, require, seed_content,
     validate_condition, validate_config)
 from .metrics import METRICS
+from .growth_editor_widgets import FramePicker,RewardPicker,frame_caption
 
 KIND_NAMES = dict(lines='追加セリフ',events='演出',trophies='トロフィー',costumes='衣装',rewards='レベル報酬')
 
@@ -95,10 +97,13 @@ class ContentEditor(QMainWindow):
     def __init__(self,content_root):
         super().__init__();self.root=Path(content_root);seed_content(self.root)
         self.document=None;self.folder=None;self.original_hash=None;self.current_index=-1;self.current_kind='lines';self.filling=False;self.dirty=False
+        self.preview_timer=QTimer(self);self.preview_timer.setInterval(33)
+        self.preview_timer.timeout.connect(self.advance_preview)
         self.setWindowTitle('Yohaku コンテンツエディタ');self.resize(1140,800)
         root=QWidget();self.setCentralWidget(root);outer=QVBoxLayout(root)
         header=QHBoxLayout();outer.addLayout(header);self.pack_combo=QComboBox();header.addWidget(self.pack_combo,1)
         header.addWidget(action('新しいパック',self.new_pack));header.addWidget(action('パックを取り込む',self.import_pack))
+        header.addWidget(action('保存内容を再読み込み',self.reload_pack))
         self.pack_combo.currentIndexChanged.connect(self.open_selected_pack)
         self.tabs=QTabWidget();outer.addWidget(self.tabs,1)
         content=QWidget();layout=QVBoxLayout(content);self.tabs.addTab(content,'コンテンツ')
@@ -109,7 +114,9 @@ class ContentEditor(QMainWindow):
         self.items=QListWidget();ll.addWidget(self.items,1)
         row=QHBoxLayout();ll.addLayout(row)
         row.addWidget(action('＋追加',self.add_item));row.addWidget(action('複製',self.duplicate));row.addWidget(action('削除',self.delete_item))
-        splitter.addWidget(left);scroll=QScrollArea();scroll.setWidgetResizable(True);self.details=QWidget();self.form=QFormLayout(self.details);scroll.setWidget(self.details);splitter.addWidget(scroll);splitter.setSizes([270,780])
+        splitter.addWidget(left);scroll=QScrollArea();scroll.setWidgetResizable(True);self.details=QWidget();self.form=QFormLayout(self.details);scroll.setWidget(self.details);splitter.addWidget(scroll)
+        self.preview_panel=QWidget(objectName='card');self.preview_panel.setMinimumWidth(280)
+        self.preview_layout=QVBoxLayout(self.preview_panel);splitter.addWidget(self.preview_panel);splitter.setSizes([230,570,310]);self.preview_panel.hide()
         self.config_page=QWidget();self.config_form=QFormLayout(self.config_page);self.tabs.addTab(self.config_page,'成長の全体設定（base）')
         self.status=QLabel();self.status.setWordWrap(True);outer.addWidget(self.status)
         footer=QHBoxLayout();outer.addLayout(footer)
@@ -125,16 +132,19 @@ class ContentEditor(QMainWindow):
         else:self.pack_combo.setCurrentIndex(max(0,self.pack_combo.findData(str(self.root/'base'))))
         self.pack_combo.blockSignals(False);self.open_selected_pack()
 
-    def open_selected_pack(self):
+    def reload_pack(self):
+        return self.open_selected_pack(force=True)
+
+    def open_selected_pack(self, _index=None, *, force=False):
         folder=self.pack_combo.currentData()
         if not folder:return
-        if self.document is not None and self.folder==Path(folder):return
+        if self.document is not None and self.folder==Path(folder) and not force:return
         if self.document is not None and self.changed():
-            answer=QMessageBox.question(self,'未保存の編集','未保存の編集を破棄してパックを切り替えますか？')
+            answer=QMessageBox.question(self,'未保存の編集','未保存の編集を破棄して保存内容を読み込みますか？')
             if answer!=QMessageBox.StandardButton.Yes:
                 self.pack_combo.blockSignals(True);self.pack_combo.setCurrentIndex(self.pack_combo.findData(str(self.folder)));self.pack_combo.blockSignals(False);return
         try:
-            document=read_json(Path(folder)/'pack.json');_,errors=inspect_pack(document,Path(folder))
+            document,digest=read_json_snapshot(Path(folder)/'pack.json');_,errors=inspect_pack(document,Path(folder))
             require(not errors,'このパックには不正な項目があります。\n'+'\n'.join(errors[:10]))
         except (OSError,ValueError,TypeError) as e:
             self.status.setText(str(e))
@@ -142,7 +152,7 @@ class ContentEditor(QMainWindow):
                 self.pack_combo.blockSignals(True);self.pack_combo.setCurrentIndex(self.pack_combo.findData(str(self.folder)));self.pack_combo.blockSignals(False)
             return
         self.folder=Path(folder);self.document=document;self.saved_document=deepcopy(document)
-        self.original_hash=hashlib.sha256((self.folder/'pack.json').read_bytes()).hexdigest()
+        self.original_hash=digest
         self.current_index=-1;self.current_kind=self.kind.currentData();self.pack_name.setText(document['name']);self.pack_enabled.setChecked(document['enabled']);self.dirty=False
         self.build_config();self.fill_list();self.status.setText('ID: '+document['id']+' ／ '+str(self.folder))
 
@@ -166,6 +176,11 @@ class ContentEditor(QMainWindow):
         self.build_item(self.document[self.current_kind][index] if self.document and index>=0 else None)
 
     def clear_form(self):
+        self.stop_preview()
+        self.preview_panel.hide()
+        while self.preview_layout.count():
+            child=self.preview_layout.takeAt(0).widget()
+            if child is not None:child.deleteLater()
         while self.form.rowCount():self.form.removeRow(0)
 
     def build_item(self,item):
@@ -202,7 +217,7 @@ class ContentEditor(QMainWindow):
             self.form.addRow(action('アイコン画像を選ぶ',lambda:self.choose_image(self.fields['icon'])))
         if k=='rewards':
             field('unlock','解放するID（1行1件 pack:item）',QPlainTextEdit('\n'.join(item.get('unlock',[]))))
-            available=load_catalog(self.root);self.form.addRow(QLabel('参照できるID：\n'+'\n'.join(list({**available.items['costumes'],**available.items['lines'],**available.items['events']})[:60])))
+            self.form.addRow(action('名前から解放するものを選ぶ',self.choose_rewards))
         if k=='costumes':
             field('slot','装備枠',combo((('head','頭'),('body','体'),('accessory','アクセサリー')),item.get('slot')))
             field('layer','描画順',combo((('back','本体の後ろ'),('front','本体の前'),('accessory','一番手前')),item.get('layer')))
@@ -210,17 +225,28 @@ class ContentEditor(QMainWindow):
             for v in item.get('variants',[]):self.add_variant(v)
             self.form.addRow(action('＋対応画像・フレームを追加',lambda:self.add_variant()))
             from .ui import Mascot
-            self.preview=Mascot(240);self.preview.frame_index=24;self.form.addRow('プレビュー',self.preview)
-            self.preview_character=combo(CHARACTERS.items(),item['characters'][0]);self.form.addRow('確認キャラ',self.preview_character)
-            self.preview_frame=combo([(n,str(n)) for n in range(28)],24);self.form.addRow('確認フレーム',self.preview_frame)
-            self.form.addRow(action('現在の入力でプレビュー',self.update_preview))
+            self.preview_panel.show();self.preview_layout.addWidget(QLabel('衣装プレビュー'))
+            self.preview=Mascot(240);self.preview.frame_index=24;self.preview_layout.addWidget(self.preview,alignment=Qt.AlignmentFlag.AlignHCenter)
+            self.preview_character=combo(CHARACTERS.items(),item['characters'][0]);self.preview_layout.addWidget(self.preview_character)
+            self.preview_frame=combo([(n,frame_caption(n)) for n in range(28)],24);self.preview_layout.addWidget(self.preview_frame)
+            self.preview_frame.currentIndexChanged.connect(self.select_preview_frame)
+            self.preview_character.currentIndexChanged.connect(self.preview_character_changed)
+            self.preview_flipped=QCheckBox('反対向きで確認（通常・歩行）');self.preview_layout.addWidget(self.preview_flipped)
+            self.preview_flipped.toggled.connect(lambda value:self.flip_preview(value))
+            self.preview_mode=combo((('walk','歩行（16〜23）'),('front','正面とまばたき（24〜25）'),('expressions','通常・表情（0〜15）')),'walk')
+            self.preview_layout.addWidget(QLabel('連続プレビュー'));self.preview_layout.addWidget(self.preview_mode)
+            self.preview_mode.currentIndexChanged.connect(self.stop_preview)
+            self.play_button=action('再生',self.toggle_preview);self.preview_layout.addWidget(self.play_button)
+            self.preview_layout.addWidget(action('現在の入力でプレビュー',self.update_preview));self.preview_layout.addStretch()
         self.filling=False
+        if k=='costumes' and item.get('variants'):self.update_preview()
 
     def add_variant(self,value=None):
         v=value or dict(character='A',frames=[24,25],image='',x=0,y=0,scale=1)
         widget=QWidget();form=QFormLayout(widget);fields={}
         for key,title,w in (('character','キャラ',combo(CHARACTERS.items(),v['character'])),('frames','フレーム（カンマ区切り）',QLineEdit(','.join(map(str,v['frames'])))),('image','画像',QLineEdit(v['image'])),('x','X',spin(v['x'],-2048,2048)),('y','Y',spin(v['y'],-2048,2048)),('scale','倍率',spin(v['scale'],.05,8))):fields[key]=w;form.addRow(title,w)
         form.addRow(action('画像を選ぶ',lambda:self.choose_image(fields['image'])))
+        form.addRow(action('対応フレームを選ぶ',lambda:self.choose_frames(fields['frames'])))
         fields['removed']=QCheckBox('この対応画像を削除する');form.addRow(fields['removed'])
         self.variant_widgets.append(fields);self.variants_layout.addWidget(widget)
 
@@ -235,6 +261,26 @@ class ContentEditor(QMainWindow):
             if not target.exists():shutil.copyfile(source,target)
             field.setText('images/'+name)
         except (OSError,ValueError) as e:self.status.setText(str(e))
+
+    def choose_frames(self,field):
+        selected=[int(s.strip()) for s in field.text().split(',') if s.strip().isdigit() and 0<=int(s.strip())<=27]
+        dialog=FramePicker(selected,self)
+        if dialog.exec():field.setText(','.join(map(str,dialog.selected())))
+
+    def reward_options(self):
+        catalog=load_catalog(self.root)
+        options={key:KIND_NAMES[kind]+' / '+item['name'] for kind in ('costumes','lines','events')
+                 for key,item in catalog.items[kind].items() if not key.startswith(self.document['id']+':')}
+        # Include unsaved content in this pack without requiring a save cycle.
+        for kind in ('costumes','lines','events'):
+            for item in self.document[kind]:
+                if isinstance(item,dict) and item.get('enabled') and identifier(item.get('id')):
+                    options[self.document['id']+':'+item['id']]=KIND_NAMES[kind]+' / '+str(item.get('name',item['id']))
+        return options
+
+    def choose_rewards(self):
+        dialog=RewardPicker(self.reward_options(),self.fields['unlock'].toPlainText().splitlines(),self)
+        if dialog.exec():self.fields['unlock'].setPlainText('\n'.join(dialog.selected()))
 
     def item_value(self):
         result=deepcopy(self.editing)
@@ -328,8 +374,43 @@ class ContentEditor(QMainWindow):
             character=self.preview_character.currentData();self.preview.set_character(character);self.preview.frame_index=self.preview_frame.currentData()
             catalog=Catalog();catalog.items['costumes']['preview']=item
             renderer=CostumeRenderer();renderer.configure(catalog,dict(equipped={item['slot']:'preview'},unlocked=['preview']),character)
-            self.preview.costumes=renderer;self.preview.update();self.status.setText('現在の入力でプレビューしています。保存はまだ行っていません。')
-        except (OSError,ValueError,TypeError) as e:self.status.setText(str(e))
+            self.preview.costumes=renderer;self.preview.flipped=self.preview_flipped.isChecked();self.preview.update();self.status.setText('現在の入力でプレビューしています。保存はまだ行っていません。');return True
+        except (OSError,ValueError,TypeError) as e:self.status.setText(str(e));return False
+
+    def stop_preview(self,*_):
+        self.preview_timer.stop()
+        if hasattr(self,'play_button'):
+            # The button belongs to the old form until clear_form completes.
+            try:self.play_button.setText('再生')
+            except RuntimeError:pass
+
+    def select_preview_frame(self,*_):
+        self.stop_preview();self.preview.previous_frame=None
+        self.preview.frame_index=self.preview_frame.currentData();self.preview.update()
+
+    def flip_preview(self,value):self.preview.flipped=value;self.preview.update()
+
+    def preview_character_changed(self,*_):
+        self.stop_preview();self.update_preview()
+
+    def toggle_preview(self):
+        if self.preview_timer.isActive():self.stop_preview();return
+        if not self.update_preview():return
+        self.preview_sequence={'walk':tuple(range(16,24)),'front':(24,25),'expressions':tuple(range(16))}[self.preview_mode.currentData()]
+        self.preview_started=time.monotonic();self.play_button.setText('停止')
+        self.preview.previous_frame=None;self.preview.frame_index=self.preview_sequence[0]
+        self.preview_frame.blockSignals(True);self.preview_frame.setCurrentIndex(self.preview_frame.findData(self.preview_sequence[0]));self.preview_frame.blockSignals(False)
+        self.preview_timer.start();self.preview.update()
+
+    def advance_preview(self):
+        if not self.preview_timer.isActive() or self.current_kind!='costumes':return
+        period=.125 if self.preview_mode.currentData()=='walk' else .6
+        frame=self.preview_sequence[int(max(0,time.monotonic()-self.preview_started)/period)%len(self.preview_sequence)]
+        if frame!=self.preview.frame_index:
+            self.preview.previous_frame=self.preview.frame_index;self.preview.previous_flipped=self.preview.flipped
+            self.preview.frame_index=frame;self.preview.frame_changed_at=time.monotonic()
+            self.preview_frame.blockSignals(True);self.preview_frame.setCurrentIndex(self.preview_frame.findData(frame));self.preview_frame.blockSignals(False)
+        self.preview.update()
 
     def validate_document(self):
         require(self.document is not None,'有効なパックを開くか、新しいパックを作ってください。')
@@ -356,9 +437,9 @@ class ContentEditor(QMainWindow):
         if not lock.tryLock(0):self.status.setText('別のエディタが保存中です。');return False
         try:
             path=self.folder/'pack.json';digest=hashlib.sha256(path.read_bytes()).hexdigest() if path.exists() else None
-            require(digest==self.original_hash,'別の編集でパックが更新されました。再度開き直してください。')
+            require(digest==self.original_hash,'別の編集でパックが更新されました。「保存内容を再読み込み」で確認してください。未保存の編集はまだ残っています。')
             if path.exists():atomic_json(self.folder/'pack.json.bak',read_json(path))
-            atomic_json(path,self.document);self.original_hash=hashlib.sha256(path.read_bytes()).hexdigest();self.saved_document=deepcopy(self.document)
+            self.original_hash=atomic_json(path,self.document);self.saved_document=deepcopy(self.document)
             self.status.setText('保存しました。Yohakuの成長画面からパックを再読み込みしてください。');return True
         except (OSError,ValueError) as e:self.status.setText(str(e));return False
         finally:lock.unlock()
@@ -395,6 +476,9 @@ class ContentEditor(QMainWindow):
             answer=QMessageBox.question(self,'未保存の編集','保存せずに閉じますか？')
             if answer!=QMessageBox.StandardButton.Yes:event.ignore();return
         event.accept()
+
+    def hideEvent(self,event):
+        self.stop_preview();super().hideEvent(event)
 
 
 def run(content_root=None):
