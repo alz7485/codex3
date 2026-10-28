@@ -1,5 +1,6 @@
 """Explicit bundle smoke check without Controller, user data or Outlook."""
 import json
+from copy import deepcopy
 from pathlib import Path
 import platform
 import sys
@@ -12,7 +13,7 @@ def check_bundle():
     from PySide6.QtGui import QPixmap
     from .dialogue import defaults
     from .ui import InteractionBubble, Mascot, character_pixmap, create_application
-    from .core import Notice
+    from .core import Notice,Settings
     from .characters import CHARACTERS
 
     app = create_application()
@@ -152,6 +153,20 @@ def check_bundle():
         from .dialogue import VOICE_NAMES
         for voice in VOICE_NAMES:
             if 'Lv.2' not in render_system_phrase(voice,'growth_level',replacements={'level':2}):raise ValueError('System dialogue asset failed')
+        from types import SimpleNamespace
+        from .dialogue import DialogueStore
+        from .growth_ui import GrowthWindow
+        view_service=SimpleNamespace(engine=growth,store=store,host=SimpleNamespace(settings=Settings(),
+            dialogue=DialogueStore(root/'view-dialogue.json'),engine=SimpleNamespace(context={})),
+            error_text=lambda:'',calendar=lambda:BusinessCalendar(),work=lambda:('08:30','17:30'),reload=lambda:None,open_editor=lambda:None)
+        growth_view=GrowthWindow(view_service)
+        before=deepcopy(growth.data)
+        try:
+            growth_view.show();app.processEvents()
+            if growth_view.grab().isNull() or not growth_view.collection.rows:raise ValueError('Growth records view failed')
+            growth_view.slots['accessory'].setCurrentIndex(0)
+            if growth.data!=before or not growth_view.apply_equipment.isEnabled():raise ValueError('Equipment trial changed saved progress')
+        finally:growth_view.hide();growth_view.deleteLater()
         exp_mascot=Mascot();exp_mascot.show();exp_clock=[1000.]
         exp_popup=ExpPopup(exp_mascot,clock=lambda:exp_clock[0])
         try:
@@ -172,7 +187,7 @@ def check_bundle():
             'pickup_poses_rendered':pickup_rendered,'note_poses_rendered':notes_rendered,
             'drop_stages_rendered': 3, 'destination_editor_checked': True, 'shelf_launcher_checked': True,
             'growth_restore_checked':True,'costume_layers_checked':True,'content_editor_checked':True,
-            'floating_exp_checked':True,'editor_preview_checked':True,'level_up_animation_checked':True,'system_dialogue_checked':True}
+            'floating_exp_checked':True,'editor_preview_checked':True,'level_up_animation_checked':True,'system_dialogue_checked':True,'growth_records_checked':True}
 
 
 def run(output):

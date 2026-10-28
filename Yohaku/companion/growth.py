@@ -270,13 +270,23 @@ class GrowthEngine:
         return item
 
     def equip(self, character, slot, key):
+        if slot not in ('head','body','accessory'):raise ValueError('不正な装備枠です。')
+        equipped=dict(self.progress(character)['equipped'])
+        if key:equipped[slot]=key
+        else:equipped.pop(slot,None)
+        self.equip_set(character,equipped)
+
+    def equip_set(self,character,equipped):
+        if (not isinstance(character,str) or character not in CHARACTERS or not isinstance(equipped,dict) or not set(equipped)<={'head','body','accessory'}
+                or not all(isinstance(key,str) and key for key in equipped.values())):raise ValueError('装備の組み合わせが不正です。')
         candidate = deepcopy(self.data); p = candidate['characters'].setdefault(character,fresh_progress())
-        if key:
+        for slot,key in equipped.items():
+            if p['equipped'].get(slot)==key:continue
             item = self.catalog.items['costumes'].get(key)
             if not item or key not in p['unlocked'] or item['slot'] != slot or character not in item['characters']:
                 raise ValueError('未解放か対象外の衣装です。')
-            p['equipped'][slot] = key
-        else: p['equipped'].pop(slot,None)
+        if p['equipped']==equipped:return
+        p['equipped']=dict(equipped)
         self.commit(candidate)
 
     def reload(self, catalog):

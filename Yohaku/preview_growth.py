@@ -14,6 +14,8 @@ from companion.growth_content import load_catalog,seed_content
 from companion.growth_ui import GrowthService,GrowthWindow
 from companion.content_editor import ContentEditor
 from companion.exp_popup import ExpPopup,visual_state
+from companion.dialogue import DialogueStore
+from companion.business_calendar import BusinessCalendar
 
 
 def message_scene(app,output,notice,caption,frame):
@@ -76,13 +78,18 @@ def capture(output):
     message_scene(app,output/'level-up.png',Notice('','Lv.2になりました。\n一緒に過ごした記録から、解放したものを確認できます。',True,expression='happy',kind='notification'),'レベルアップ：実装済みのメッセージ',2)
     with TemporaryDirectory(prefix='yohaku-growth-preview-') as temporary:
         root=Path(temporary);seed_content(root/'content');catalog=load_catalog(root/'content')
-        p=fresh_progress();p.update(exp=65.,level=2,seconds=3720.,exp_seconds=120.,days=['2026-10-28'],unlocked=list(catalog.all_items),equipped={'accessory':'base:welcome_pin'},
-            trophies={'base:first_hour':{'at':'2026-10-28T16:00:00+09:00','exp':5}},best={'base:first_hour':62.})
-        service=GrowthService.__new__(GrowthService);service.host=SimpleNamespace(settings=Settings(character='A'))
+        p=fresh_progress();p.update(exp=35.,seconds=2100.,exp_seconds=120.,days=['2026-10-28'],best={'base:first_hour':35.})
+        service=GrowthService.__new__(GrowthService);service.host=SimpleNamespace(settings=Settings(character='A'),dialogue=DialogueStore(root/'dialogue.json'),engine=SimpleNamespace(context={}))
         service.error='';service.store=GrowthStore(root/'growth.json');service.content_root=root/'content'
         service.engine=GrowthEngine(service.store,catalog,lambda:1000.);service.engine.data['characters']['A']=p
+        service.engine.update_unlocks(p,'A');service.calendar=lambda:BusinessCalendar();service.work=lambda:('08:30','17:30')
         service.error_text=lambda:'プレビュー用のサンプル値です。実際の記録ではありません。'
-        window=GrowthWindow(service);window.resize(900,720);window.show();app.processEvents();window.grab().save(str(output/'status.png'));window.hide()
+        window=GrowthWindow(service);window.show();app.processEvents();window.grab().save(str(output/'status.png'))
+        window.tabs.setCurrentIndex(1);app.processEvents();window.grab().save(str(output/'trophy-detail.png'))
+        p.update(exp=65.,level=2,seconds=3720.);service.engine.update_unlocks(p,'A');window.refresh()
+        window.tabs.setCurrentWidget(window.collection);app.processEvents();window.grab().save(str(output/'collection.png'))
+        window.tabs.setCurrentWidget(window.costume_page);window.slots['accessory'].setCurrentIndex(window.slots['accessory'].findData('base:welcome_pin'))
+        app.processEvents();window.grab().save(str(output/'wardrobe-trial.png'));window.hide()
         editor=ContentEditor(root/'content');editor.resize(1360,860);editor.kind.setCurrentIndex(editor.kind.findData('costumes'));editor.show();app.processEvents()
         editor.grab().save(str(output/'content-editor.png'));editor.hide();editor.deleteLater();window.deleteLater();app.processEvents()
     print(str(output))
