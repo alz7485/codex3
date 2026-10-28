@@ -12,6 +12,7 @@ from .core import CHARACTERS
 from .characters import profile_for
 from .motion import EXPRESSION_FRAMES
 from .metrics import METRICS
+from .system_dialogue import SYSTEM_LABELS,system_defaults,system_fields
 from .ui import box, button, label
 
 EXPRESSION_LABELS = dict(zip(EXPRESSION_FRAMES, ('通常', 'まばたき', '笑顔', 'お知らせ', '考え中', '眠そう',
@@ -39,6 +40,7 @@ class DialogueEditor(QMainWindow):
         self.loading = True
         self.dirty = False
         self.draft = deepcopy(store.data)
+        self.system_fallback=system_defaults()
         self.setWindowTitle('Yohaku — 会話の編集')
         self.resize(1020, 800)
         self.setMinimumSize(800, 620)
@@ -109,7 +111,7 @@ class DialogueEditor(QMainWindow):
         self.line_edit.setMaximumHeight(150)
         self.line_edit.textChanged.connect(self.update_line)
         layout.addWidget(self.line_edit)
-        layout.addWidget(label('1話題1〜200件、1件1〜1000文字。本文に {idle_minutes}・{file_name}・{file_open_count}・{hours_to_end}・{weekly_events}・{cpu_percent}・{memory_percent} 等の差し込みが使えます。CPU・メモリの値は%です。', 'muted', True))
+        self.phrase_hint=label('', 'muted', True);layout.addWidget(self.phrase_hint)
         split.addWidget(content)
         split.setSizes([240, 650])
         outer.addWidget(split)
@@ -291,6 +293,9 @@ class DialogueEditor(QMainWindow):
         for rule in self.draft['rules']:
             self.phrase_topics.addItem(rule['label'])
             self.rule_list.addItem(rule['label'])
+        for key,title in SYSTEM_LABELS.items():
+            self.phrase_topics.addItem('操作案内：'+title)
+            self.phrase_topics.item(self.phrase_topics.count()-1).setData(Qt.ItemDataRole.UserRole,key)
         for key, widget in self.options.items():
             value = self.draft['options'][key]
             if isinstance(widget, QSpinBox): widget.setValue(value)
@@ -305,10 +310,14 @@ class DialogueEditor(QMainWindow):
         self.load_profile()
         self.dirty = False
 
-    def bank(self):
+    def bank(self,writable=False):
         row = self.phrase_topics.currentRow()
         if row < 0:
             return None
+        if row>=len(self.draft['rules']):
+            key=self.phrase_topics.item(row).data(Qt.ItemDataRole.UserRole)
+            if writable and 'system_phrases' not in self.draft:self.draft['system_phrases']=deepcopy(self.system_fallback)
+            return self.draft.get('system_phrases',self.system_fallback)[self.voice.currentText()][key]
         key = self.draft['rules'][row]['id']
         return self.draft['phrases'][self.voice.currentText()][key]
 
@@ -316,6 +325,12 @@ class DialogueEditor(QMainWindow):
         if self.loading:
             return
         self.loading = True
+        item=self.phrase_topics.currentItem();key=item.data(Qt.ItemDataRole.UserRole) if item else None
+        if key in SYSTEM_LABELS:
+            fields='・'.join('{'+s+'}' for s in sorted(system_fields(key))) or 'なし'
+            self.phrase_hint.setText('操作案内は全7性格で編集できます。1件1〜1000文字。必要な差し込み：'+fields+'。日時・処理結果などの情報は残してください。')
+        else:
+            self.phrase_hint.setText('1話題1〜200件、1件1〜1000文字。{idle_minutes}・{file_name}・{file_open_count}・{hours_to_end}・{weekly_events}・{cpu_percent}・{memory_percent} 等を使えます。CPU・メモリの値は%です。')
         self.lines.clear()
         for line in self.bank() or []:
             self.lines.addItem(line.replace('\n', ' ↵ ')[:70])
@@ -336,16 +351,17 @@ class DialogueEditor(QMainWindow):
     def update_line(self):
         if self.loading:
             return
-        bank, row = self.bank(), self.lines.currentRow()
+        bank, row = self.bank(writable=True), self.lines.currentRow()
         if bank is not None and row >= 0:
             bank[row] = self.line_edit.toPlainText()
             self.lines.item(row).setText(bank[row].replace('\n', ' ↵ ')[:70] or '（空のセリフ）')
             self.mark_dirty()
 
     def add_line(self):
-        bank = self.bank()
+        bank = self.bank(writable=True)
         if bank is not None and len(bank) < 200:
-            bank.append('新しいセリフ')
+            key=self.phrase_topics.currentItem().data(Qt.ItemDataRole.UserRole)
+            bank.append(bank[0] if key in SYSTEM_LABELS else '新しいセリフ')
             self.load_phrases()
             self.lines.setCurrentRow(len(bank) - 1)
             self.line_edit.selectAll()
@@ -353,7 +369,7 @@ class DialogueEditor(QMainWindow):
             self.mark_dirty()
 
     def remove_line(self):
-        bank, row = self.bank(), self.lines.currentRow()
+        bank, row = self.bank(writable=True), self.lines.currentRow()
         if bank and len(bank) > 1 and row >= 0:
             del bank[row]
             self.load_phrases()

@@ -1,0 +1,966 @@
+{
+  "labels": {
+    "drop_action": "渡したファイルの処理",
+    "drop_destination": "移動先を選ぶ",
+    "drop_paper": "印刷用紙を選ぶ",
+    "destination_empty": "移動先が未登録",
+    "drop_invalid": "渡されたものを扱えない",
+    "drop_changed": "渡されたファイルの変更",
+    "deposit_ok": "預かり完了",
+    "deposit_failed": "預かりの保存失敗",
+    "processing": "ファイル処理中",
+    "operation_failed": "ファイル処理の失敗",
+    "print_sent": "印刷データ送信完了",
+    "print_cancelled": "印刷のキャンセル",
+    "extracted": "移動と解凍の完了",
+    "moved": "移動完了",
+    "source_retained": "移動元に残る項目",
+    "shelf_items": "預けたものの一覧",
+    "shelf_empty": "預けたものがない",
+    "shelf_load_failed": "預けた一覧の読込失敗",
+    "shelf_open_failed": "預けたものを開けない",
+    "parent_open_failed": "保存先フォルダを開けない",
+    "shelf_remove_failed": "預かり一覧からの削除失敗",
+    "shelf_lookup_failed": "預かり登録の読込失敗",
+    "one_shot_prompt": "単発通知を入力する",
+    "one_shot_saved": "単発通知の登録完了",
+    "one_shot_save_failed": "単発通知を保存できない",
+    "one_shot_invalid": "単発通知の入力を見直す",
+    "one_shot_date_changed": "入力中に日付が変わった",
+    "one_shot_time_invalid": "通知の時刻の書式",
+    "one_shot_min_time": "過去の通知時刻を選んでいる",
+    "history_limit": "履歴の表示上限",
+    "history_empty": "今日の履歴がない",
+    "history_off": "履歴記録がオフ",
+    "history_partial": "履歴の一部を確認できない",
+    "history_failed": "履歴の読込失敗",
+    "history_open_failed": "履歴のファイルを開けない",
+    "calendar_partial": "予定の一部を確認できない",
+    "calendar_open_failed": "Outlook予定表を開けない",
+    "attendance_url_invalid": "勤怠URLの確認",
+    "attendance_open_failed": "勤怠サイトを開けない",
+    "growth_level": "レベルアップ",
+    "growth_trophy": "実績の記録",
+    "departure_default": "退勤前の既定メッセージ",
+    "uptime_unavailable": "PC起動時間を取得できない"
+  },
+  "phrases": {
+    "控えめな皮肉屋": {
+      "drop_action": [
+        "どう扱いましょう。預かるだけでも構いませんよ。"
+      ],
+      "drop_destination": [
+        "どこへ移しましょう。定位置があると助かりますね。"
+      ],
+      "drop_paper": [
+        "用紙を選んでください。紙のほうは増えますけど。"
+      ],
+      "destination_empty": [
+        "移動先がまだありません。「移動先を編集する」で定位置を作ってください。"
+      ],
+      "drop_invalid": [
+        "通常のファイルかフォルダを1つお願いします。リンクは扱えないんです。"
+      ],
+      "drop_changed": [
+        "ファイルを確認できないか、変更されたようです。もう一度渡してください。"
+      ],
+      "deposit_ok": [
+        "預かりました。私の机はまだ片付いています。\n「預けたものを見る」から開けます。"
+      ],
+      "deposit_failed": [
+        "預かりの登録を保存できませんでした。設定ファイルと保存先を確認してください。"
+      ],
+      "processing": [
+        "処理中です。少々お待ちを。"
+      ],
+      "operation_failed": [
+        "処理を完了できませんでした。下の内容を確認してください。"
+      ],
+      "print_sent": [
+        "印刷データを送信しました。紙に出たかはプリンターで確認してください。"
+      ],
+      "print_cancelled": [
+        "印刷をキャンセルしました。紙は増えずに済みましたね。"
+      ],
+      "extracted": [
+        "移動して解凍しました。\n{path}"
+      ],
+      "moved": [
+        "移動しました。新しい定位置はこちらです。\n{path}"
+      ],
+      "source_retained": [
+        "元の場所に残った項目があります。移動先を確認してから整理してください。"
+      ],
+      "shelf_items": [
+        "預けたものはこちらです。\nダブルクリックで開きます。"
+      ],
+      "shelf_empty": [
+        "今は何も預かっていません。私の机だけは空いています。\nファイルやフォルダを渡して「預ける」を選んでください。"
+      ],
+      "shelf_load_failed": [
+        "預けたものの一覧を読めませんでした。保存先を確認してください。"
+      ],
+      "shelf_open_failed": [
+        "開けませんでした。移動・削除や関連付けを確認してください。本体は変更していません。"
+      ],
+      "parent_open_failed": [
+        "保存先のフォルダを開けませんでした。場所を確認してください。"
+      ],
+      "shelf_remove_failed": [
+        "一覧の登録を削除できませんでした。設定ファイルを確認してください。"
+      ],
+      "shelf_lookup_failed": [
+        "登録を読み込めませんでした。設定ファイルを確認してください。"
+      ],
+      "one_shot_prompt": [
+        "いつ、何を知らせましょう。覚えておく係は引き受けます。"
+      ],
+      "one_shot_saved": [
+        "{when}に、一度だけお知らせします。覚えておく係は、こちらで引き受けます。"
+      ],
+      "one_shot_save_failed": [
+        "通知を保存できませんでした。保存先の空き容量と権限を確認してください。"
+      ],
+      "one_shot_invalid": [
+        "登録はまだです。こちらを確認してください。\n{detail}"
+      ],
+      "one_shot_date_changed": [
+        "選べる日付が変わりました。日付か時刻を選び直してください。"
+      ],
+      "one_shot_time_invalid": [
+        "時刻は24時間表記のHH:mmでお願いします。"
+      ],
+      "one_shot_min_time": [
+        "その日の時刻は{time}以降でお願いします。過去へはお届けできません。"
+      ],
+      "history_limit": [
+        "直近50ファイルです。全件は管理画面で確認できます。"
+      ],
+      "history_empty": [
+        "今日の記録はまだありません。"
+      ],
+      "history_off": [
+        "ファイル履歴の記録はオフです。今は覚えない係ですね。"
+      ],
+      "history_partial": [
+        "一部の記録を確認できていません。管理画面で状態を確認してください。"
+      ],
+      "history_failed": [
+        "履歴を読み込めませんでした。管理画面で状態を確認してください。"
+      ],
+      "history_open_failed": [
+        "ファイルを開けませんでした。移動・削除や関連付けを確認してください。"
+      ],
+      "calendar_partial": [
+        "一部の予定は未確認です。設定の接続状態を確認してください。"
+      ],
+      "calendar_open_failed": [
+        "Outlookの予定表を開けませんでした。接続状態を確認してください。"
+      ],
+      "attendance_url_invalid": [
+        "勤怠サイトのURLを設定で確認してください。行き先が読めないようです。"
+      ],
+      "attendance_open_failed": [
+        "サイトを開けませんでした。設定のURLを確認してください。"
+      ],
+      "growth_level": [
+        "Lv.{level}になりました。地道さも、案外あなどれませんね。\n「一緒に過ごした記録・衣装」で解放したものを確認できます。"
+      ],
+      "growth_trophy": [
+        "「{name}」を記録しました。積み重ねは残るものですね。"
+      ],
+      "departure_default": [
+        "そろそろ退勤の時間です。勤怠の入力も、お忘れなく。"
+      ],
+      "uptime_unavailable": [
+        "PCの起動時間は取得できませんでした。ここは未確認です。"
+      ]
+    },
+    "冷静な案内役": {
+      "drop_action": [
+        "どう処理しましょう？"
+      ],
+      "drop_destination": [
+        "どこに移動しましょう？"
+      ],
+      "drop_paper": [
+        "どの用紙で印刷しましょう？"
+      ],
+      "destination_empty": [
+        "移動先が未登録です。「移動先を編集する」から登録してください。"
+      ],
+      "drop_invalid": [
+        "通常のファイルかフォルダーを1つドロップしてください。リンクは対象外です。"
+      ],
+      "drop_changed": [
+        "ファイルを確認できないか、変更されています。もう一度ドロップしてください。"
+      ],
+      "deposit_ok": [
+        "預かりました。\n「預けたものを見る」から開けます。"
+      ],
+      "deposit_failed": [
+        "預けたものを保存できません。設定ファイルと保存先を確認してください。"
+      ],
+      "processing": [
+        "処理しています。"
+      ],
+      "operation_failed": [
+        "処理を完了できません。詳細を確認してください。"
+      ],
+      "print_sent": [
+        "印刷データを送信しました。"
+      ],
+      "print_cancelled": [
+        "印刷をキャンセルしました。"
+      ],
+      "extracted": [
+        "移動して解凍しました。\n{path}"
+      ],
+      "moved": [
+        "移動しました。\n{path}"
+      ],
+      "source_retained": [
+        "元の場所に残った項目があります。移動先を確認してから整理してください。"
+      ],
+      "shelf_items": [
+        "預けたものはこちらです。\nダブルクリックで開きます。"
+      ],
+      "shelf_empty": [
+        "今は何も預かっていません。\nファイルやフォルダを渡して「預ける」を選んでください。"
+      ],
+      "shelf_load_failed": [
+        "預けたものを読み込めません。保存先をご確認ください。"
+      ],
+      "shelf_open_failed": [
+        "開けませんでした。移動・削除や関連付けを確認してください。本体は変更していません。"
+      ],
+      "parent_open_failed": [
+        "保存先のフォルダを開けませんでした。"
+      ],
+      "shelf_remove_failed": [
+        "一覧の登録を削除できません。設定ファイルをご確認ください。"
+      ],
+      "shelf_lookup_failed": [
+        "登録を読み込めません。設定ファイルをご確認ください。"
+      ],
+      "one_shot_prompt": [
+        "いつ、何をお知らせしましょう？"
+      ],
+      "one_shot_saved": [
+        "{when} に、一度だけお知らせします。"
+      ],
+      "one_shot_save_failed": [
+        "通知を保存できません。保存先の空き容量・権限をご確認ください。"
+      ],
+      "one_shot_invalid": [
+        "通知を登録できません。入力内容をご確認ください。\n{detail}"
+      ],
+      "one_shot_date_changed": [
+        "選択できる日付が変わりました。日付か時刻を選び直してください。"
+      ],
+      "one_shot_time_invalid": [
+        "時刻は24時間表記のHH:mmで入力してください。"
+      ],
+      "one_shot_min_time": [
+        "選択した日の時刻は{time}以降を指定してください。"
+      ],
+      "history_limit": [
+        "直近50ファイルです。全件は管理画面で確認できます。"
+      ],
+      "history_empty": [
+        "今日の記録はまだありません。"
+      ],
+      "history_off": [
+        "ファイル履歴の記録はオフです。"
+      ],
+      "history_partial": [
+        "一部の記録を確認できていません。管理画面で状態を確認できます。"
+      ],
+      "history_failed": [
+        "履歴を読み込めませんでした。管理画面で状態をご確認ください。"
+      ],
+      "history_open_failed": [
+        "ファイルを開けませんでした。移動・削除や関連付けをご確認ください。"
+      ],
+      "calendar_partial": [
+        "一部の予定を確認できていません。設定の接続状態をご確認ください。"
+      ],
+      "calendar_open_failed": [
+        "Outlookの予定表を開けませんでした。接続状態をご確認ください。"
+      ],
+      "attendance_url_invalid": [
+        "勤怠サイトのURLを設定で確認してください。"
+      ],
+      "attendance_open_failed": [
+        "サイトを開けませんでした。設定のURLをご確認ください。"
+      ],
+      "growth_level": [
+        "Lv.{level}になりました。\n「一緒に過ごした記録・衣装」で解放したものを確認できます。"
+      ],
+      "growth_trophy": [
+        "「{name}」を記録しました。"
+      ],
+      "departure_default": [
+        "そろそろ退勤の時間です。勤怠の入力を確認しましょう。"
+      ],
+      "uptime_unavailable": [
+        "PCの起動時間を取得できませんでした。"
+      ]
+    },
+    "元気な応援係": {
+      "drop_action": [
+        "これ、どうしようか！"
+      ],
+      "drop_destination": [
+        "どこへ移動する？"
+      ],
+      "drop_paper": [
+        "どの用紙で印刷する？"
+      ],
+      "destination_empty": [
+        "まずは「移動先を編集する」で行き先を登録しよう！"
+      ],
+      "drop_invalid": [
+        "ファイルかフォルダを1つずつ渡してね！ リンクは扱えないよ。"
+      ],
+      "drop_changed": [
+        "ファイルが変わったか、確認できなかったよ。もう一度渡してね！"
+      ],
+      "deposit_ok": [
+        "預かったよ！\n「預けたものを見る」から開いてね。"
+      ],
+      "deposit_failed": [
+        "預かりの登録ができなかったよ。設定ファイルと保存先を確認してね。"
+      ],
+      "processing": [
+        "処理しているよ！"
+      ],
+      "operation_failed": [
+        "処理を完了できなかったよ。下の内容を確認してね。"
+      ],
+      "print_sent": [
+        "印刷データを送信したよ！"
+      ],
+      "print_cancelled": [
+        "印刷はキャンセルしたよ。"
+      ],
+      "extracted": [
+        "移動と解凍が終わったよ！\n{path}"
+      ],
+      "moved": [
+        "移動できたよ！\n{path}"
+      ],
+      "source_retained": [
+        "元の場所に残っているものがあるよ。移動先を確認してから整理してね。"
+      ],
+      "shelf_items": [
+        "預かったものはこちら！\nダブルクリックで開いてね。"
+      ],
+      "shelf_empty": [
+        "まだ何も預かっていないよ！\nファイルやフォルダを渡して「預ける」を選んでね。"
+      ],
+      "shelf_load_failed": [
+        "預かったものの一覧を読めなかったよ。保存先を確認してね。"
+      ],
+      "shelf_open_failed": [
+        "開けなかったよ。移動・削除や関連付けを確認してね。本体は変更していないよ。"
+      ],
+      "parent_open_failed": [
+        "保存先のフォルダを開けなかったよ。"
+      ],
+      "shelf_remove_failed": [
+        "一覧から外せなかったよ。設定ファイルを確認してね。"
+      ],
+      "shelf_lookup_failed": [
+        "登録を読み込めなかったよ。設定ファイルを確認してね。"
+      ],
+      "one_shot_prompt": [
+        "いつ、何を知らせようか！"
+      ],
+      "one_shot_saved": [
+        "{when}に、一度だけお知らせするね！"
+      ],
+      "one_shot_save_failed": [
+        "通知を保存できなかったよ。保存先の空き容量と権限を確認してね。"
+      ],
+      "one_shot_invalid": [
+        "まだ登録できていないよ。ここを確認してね！\n{detail}"
+      ],
+      "one_shot_date_changed": [
+        "選べる日付が変わったよ。日付か時刻を選び直してね。"
+      ],
+      "one_shot_time_invalid": [
+        "時刻は24時間表記のHH:mmで入れてね！"
+      ],
+      "one_shot_min_time": [
+        "その日の時刻は{time}以降を選んでね！"
+      ],
+      "history_limit": [
+        "直近50ファイルを出したよ！ 全件は管理画面で見てね。"
+      ],
+      "history_empty": [
+        "今日の記録はまだないよ。"
+      ],
+      "history_off": [
+        "ファイル履歴の記録はオフになっているよ。"
+      ],
+      "history_partial": [
+        "一部の記録を確認できていないよ。管理画面で状態を見てね。"
+      ],
+      "history_failed": [
+        "履歴を読み込めなかったよ。管理画面で状態を確認してね。"
+      ],
+      "history_open_failed": [
+        "ファイルを開けなかったよ。移動・削除や関連付けを確認してね。"
+      ],
+      "calendar_partial": [
+        "一部の予定を確認できていないよ。設定の接続状態を見てね。"
+      ],
+      "calendar_open_failed": [
+        "Outlookの予定表を開けなかったよ。接続状態を確認してね。"
+      ],
+      "attendance_url_invalid": [
+        "勤怠サイトのURLを設定で確認してね！"
+      ],
+      "attendance_open_failed": [
+        "サイトを開けなかったよ。設定のURLを確認してね。"
+      ],
+      "growth_level": [
+        "やった、Lv.{level}だよ！\n「一緒に過ごした記録・衣装」で解放したものを見てみよう！"
+      ],
+      "growth_trophy": [
+        "「{name}」を記録したよ！"
+      ],
+      "departure_default": [
+        "そろそろ退勤の時間だよ！ 勤怠の入力も確認しよう。"
+      ],
+      "uptime_unavailable": [
+        "PCの起動時間は取得できなかったよ。"
+      ]
+    },
+    "のんびりした同僚": {
+      "drop_action": [
+        "どうしよっか。預かっておくこともできるよ。"
+      ],
+      "drop_destination": [
+        "どこに置いておこうか。"
+      ],
+      "drop_paper": [
+        "用紙はどれにしようか。"
+      ],
+      "destination_empty": [
+        "行き先がまだないね。「移動先を編集する」から登録してね。"
+      ],
+      "drop_invalid": [
+        "ファイルかフォルダを1つずつお願い。リンクは扱えないんだ。"
+      ],
+      "drop_changed": [
+        "ファイルが変わったか、見つからないみたい。もう一度渡してね。"
+      ],
+      "deposit_ok": [
+        "預かっておくね。\n「預けたものを見る」から開けるよ。"
+      ],
+      "deposit_failed": [
+        "登録を保存できなかったみたい。設定ファイルと保存先を確認してね。"
+      ],
+      "processing": [
+        "処理中だよ。ちょっと待ってね。"
+      ],
+      "operation_failed": [
+        "処理が終わらなかったみたい。下の内容を確認してね。"
+      ],
+      "print_sent": [
+        "印刷データ、送っておいたよ。"
+      ],
+      "print_cancelled": [
+        "印刷はやめておいたよ。"
+      ],
+      "extracted": [
+        "移して、解凍しておいたよ。\n{path}"
+      ],
+      "moved": [
+        "移しておいたよ。\n{path}"
+      ],
+      "source_retained": [
+        "元の場所にも残っているものがあるよ。移動先を確かめてから整理しよう。"
+      ],
+      "shelf_items": [
+        "預かっているものはこれだよ。\nダブルクリックで開けるよ。"
+      ],
+      "shelf_empty": [
+        "今は何も預かっていないよ。\nファイルやフォルダを渡して「預ける」を選んでね。"
+      ],
+      "shelf_load_failed": [
+        "預かった一覧を読めなかったみたい。保存先を確認してね。"
+      ],
+      "shelf_open_failed": [
+        "開けなかったみたい。移動・削除や関連付けを確認してね。本体は変えていないよ。"
+      ],
+      "parent_open_failed": [
+        "保存先のフォルダ、開けなかったみたい。"
+      ],
+      "shelf_remove_failed": [
+        "一覧から外せなかったみたい。設定ファイルを確認してね。"
+      ],
+      "shelf_lookup_failed": [
+        "登録を読めなかったみたい。設定ファイルを確認してね。"
+      ],
+      "one_shot_prompt": [
+        "いつ、何をお知らせしようか。"
+      ],
+      "one_shot_saved": [
+        "{when}に、一度だけ知らせるね。"
+      ],
+      "one_shot_save_failed": [
+        "通知を保存できなかったみたい。保存先の空き容量と権限を確認してね。"
+      ],
+      "one_shot_invalid": [
+        "まだ登録できていないよ。ここを確認してね。\n{detail}"
+      ],
+      "one_shot_date_changed": [
+        "選べる日付が変わったみたい。日付か時刻を選び直してね。"
+      ],
+      "one_shot_time_invalid": [
+        "時刻は24時間表記のHH:mmで入れてね。"
+      ],
+      "one_shot_min_time": [
+        "その日の時刻は{time}以降でお願いね。"
+      ],
+      "history_limit": [
+        "直近50ファイルだよ。全部見るなら管理画面へどうぞ。"
+      ],
+      "history_empty": [
+        "今日の記録は、まだないみたい。"
+      ],
+      "history_off": [
+        "ファイル履歴の記録は、今はオフだよ。"
+      ],
+      "history_partial": [
+        "一部の記録を確認できていないみたい。管理画面で状態を見てね。"
+      ],
+      "history_failed": [
+        "履歴を読めなかったみたい。管理画面で状態を確認してね。"
+      ],
+      "history_open_failed": [
+        "ファイルを開けなかったみたい。移動・削除や関連付けを確認してね。"
+      ],
+      "calendar_partial": [
+        "一部の予定が見えていないみたい。設定の接続状態を確認してね。"
+      ],
+      "calendar_open_failed": [
+        "Outlookの予定表を開けなかったみたい。接続状態を確認してね。"
+      ],
+      "attendance_url_invalid": [
+        "勤怠サイトのURLを設定で確認してね。"
+      ],
+      "attendance_open_failed": [
+        "サイトを開けなかったみたい。設定のURLを確認してね。"
+      ],
+      "growth_level": [
+        "Lv.{level}になったみたい。ゆっくりでも積み重なるね。\n「一緒に過ごした記録・衣装」で解放したものを見られるよ。"
+      ],
+      "growth_trophy": [
+        "「{name}」を記録しておいたよ。"
+      ],
+      "departure_default": [
+        "そろそろ帰る時間だね。勤怠の入力も、確認しておこうか。"
+      ],
+      "uptime_unavailable": [
+        "PCの起動時間は、わからなかったみたい。"
+      ]
+    },
+    "馴れ馴れしい関西弁": {
+      "drop_action": [
+        "これ、どないしよか？ 預かるだけでもええで。"
+      ],
+      "drop_destination": [
+        "どこに移すん？ 行き先、選んでな。"
+      ],
+      "drop_paper": [
+        "どの用紙で印刷するん？"
+      ],
+      "destination_empty": [
+        "行き先がまだないで。「移動先を編集する」で登録しとこ。"
+      ],
+      "drop_invalid": [
+        "ファイルかフォルダを1つずつ渡してな。リンクは扱えへんねん。"
+      ],
+      "drop_changed": [
+        "ファイルが変わったか、確認できへんかったわ。もう一回渡してな。"
+      ],
+      "deposit_ok": [
+        "預かったで！\n「預けたものを見る」から開けるで。"
+      ],
+      "deposit_failed": [
+        "預かりの登録を保存できへんかったわ。設定ファイルと保存先、確認してな。"
+      ],
+      "processing": [
+        "処理してるで。ちょっと待ってな。"
+      ],
+      "operation_failed": [
+        "処理が終わらへんかったわ。下の内容、確認してな。"
+      ],
+      "print_sent": [
+        "印刷データ、送ったで！"
+      ],
+      "print_cancelled": [
+        "印刷はキャンセルしといたで。"
+      ],
+      "extracted": [
+        "移動して解凍したで。\n{path}"
+      ],
+      "moved": [
+        "移動したで。\n{path}"
+      ],
+      "source_retained": [
+        "元の場所に残ってるもんがあるで。移動先を確認してから整理してな。"
+      ],
+      "shelf_items": [
+        "預かってるんはこれやで。\nダブルクリックで開いてな。"
+      ],
+      "shelf_empty": [
+        "今は何も預かってへんで。\nファイルやフォルダを渡して「預ける」を選んでな。"
+      ],
+      "shelf_load_failed": [
+        "預かった一覧を読めへんかったわ。保存先、確認してな。"
+      ],
+      "shelf_open_failed": [
+        "開けへんかったわ。移動・削除や関連付けを確認してな。本体は変えてへんで。"
+      ],
+      "parent_open_failed": [
+        "保存先のフォルダ、開けへんかったわ。"
+      ],
+      "shelf_remove_failed": [
+        "一覧から外せへんかったわ。設定ファイル、確認してな。"
+      ],
+      "shelf_lookup_failed": [
+        "登録を読めへんかったわ。設定ファイル、確認してな。"
+      ],
+      "one_shot_prompt": [
+        "いつ、何を知らせたらええ？"
+      ],
+      "one_shot_saved": [
+        "{when}に、一回だけ知らせるで。"
+      ],
+      "one_shot_save_failed": [
+        "通知を保存できへんかったわ。保存先の空き容量と権限、確認してな。"
+      ],
+      "one_shot_invalid": [
+        "まだ登録できてへんで。ここ、確認してな。\n{detail}"
+      ],
+      "one_shot_date_changed": [
+        "選べる日付が変わったで。日付か時刻、選び直してな。"
+      ],
+      "one_shot_time_invalid": [
+        "時刻は24時間表記のHH:mmで入れてな。"
+      ],
+      "one_shot_min_time": [
+        "その日の時刻は{time}以降を選んでな。"
+      ],
+      "history_limit": [
+        "直近50ファイルやで。全部見るなら管理画面や。"
+      ],
+      "history_empty": [
+        "今日の記録はまだないで。"
+      ],
+      "history_off": [
+        "ファイル履歴の記録はオフやで。"
+      ],
+      "history_partial": [
+        "一部の記録を確認できてへんねん。管理画面で状態を見てな。"
+      ],
+      "history_failed": [
+        "履歴を読めへんかったわ。管理画面で状態を確認してな。"
+      ],
+      "history_open_failed": [
+        "ファイルを開けへんかったわ。移動・削除や関連付けを確認してな。"
+      ],
+      "calendar_partial": [
+        "一部の予定を確認できてへんねん。設定の接続状態を確認してな。"
+      ],
+      "calendar_open_failed": [
+        "Outlookの予定表を開けへんかったわ。接続状態を確認してな。"
+      ],
+      "attendance_url_invalid": [
+        "勤怠サイトのURL、設定で確認してな。"
+      ],
+      "attendance_open_failed": [
+        "サイトを開けへんかったわ。設定のURLを確認してな。"
+      ],
+      "growth_level": [
+        "Lv.{level}になったで！ 一緒におった分やな。\n「一緒に過ごした記録・衣装」で解放したもんを見てな。"
+      ],
+      "growth_trophy": [
+        "「{name}」を記録したで！"
+      ],
+      "departure_default": [
+        "そろそろ帰る時間やで。勤怠の入力も確認しとこな。"
+      ],
+      "uptime_unavailable": [
+        "PCの起動時間は取得できへんかったわ。"
+      ]
+    },
+    "寡黙な先輩": {
+      "drop_action": [
+        "どうする。"
+      ],
+      "drop_destination": [
+        "移動先は。"
+      ],
+      "drop_paper": [
+        "用紙を選べ。"
+      ],
+      "destination_empty": [
+        "移動先がない。「移動先を編集する」で登録だ。"
+      ],
+      "drop_invalid": [
+        "通常のファイルかフォルダを1つ。リンクは対象外だ。"
+      ],
+      "drop_changed": [
+        "確認できないか、変更されている。もう一度渡せ。"
+      ],
+      "deposit_ok": [
+        "預かった。\n「預けたものを見る」から開ける。"
+      ],
+      "deposit_failed": [
+        "登録を保存できない。設定ファイルと保存先を確認だ。"
+      ],
+      "processing": [
+        "処理中だ。"
+      ],
+      "operation_failed": [
+        "処理は未完了だ。詳細を確認しろ。"
+      ],
+      "print_sent": [
+        "印刷データを送った。"
+      ],
+      "print_cancelled": [
+        "印刷を取りやめた。"
+      ],
+      "extracted": [
+        "移動と解凍が終わった。\n{path}"
+      ],
+      "moved": [
+        "移動した。\n{path}"
+      ],
+      "source_retained": [
+        "元の場所に残る項目がある。移動先を確認してから整理だ。"
+      ],
+      "shelf_items": [
+        "預かったものだ。\nダブルクリックで開ける。"
+      ],
+      "shelf_empty": [
+        "預かりはない。\nファイルかフォルダを渡して「預ける」を選べ。"
+      ],
+      "shelf_load_failed": [
+        "預かった一覧を読めない。保存先を確認だ。"
+      ],
+      "shelf_open_failed": [
+        "開けなかった。移動・削除や関連付けを確認しろ。本体は未変更だ。"
+      ],
+      "parent_open_failed": [
+        "保存先のフォルダを開けなかった。"
+      ],
+      "shelf_remove_failed": [
+        "一覧の登録を削除できない。設定ファイルを確認だ。"
+      ],
+      "shelf_lookup_failed": [
+        "登録を読めない。設定ファイルを確認だ。"
+      ],
+      "one_shot_prompt": [
+        "日時と内容を。"
+      ],
+      "one_shot_saved": [
+        "{when}に、一度だけ知らせる。"
+      ],
+      "one_shot_save_failed": [
+        "通知を保存できない。保存先の空き容量と権限を確認だ。"
+      ],
+      "one_shot_invalid": [
+        "未登録だ。入力を確認しろ。\n{detail}"
+      ],
+      "one_shot_date_changed": [
+        "選べる日付が変わった。日付か時刻を選び直せ。"
+      ],
+      "one_shot_time_invalid": [
+        "時刻は24時間表記のHH:mmだ。"
+      ],
+      "one_shot_min_time": [
+        "その日は{time}以降を選べ。"
+      ],
+      "history_limit": [
+        "直近50ファイルだ。全件は管理画面にある。"
+      ],
+      "history_empty": [
+        "今日の記録はない。"
+      ],
+      "history_off": [
+        "ファイル履歴の記録はオフだ。"
+      ],
+      "history_partial": [
+        "一部の記録は未確認だ。管理画面で状態を確認しろ。"
+      ],
+      "history_failed": [
+        "履歴を読めない。管理画面で状態を確認しろ。"
+      ],
+      "history_open_failed": [
+        "ファイルを開けない。移動・削除や関連付けを確認しろ。"
+      ],
+      "calendar_partial": [
+        "一部の予定は未確認だ。設定の接続状態を確認しろ。"
+      ],
+      "calendar_open_failed": [
+        "Outlookの予定表を開けない。接続状態を確認しろ。"
+      ],
+      "attendance_url_invalid": [
+        "設定で勤怠サイトのURLを確認しろ。"
+      ],
+      "attendance_open_failed": [
+        "サイトを開けない。設定のURLを確認しろ。"
+      ],
+      "growth_level": [
+        "Lv.{level}になった。\n解放したものは「一緒に過ごした記録・衣装」で確認できる。"
+      ],
+      "growth_trophy": [
+        "「{name}」を記録した。"
+      ],
+      "departure_default": [
+        "そろそろ退勤だ。勤怠の入力を確認しろ。"
+      ],
+      "uptime_unavailable": [
+        "PCの起動時間は取得できなかった。"
+      ]
+    },
+    "孤高のギャンブラー": {
+      "drop_action": [
+        "選ぶか……次の一手。預けるか、処理を進めるか。"
+      ],
+      "drop_destination": [
+        "決めよう……次の置き場所。"
+      ],
+      "drop_paper": [
+        "選択……印刷する用紙。"
+      ],
+      "destination_empty": [
+        "まだ白紙……移動先。「移動先を編集する」からの登録。"
+      ],
+      "drop_invalid": [
+        "受け取れるのは1つ……通常のファイルかフォルダ。対象外、リンク。"
+      ],
+      "drop_changed": [
+        "変わったらしい……手元のファイル。確認できない場合もある。もう一度、受け渡し。"
+      ],
+      "deposit_ok": [
+        "預かった……手元の一枚。\n開くなら「預けたものを見る」。"
+      ],
+      "deposit_failed": [
+        "未完了……預かりの登録。確認するもの、設定ファイルと保存先。"
+      ],
+      "processing": [
+        "進行中……選んだ処理。"
+      ],
+      "operation_failed": [
+        "届かなかった……処理の完了。次の一手は、詳細の確認。"
+      ],
+      "print_sent": [
+        "送信済み……印刷データ。"
+      ],
+      "print_cancelled": [
+        "ここは見送り……印刷。"
+      ],
+      "extracted": [
+        "完了……移動と解凍。\n{path}"
+      ],
+      "moved": [
+        "移した……新たな置き場所。\n{path}"
+      ],
+      "source_retained": [
+        "残っている……元の場所にも一部。整理の前に確認、移動先。"
+      ],
+      "shelf_items": [
+        "並べた……預かっている手札。\n開くなら、ダブルクリック。"
+      ],
+      "shelf_empty": [
+        "まだない……預かっている手札。\nファイルかフォルダを渡し、選ぶのは「預ける」。"
+      ],
+      "shelf_load_failed": [
+        "読み込めない……預かった一覧。まず確認、保存先。"
+      ],
+      "shelf_open_failed": [
+        "開けない……預かったもの。確認するもの、移動・削除と関連付け。未変更、本体。"
+      ],
+      "parent_open_failed": [
+        "開けなかった……保存先のフォルダ。"
+      ],
+      "shelf_remove_failed": [
+        "外せない……一覧の登録。確認するもの、設定ファイル。"
+      ],
+      "shelf_lookup_failed": [
+        "読み込めない……登録。確認するもの、設定ファイル。"
+      ],
+      "one_shot_prompt": [
+        "決めよう……知らせる日時と、その内容。"
+      ],
+      "one_shot_saved": [
+        "刻んだ……{when}。\n一度だけのお知らせ、その時刻。"
+      ],
+      "one_shot_save_failed": [
+        "残せなかった……通知の登録。確認するもの、保存先の空き容量と権限。"
+      ],
+      "one_shot_invalid": [
+        "まだ未登録……通知。必要なのは、入力の確認。\n{detail}"
+      ],
+      "one_shot_date_changed": [
+        "変わった……選べる日付。もう一度、日付か時刻の選択。"
+      ],
+      "one_shot_time_invalid": [
+        "そろえる……時刻の形。24時間表記のHH:mm。"
+      ],
+      "one_shot_min_time": [
+        "選べるのは……その日の{time}以降。"
+      ],
+      "history_limit": [
+        "ここには直近50ファイル。全件を読むなら、管理画面。"
+      ],
+      "history_empty": [
+        "まだない……今日の記録。"
+      ],
+      "history_off": [
+        "記録はオフ……ファイル履歴。"
+      ],
+      "history_partial": [
+        "まだ一部が未確認……記録。確かめる場所、管理画面。"
+      ],
+      "history_failed": [
+        "読み込めない……履歴。まず管理画面で、状態の確認。"
+      ],
+      "history_open_failed": [
+        "開けなかった……ファイル。確認するもの、移動・削除と関連付け。"
+      ],
+      "calendar_partial": [
+        "見えていない……一部の予定。確認するもの、設定の接続状態。"
+      ],
+      "calendar_open_failed": [
+        "開けなかった……Outlookの予定表。確認するもの、接続状態。"
+      ],
+      "attendance_url_invalid": [
+        "確認……設定にある勤怠サイトのURL。"
+      ],
+      "attendance_open_failed": [
+        "開けなかった……サイト。確認するもの、設定のURL。"
+      ],
+      "growth_level": [
+        "積み上げた……Lv.{level}。\n新たな手札の確認は「一緒に過ごした記録・衣装」。"
+      ],
+      "growth_trophy": [
+        "刻んだ……「{name}」。一つ増えた、記録という手札。"
+      ],
+      "departure_default": [
+        "近づいた……退勤の時刻。最後に確認、勤怠の入力。"
+      ],
+      "uptime_unavailable": [
+        "まだ不明……PCの起動時間。"
+      ]
+    }
+  }
+}

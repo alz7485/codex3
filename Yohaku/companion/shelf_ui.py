@@ -52,7 +52,7 @@ class ShelfController(QObject):
         c=self.owner
         if c.hidden or c.user_hidden:return
         try:items=self.store.prune(self.now());error=''
-        except (ShelfError,OSError):items=[];error=self.store.error or '預けたものを読み込めません。保存先をご確認ください。'
+        except (ShelfError,OSError):items=[];error=c.engine.system_phrase('shelf_load_failed')+('\n'+self.store.error if self.store.error else '')
         c.bubble.show_shelf(items,error);c.position()
     def refresh(self):
         if self.owner.bubble.isVisible() and self.owner.bubble.current=='shelf':self.show()
@@ -71,7 +71,7 @@ class ShelfController(QObject):
             path=dropped_item(row['path'])
             if path.is_dir()!=(row['kind']=='folder'):raise ShelfError('種類が変わっています。')
             if not QDesktopServices.openUrl(QUrl.fromLocalFile(str(path))):raise ShelfError('開けません。')
-        except (ShelfError,FileDropError,OSError):self.report('開けませんでした。移動・削除や関連付けを確認してください。本体は変更していません。')
+        except (ShelfError,FileDropError,OSError):self.report(self.owner.engine.system_phrase('shelf_open_failed'))
     def open_parent(self,identifier):
         try:
             row=self.lookup(identifier)
@@ -79,10 +79,10 @@ class ShelfController(QObject):
             if row['kind']!='file':return
             folder=Path(row['path']).parent
             if not folder.is_dir() or not QDesktopServices.openUrl(QUrl.fromLocalFile(str(folder))):raise ShelfError('開けません。')
-        except (ShelfError,OSError):self.report('保存先のフォルダを開けませんでした。')
+        except (ShelfError,OSError):self.report(self.owner.engine.system_phrase('parent_open_failed'))
     def remove(self,identifier):
         try:self.store.remove(identifier);self.refresh()
-        except (ShelfError,OSError):self.report('一覧の登録を削除できません。設定ファイルをご確認ください。')
+        except (ShelfError,OSError):self.report(self.owner.engine.system_phrase('shelf_remove_failed'))
     def menu_for(self,row):
         menu=QMenu(self.owner.bubble)
         if row['kind']=='file':menu.addAction('フォルダを開く',lambda:self.open_parent(row['id']))
@@ -98,7 +98,7 @@ class ShelfController(QObject):
         if item is None:return
         c.bubble.file_links.setCurrentItem(item)
         try:row=self.lookup(item.data(Qt.ItemDataRole.UserRole))
-        except (ShelfError,OSError):self.report('登録を読み込めません。');return
+        except (ShelfError,OSError):self.report(self.owner.engine.system_phrase('shelf_lookup_failed'));return
         if row is None:self.refresh();return
         self.close_popup();menu=self.menu_for(row);self.popup=menu
         def release():

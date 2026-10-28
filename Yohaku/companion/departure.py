@@ -34,10 +34,10 @@ def system_uptime_seconds():
         return None
 
 
-def departure_body(message, now, uptime_seconds):
+def departure_body(message, now, uptime_seconds, unavailable='PCの起動時間を取得できませんでした。'):
     body = message.strip() or DEFAULT_MESSAGE
     if type(uptime_seconds) not in (int, float) or not math.isfinite(uptime_seconds) or not 0 <= uptime_seconds < 10**10:
-        return body + '\n\nPCの起動時間を取得できませんでした。'
+        return body + '\n\n'+unavailable
     boot = now - timedelta(seconds=uptime_seconds)
     minutes = int(uptime_seconds // 60)
     return body + f'\n\nPC起動：{boot:%m/%d %H:%M}\n起動から：{minutes // 60}時間{minutes % 60}分'

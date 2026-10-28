@@ -199,6 +199,10 @@ class Engine:
                 text = text[:thought.start()].rstrip()
         return text
 
+    def system_phrase(self,key,replacements=None):
+        from .system_dialogue import render_system_phrase
+        return render_system_phrase(voice_for(self.settings,self.dialogue.data),key,self.dialogue.data,replacements,self.choose)
+
     def click_reaction(self, monotonic_time):
         category = self.click_reactions.click(monotonic_time, self.dialogue.data['options'])
         if category:
@@ -309,7 +313,9 @@ class Engine:
             return None
         self.departure_date = now.date().isoformat()
         self.last_display = now
-        return Notice('退勤前のお知らせ', departure_body(self.settings.departure_message, now, uptime_provider()),
+        message=self.settings.departure_message
+        if not message.strip() or message.strip()==DEFAULT_MESSAGE:message=self.system_phrase('departure_default')
+        return Notice('退勤前のお知らせ', departure_body(message, now, uptime_provider(),self.system_phrase('uptime_unavailable')),
                       True, 'notice', 'departure')
 
     def next_notice(self, now: datetime, events: list[Event], hidden: bool = False,
