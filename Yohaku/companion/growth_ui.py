@@ -225,10 +225,9 @@ class GrowthService:
             if n['kind']=='level':
                 h.motion.start_soon()
                 if h.settings.animation:h.resident.level_up.start()
-                # Do not inject another personality through status notifications.
-                return Notice('',f'Lv.{n["level"]}になりました。\n一緒に過ごした記録から、解放したものを確認できます。',True,expression='happy',kind='notification')
+                return Notice('',h.engine.system_phrase('growth_level',{'level':n['level']}),True,expression='happy',kind='notification')
             item=self.engine.catalog.items['trophies'].get(n['key'])
-            if item:return Notice('',item['texts'].get(voice,item['texts'].get('*',item['name']))+'\n「'+item['name']+'」を記録しました。',True,expression=item['expression'],kind='notification')
+            if item:return Notice('',item['texts'].get(voice,item['texts'].get('*',item['name']))+'\n'+h.engine.system_phrase('growth_trophy',{'name':item['name']}),True,expression=item['expression'],kind='notification')
             return None
         try:item=self.engine.choose_event(h.settings.character,voice,now,h.engine.context,self.calendar(),self.work())
         except (OSError,ValueError,TypeError,KeyError):self.error='演出の記録を保存できませんでした。';return None

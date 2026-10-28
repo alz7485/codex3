@@ -1,8 +1,10 @@
-# Yohaku v0.32.0
+# Yohaku v0.33.0
 
-**[onedirビルド用ZIP（約14MB）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.32.0-onedir-build.zip)**
+**[onedirビルド用ZIP（約14MB）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.33.0-onedir-build.zip)**
 
-[spec単体](Yohaku.spec) · [5行のコマンド](BUILD_ONEDIR.txt) · [SHA-256](Yohaku-v0.32.0-onedir-build.zip.sha256) · [全ソース](Yohaku-v0.32.0-source.zip)
+[spec単体](Yohaku.spec) · [5行のコマンド](BUILD_ONEDIR.txt) · [SHA-256](Yohaku-v0.33.0-onedir-build.zip.sha256) · [全ソース](Yohaku-v0.33.0-source.zip)
+
+呼び出し後の操作案内・処理結果・レベルアップ・退勤前の既定メッセージ43項目を全7性格にそろえました。会話編集UIの「操作案内」から編集できます。[案内と編集](../../Yohaku/docs/SYSTEM_DIALOGUE.md)
 
 レベルアップ時、つづり・ビット・ペギーそれぞれが約2.8秒喜ぶ専用アニメーションを表示します。[動きの例](../../Yohaku/docs/growth-level-animation.gif)
 

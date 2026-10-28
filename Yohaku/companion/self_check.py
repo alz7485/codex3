@@ -148,6 +148,10 @@ def check_bundle():
             content_editor.stop_preview()
         finally:content_editor.hide();content_editor.deleteLater()
         from .exp_popup import ExpPopup
+        from .system_dialogue import render_system_phrase
+        from .dialogue import VOICE_NAMES
+        for voice in VOICE_NAMES:
+            if 'Lv.2' not in render_system_phrase(voice,'growth_level',replacements={'level':2}):raise ValueError('System dialogue asset failed')
         exp_mascot=Mascot();exp_mascot.show();exp_clock=[1000.]
         exp_popup=ExpPopup(exp_mascot,clock=lambda:exp_clock[0])
         try:
@@ -168,7 +172,7 @@ def check_bundle():
             'pickup_poses_rendered':pickup_rendered,'note_poses_rendered':notes_rendered,
             'drop_stages_rendered': 3, 'destination_editor_checked': True, 'shelf_launcher_checked': True,
             'growth_restore_checked':True,'costume_layers_checked':True,'content_editor_checked':True,
-            'floating_exp_checked':True,'editor_preview_checked':True,'level_up_animation_checked':True}
+            'floating_exp_checked':True,'editor_preview_checked':True,'level_up_animation_checked':True,'system_dialogue_checked':True}
 
 
 def run(output):

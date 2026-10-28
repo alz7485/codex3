@@ -1212,6 +1212,8 @@ class InteractionBubble(Bubble):
 
     def __init__(self):
         super().__init__()
+        from .system_dialogue import render_system_phrase
+        self.system_phrase=lambda key,values=None:render_system_phrase('冷静な案内役',key,replacements=values)
         self.setWindowFlag(Qt.WindowType.WindowDoesNotAcceptFocus, False)
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating, True)
         self.current = None
@@ -1450,8 +1452,8 @@ class InteractionBubble(Bubble):
             self.calendar_presented.emit()
 
     def show_drop_stage(self, path, stage, destinations=(), error=''):
-        prompts={'action':'どう処理しましょう？','destination':'どこに移動しましょう？','paper':'どの用紙で印刷しましょう？'}
-        text=path.name+'\n'+prompts[stage]
+        prompts={'action':'drop_action','destination':'drop_destination','paper':'drop_paper'}
+        text=path.name+'\n'+self.system_phrase(prompts[stage])
         if error:text+='\n\n'+error
         self.display(Notice('',text));self.current='file_drop';self.interactive=True;self.set_kind('menu');self.timer.stop()
         self.drop_notice.clear();self.drop_notice.hide()
@@ -1476,14 +1478,14 @@ class InteractionBubble(Bubble):
             self.drop_targets_scroll.show()
             if stage=='destination':
                 self.drop_settings_button.setText('移動先を編集する');self.drop_settings_button.setEnabled(True);self.drop_settings_button.show()
-                if not destinations and not error:self.drop_notice.setText('移動先が未登録です。「移動先を編集する」から登録してください。');self.drop_notice.show()
+                if not destinations and not error:self.drop_notice.setText(self.system_phrase('destination_empty'));self.drop_notice.show()
         self.drop_row.show();self.resize_text();self.activateWindow()
 
     def show_drop_choices(self,path,rule=None,error=''):
         self.show_drop_stage(path,'action',error=error)
 
     def show_one_shot_form(self):
-        self.display(Notice('', 'いつ、何をお知らせしましょう？'))
+        self.display(Notice('', self.system_phrase('one_shot_prompt')))
         self.current = 'one_shot';self.interactive = True
         self.set_kind('menu')
         earliest = datetime.now().astimezone().replace(second=0, microsecond=0) + timedelta(minutes=1)
@@ -1522,9 +1524,9 @@ class InteractionBubble(Bubble):
         minimum_time = QTime(earliest.hour, earliest.minute) if self.reminder_date.date() == minimum_day else QTime(0, 0)
         self.reminder_time.setMinimumTime(minimum_time)
         clock = self.reminder_time.time()
-        error = ('選択できる日付が変わりました。日付か時刻を選び直してください。' if self._reminder_date_recheck
-                 else '時刻は24時間表記のHH:mmで入力してください。' if not clock.isValid()
-                 else f'選択した日の時刻は{minimum_time.toString("HH:mm")}以降を指定してください。' if clock < minimum_time else '')
+        error = (self.system_phrase('one_shot_date_changed') if self._reminder_date_recheck
+                 else self.system_phrase('one_shot_time_invalid') if not clock.isValid()
+                 else self.system_phrase('one_shot_min_time',{'time':minimum_time.toString('HH:mm')}) if clock < minimum_time else '')
         self.reminder_ok.setEnabled(not error)
         if error:
             self.reminder_status.setText(error);self.reminder_status.show()
@@ -1541,7 +1543,7 @@ class InteractionBubble(Bubble):
 
     def show_shelf(self,rows,error=''):
         from .props import item_icon
-        text=error or ('預けたものはこちらです。\nダブルクリックで開きます。' if rows else '今は何も預かっていません。\nファイルやフォルダを渡して「預ける」を選んでください。')
+        text=error or self.system_phrase('shelf_items' if rows else 'shelf_empty')
         self.display(Notice('',text));self.current='shelf';self.interactive=True;self.set_kind('menu');self.timer.stop()
         self.file_links.setAccessibleName('預けたもの。ダブルクリックで開く、右クリックで登録を削除')
         for row in rows:
@@ -1741,6 +1743,7 @@ class Controller(QObject):
         self.brand_icon = QIcon(str(Path(__file__).parent / "assets/app/yohaku.ico"))
         self.resident = Resident(self.settings.character)
         self.bubble = InteractionBubble()
+        self.bubble.system_phrase = self.engine.system_phrase
         self.bubble.duration_ms = self.dialogue.data["options"]["bubble_seconds"] * 1000
         self.interaction = self.bubble  # One actual speech window for all modes.
         self.pending_reaction = None
@@ -1957,13 +1960,13 @@ class Controller(QObject):
         try:
             url = attendance_url(self.settings.attendance_url)
         except ValueError:
-            self.bubble.text.setText('勤怠サイトのURLを設定で確認してください。')
+            self.bubble.text.setText(self.engine.system_phrase('attendance_url_invalid'))
             self.bubble.resize_text()
             return
         if QDesktopServices.openUrl(QUrl(url)):
             self.bubble.hide()
         else:
-            self.bubble.text.setText(self.bubble.text.text() + '\n\nサイトを開けませんでした。設定のURLをご確認ください。')
+            self.bubble.text.setText(self.bubble.text.text() + '\n\n'+self.engine.system_phrase('attendance_open_failed'))
             self.bubble.resize_text()
 
     def request_quit(self):
@@ -2601,13 +2604,13 @@ class Controller(QObject):
         try:
             self.engine.one_shots.add(when, self.bubble.reminder_message.toPlainText(), now, self.bubble.reminder_message.styles())
         except ValueError as error:
-            self.bubble.reminder_status.setText(str(error))
+            self.bubble.reminder_status.setText(self.engine.system_phrase('one_shot_invalid',{'detail':str(error)}))
             self.bubble.reminder_status.show()
         except OSError:
-            self.bubble.reminder_status.setText('通知を保存できません。保存先の空き容量・権限をご確認ください。')
+            self.bubble.reminder_status.setText(self.engine.system_phrase('one_shot_save_failed'))
             self.bubble.reminder_status.show()
         else:
-            self.bubble.display(Notice('', f'{when:%Y/%m/%d %H:%M} に、一度だけお知らせします。'))
+            self.bubble.display(Notice('', self.engine.system_phrase('one_shot_saved',{'when':f'{when:%Y/%m/%d %H:%M}'})))
         self.bubble.resize_text();self.position()
 
     def select_content(self, key):
@@ -2634,7 +2637,7 @@ class Controller(QObject):
                                    (e.title[:80] if self.settings.show_titles and e.title else "予定あり（件名は非表示）")
                                    for e in upcoming[:10]) or self.engine.phrase("calendar_empty")
                 if not getattr(self.events, 'complete', True):
-                    text += '\n\n一部の予定を確認できていません。設定の接続状態をご確認ください。'
+                    text += '\n\n'+self.engine.system_phrase('calendar_partial')
             self.interaction.content(key, CHARACTERS[self.settings.character], self.engine.phrase("calendar_intro") + "\n\n" + text)
         elif key == "activity":
             self.motion.react(self.dialogue.rule("activity_open")["expression"])
@@ -2672,17 +2675,17 @@ class Controller(QObject):
             for name,path,_source,_opened in rows:
                 key=path.replace('/','\\').casefold()
                 if key not in seen:seen.add(key);files.append((name,path))
-            if len(files)>50:text+='\n直近50ファイルです。全件は管理画面で確認できます。'
-            if not files:text+='\n今日の記録はまだありません。'
-            if not self.settings.file_logging:text+='\nファイル履歴の記録はオフです。'
-            if self.activity_error:text+='\n一部の記録を確認できていません。管理画面で状態を確認できます。'
+            if len(files)>50:text+='\n'+self.engine.system_phrase('history_limit')
+            if not files:text+='\n'+self.engine.system_phrase('history_empty')
+            if not self.settings.file_logging:text+='\n'+self.engine.system_phrase('history_off')
+            if self.activity_error:text+='\n'+self.engine.system_phrase('history_partial')
         except (OSError,sqlite3.Error):
-            files=[];text+='\n履歴を読み込めませんでした。管理画面で状態をご確認ください。'
+            files=[];text+='\n'+self.engine.system_phrase('history_failed')
         self.bubble.show_file_history(text,files[:50])
 
     def open_history_file(self,path):
         if not QDesktopServices.openUrl(QUrl.fromLocalFile(path)):
-            self.bubble.text.setText('ファイルを開けませんでした。移動・削除や関連付けをご確認ください。')
+            self.bubble.text.setText(self.engine.system_phrase('history_open_failed'))
             self.bubble.resize_text();self.position()
 
     def open_outlook_calendar(self):
@@ -2701,7 +2704,7 @@ class Controller(QObject):
         self.outlook_open_busy=False;self.bubble.detail_action.setEnabled(True)
         if self.bubble.notice is not self.outlook_open_notice:return
         if error:
-            self.bubble.text.setText(self.bubble.text.text()+'\n\n'+error)
+            self.bubble.text.setText(self.bubble.text.text()+'\n\n'+self.engine.system_phrase('calendar_open_failed')+'\n'+error)
             self.bubble.resize_text();self.position()
         else:self.bubble.dismiss()
 

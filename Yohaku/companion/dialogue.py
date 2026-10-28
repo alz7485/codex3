@@ -10,6 +10,7 @@ import shutil
 from .motion import EXPRESSION_FRAMES
 from .characters import CHARACTERS, RECOGNIZED_PROFILE_KEYS, profile_for
 from .metrics import METRICS
+from .system_dialogue import system_defaults,validate_system_phrases
 from .advanced_context import condition_key, TEMPORAL_KINDS, EVENT_KINDS
 import math
 
@@ -126,6 +127,9 @@ def validate(document):
         _require(isinstance(bank, dict) and set(bank) == set(ids), f'{voice}: すべての話題のセリフが必要です。')
         for key, lines in bank.items():
             _require(isinstance(lines, list) and 1 <= len(lines) <= 200 and all(_text(line) for line in lines), f'{voice} / {key}: セリフは1〜200件、1件1〜1000文字にしてください。')
+    if 'system_phrases' in document:
+        try:validate_system_phrases(document['system_phrases'])
+        except ValueError as error:raise DialogueError(str(error)) from None
     _require(document_size(document) <= MAX_BYTES, 'JSONは2MB以内にしてください。')
     return deepcopy(document)
 
@@ -190,7 +194,7 @@ def upgrade(document):
     document = upgrade_voice_names(document)
     document = upgrade_display_timing(document)
     if document['schema_version'] == 2:
-        return upgrade_personalities(upgrade_advanced(upgrade_resources(upgrade_names(upgrade_comfort(upgrade_click_reactions(upgrade_mail(document)))))))
+        return upgrade_system_phrases(upgrade_personalities(upgrade_advanced(upgrade_resources(upgrade_names(upgrade_comfort(upgrade_click_reactions(upgrade_mail(document))))))))
     result = deepcopy(document)
     base = json.loads(DEFAULT_PATH.read_text(encoding='utf-8'))
     result['schema_version'] = 2
@@ -207,7 +211,14 @@ def upgrade(document):
                 for voice, bank in result['phrases'].items():
                     if isinstance(bank, dict) and voice in base['phrases']:
                         bank[rule['id']] = deepcopy(base['phrases'][voice][rule['id']])
-    return upgrade_personalities(upgrade_advanced(upgrade_resources(upgrade_names(upgrade_comfort(upgrade_click_reactions(upgrade_mail(result)))))))
+    return upgrade_system_phrases(upgrade_personalities(upgrade_advanced(upgrade_resources(upgrade_names(upgrade_comfort(upgrade_click_reactions(upgrade_mail(result))))))))
+
+
+def upgrade_system_phrases(document):
+    if 'system_phrases' in document:return document
+    result=deepcopy(document);result['system_phrases']=system_defaults()
+    # Keep a valid document at its size limit readable; runtime has stock speech.
+    return result if document_size(result)<=MAX_BYTES else document
 
 
 def upgrade_display_timing(document):

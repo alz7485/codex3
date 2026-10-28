@@ -45,7 +45,7 @@ class FileDropController(QObject):
             self.pending=dropped_item(path);self.identity=file_identity(self.pending)
             self.pending_kind='folder' if self.pending.is_dir() else 'file'
         except (FileDropError,OSError):
-            self.message('通常のファイルかフォルダーを1つドロップしてください。リンクは対象外です。');return
+            self.message(self.owner.engine.system_phrase('drop_invalid'));return
         self.store.__init__(self.store.path)
         if not self.store.data['enabled']:
             self.cancel_pending();return
@@ -107,14 +107,14 @@ class FileDropController(QObject):
                     raise FileDropError('種類が変更されています。')
             elif file_identity(path)!=self.identity:raise FileDropError('変更されています。')
         except (FileDropError,OSError):
-            self.message('ファイルを確認できないか、変更されています。もう一度ドロップしてください。');return
+            self.message(c.engine.system_phrase('drop_changed'));return
         if self.stage=='action':
             if action=='shelve':
                 try:
                     self.owner.shelf_service.deposit(path)
-                    self.message('預かりました。\n「預けたものを見る」から開けます。')
+                    self.message(c.engine.system_phrase('deposit_ok'))
                     self.cancel_pending()
-                except (ValueError,OSError):self.message('預けたものを保存できません。設定ファイルと保存先を確認してください。')
+                except (ValueError,OSError):self.message(c.engine.system_phrase('deposit_failed'))
                 return
             if action=='move':self.stage='destination';self.show_choices()
             elif action=='print_pdf' and path.is_file() and path.suffix.lower()=='.pdf':self.stage='paper';self.show_choices()
@@ -137,7 +137,7 @@ class FileDropController(QObject):
         self.busy=True
         for choice in list(c.bubble.drop_buttons.values())+list(c.bubble.drop_extra_buttons.values()):choice.setEnabled(False)
         c.bubble.drop_settings_button.setEnabled(False);c.bubble.drop_cancel.setEnabled(False)
-        c.bubble.drop_notice.setText('処理しています。');c.bubble.drop_notice.show();c.bubble.resize_text();c.position()
+        c.bubble.drop_notice.setText(c.engine.system_phrase('processing'));c.bubble.drop_notice.show();c.bubble.resize_text();c.position()
         expected=self.identity
         def work():
             try:
@@ -154,16 +154,17 @@ class FileDropController(QObject):
         self.owner.resident.clear_props()
         if self.closed:
             return
+        phrase=self.owner.engine.system_phrase
         if error:
-            text = error
+            text = phrase('operation_failed')+'\n'+error
         elif 'printed' in result:
-            text = '印刷データを送信しました。' if result['printed'] else '印刷をキャンセルしました。'
+            text = phrase('print_sent' if result['printed'] else 'print_cancelled')
         elif result.get('extracted'):
-            text = '移動して解凍しました。\n' + result['extracted']
+            text = phrase('extracted',{'path':result['extracted']})
         else:
-            text = '移動しました。\n' + result.get('path', '')
+            text = phrase('moved',{'path':result.get('path','')})
             if result.get('source_retained'):
-                text += '\n元の場所に残った項目があります。移動先を確認してから整理してください。'
+                text += '\n'+phrase('source_retained')
         c = self.owner
         if not self.closed and not c.hidden and not c.user_hidden and c.bubble.isVisible():
             if c.bubble.current == 'one_shot':
