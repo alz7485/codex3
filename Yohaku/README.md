@@ -1,14 +1,16 @@
 # Yohaku
 
+成長システムの基盤と独立エディタを追加しました。経験値はEXP表記、キャラごとに記録します。タスクトレイの「一緒に過ごした記録・衣装」から確認・装着・パック再読み込みができます。[使い方・初期値・追加方法](docs/GROWTH.md)。導入前はGitタグ `yohaku-v0.29.0-before-growth` で保存済みです。
+
 <img src="companion/assets/app/yohaku.png" width="112" alt="Yohakuのアイコン">
 
 **仕事に、ひと呼吸。** 予定とファイル履歴をそっと知らせる、デスクトップの小さな同僚です。
 
-[onedirビルド用ZIP（1つ）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.29.0-onedir-build.zip) · [specファイル](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku.spec)
+[onedirビルド用ZIP（1つ）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.30.0-onedir-build.zip) · [specファイル](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku.spec)
 
 **ビルド用ZIPだけを新しいフォルダーに展開してください。** testsは不要で、同梱のONEDIR_COMMAND.txtの5行でEXEを作れます。テキスト化していません。
 
-v0.29.0では、ユーザー設定・会話・通知・履歴の保存先をYohaku.exeの隣の `Data` にまとめました。Dataがない初回は旧LocalAppDataからコピーし、既存のDataは優先して保持します。初回にsettings.jsonを作成します。[保存先・初回移行・更新手順](docs/PORTABLE_DATA.md)
+v0.30.0では、ユーザー設定・会話・通知・履歴の保存先をYohaku.exeの隣の `Data` にまとめました。Dataがない初回は旧LocalAppDataからコピーし、既存のDataは優先して保持します。初回にsettings.jsonを作成します。[保存先・初回移行・更新手順](docs/PORTABLE_DATA.md)
 
 v0.28.2では、特につづりの足の付け根まで滑っていた見え方を見直しました。付け根から靴までをつなぎ、足を寄せすぎず小さく踏み出します。本体の色が靴に混ざる部分も除き、つづりの移動速度を控えめにしました。体だけをごく小さく上下させ、接地する足は地面に保ちます。[実際の82px表示と拡大GIF](docs/walk-alternation.gif) · [動作](docs/TIMING_MOTION.md)
 
@@ -244,12 +246,12 @@ py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements-build.txt
 .\.venv\Scripts\python.exe -m PyInstaller --noconfirm --clean Yohaku.spec
 .\.venv\Scripts\python.exe scripts\collect_licenses.py dist\Yohaku
-.\.venv\Scripts\python.exe -c "import shutil; shutil.make_archive('Yohaku-v0.29.0-windows-x64-onedir', 'zip', 'dist', 'Yohaku')"
+.\.venv\Scripts\python.exe -c "import shutil; shutil.make_archive('Yohaku-v0.30.0-windows-x64-onedir', 'zip', 'dist', 'Yohaku')"
 ```
 
 Python 3.12の場合は、1行目を `py -3.12 -m venv .venv` に変更します。
 
-3行目がonedirを作るコマンドです。`Yohaku.spec`にフォルダー形式、アイコン、3体とアニメーション素材、製品名・版を定義しています。出力は `dist\Yohaku\Yohaku.exe`。5行目で作るZIPは作業フォルダー直下の `Yohaku-v0.29.0-windows-x64-onedir.zip` です。
+3行目がonedirを作るコマンドです。`Yohaku.spec`にフォルダー形式、アイコン、3体とアニメーション素材、製品名・版を定義しています。出力は `dist\Yohaku\Yohaku.exe`。5行目で作るZIPは作業フォルダー直下の `Yohaku-v0.30.0-windows-x64-onedir.zip` です。
 
 | 同梱ファイル | 用途 |
 |---|---|
@@ -267,7 +269,7 @@ Python 3.12の場合は、1行目を `py -3.12 -m venv .venv` に変更します
 py -3.11 scripts/build_onedir.py
 ```
 
-ビルドヘルパーの場合の出力は `dist\Yohaku\Yohaku.exe` と `release\Yohaku-v0.29.0-windows-x64-onedir.zip` です。**EXEだけを取り出さず、ZIPをすべて展開して実行してください。** DLL・Qt・画像は同じフォルダーの`_internal`に入ります。配布物には依存ソフトウェアのライセンス文書もコピーします。署名・社内パッケージ化は含みません。LinuxからWindows EXEを作ったものではありません。
+ビルドヘルパーの場合の出力は `dist\Yohaku\Yohaku.exe` と `release\Yohaku-v0.30.0-windows-x64-onedir.zip` です。**EXEだけを取り出さず、ZIPをすべて展開して実行してください。** DLL・Qt・画像は同じフォルダーの`_internal`に入ります。配布物には依存ソフトウェアのライセンス文書もコピーします。署名・社内パッケージ化は含みません。LinuxからWindows EXEを作ったものではありません。
 
 ビルド素材の確認だけなら `python scripts/build_onedir.py --check`、ビルド環境の準備だけなら `py -3.11 scripts/build_onedir.py --setup-only` を使います。Windows用ビルドはWindows上で実行してください。
 

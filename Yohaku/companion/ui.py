@@ -285,6 +285,11 @@ class Mascot(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setFixedSize(size, size)
         self.frame_index = None
+        self.costumes = None
+        self.growth_effect_until = 0.0
+        self.growth_effect_timer = QTimer(self)
+        self.growth_effect_timer.setInterval(33)
+        self.growth_effect_timer.timeout.connect(self.advance_growth_effect)
         self.flipped = False
         self.bob = 0.0
         self.sway = 0.0
@@ -403,6 +408,14 @@ class Mascot(QWidget):
         self.setAccessibleName(CHARACTERS[self.character])
         self.update()
 
+    def start_growth_effect(self):
+        self.growth_effect_until=time.monotonic()+4
+        self.growth_effect_timer.start();self.update()
+
+    def advance_growth_effect(self):
+        if time.monotonic()>=self.growth_effect_until or not self.isVisible():self.growth_effect_timer.stop()
+        self.update()
+
     def paintEvent(self, event):
         p = QPainter(self)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -435,6 +448,8 @@ class Mascot(QWidget):
         p.translate(-self.width() / 2, -self.height() + 4)
         frames = character_frames(self.character)
         pixmap = self.pixmap if self.frame_index is None else frames[self.frame_index]
+        if self.costumes is not None:
+            pixmap=self.costumes.compose(pixmap,self.character,24 if self.frame_index is None else self.frame_index)
         if self.flipped and (self.frame_index is None or self.frame_index < 24):
             pixmap = pixmap.transformed(QTransform().scale(-1, 1))
         from .walk_animation import WALK_BLEND_SECONDS
@@ -442,6 +457,8 @@ class Mascot(QWidget):
         blend = min(1.0, max(0.0, (time.monotonic() - self.frame_changed_at) / duration))
         if self.previous_frame is not None and self.frame_index is not None and blend < 1:
             previous = frames[self.previous_frame]
+            if self.costumes is not None:
+                previous=self.costumes.compose(previous,self.character,self.previous_frame)
             if self.previous_flipped and self.previous_frame < 24:
                 previous = previous.transformed(QTransform().scale(-1, 1))
             pixmap = blend_frames(previous, pixmap, blend)
@@ -449,6 +466,13 @@ class Mascot(QWidget):
         target = QRectF((self.width() - size.width()) / 2,
                        self.height() - size.height() - self.bottom_padding, size.width(), size.height())
         p.drawPixmap(target, pixmap, QRectF(pixmap.rect()))
+        if time.monotonic()<self.growth_effect_until:
+            p.setPen(QPen(QColor('#d9ae4d'),1.6))
+            phase=time.monotonic()*2 if self.prop_animation_enabled else 0
+            for n in range(3):
+                x=self.width()*(.17+.33*n);y=self.height()*(.18+.10*math.sin(phase+n))
+                p.drawLine(QPoint(round(x-3),round(y)),QPoint(round(x+3),round(y)))
+                p.drawLine(QPoint(round(x),round(y-3)),QPoint(round(x),round(y+3)))
         p.end()
 
 
@@ -1815,6 +1839,9 @@ class Controller(QObject):
         self.shelf_service = ShelfController(self)
         from .file_drop_ui import FileDropController
         self.file_drop_service = FileDropController(self)
+        from .growth_ui import GrowthService
+        self.growth_service = GrowthService(self)
+        self.menu.insertAction(self.pause_action, self.menu.addAction('一緒に過ごした記録・衣装',self.growth_service.show))
         self.panel.share_button.setEnabled(QSystemTrayIcon.isSystemTrayAvailable())
         if not QSystemTrayIcon.isSystemTrayAvailable():
             self.panel.share_button.setToolTip("画面共有モードにはシステムトレイが必要です。")
@@ -2268,7 +2295,8 @@ class Controller(QObject):
             generation = self.context_generation
             def worker():
                 values = {}
-                for key, provider in (('open_office_files', office_file_count), ('desktop_files', desktop_file_count)):
+                from .growth import visible_app_count
+                for key, provider in (('open_office_files', office_file_count), ('desktop_files', desktop_file_count), ('visible_apps',visible_app_count)):
                     try:
                         values[key] = provider()
                     except Exception:
@@ -2414,6 +2442,7 @@ class Controller(QObject):
         self.position()
 
     def shutdown(self):
+        self.growth_service.shutdown()
         self.shelf_service.timer.stop()
         self.shelf_service.cancel_mail()
         self.file_drop_service.closed = True
@@ -2731,7 +2760,11 @@ class Controller(QObject):
             self.panel.activity_status.setText("履歴を削除できません。保存先の権限をご確認ください。")
 
     def apply_character(self):
+        if hasattr(self,'growth_service'):
+            self.growth_service.sample()
         self.resident.set_character(self.settings.character)
+        if hasattr(self,'growth_service'):
+            self.growth_service.apply_costumes()
         self.icon = QIcon(character_pixmap(self.settings.character))
         self.panel.setWindowIcon(self.brand_icon)
         self.tray.setIcon(self.icon)
@@ -2927,6 +2960,12 @@ class Controller(QObject):
             self.motion.react(notice.expression, speaking=True)
             self.bubble.display(notice)
             self.position()
+        elif not (self.engine.paused_until and now<self.engine.paused_until):
+            growth_notice=self.growth_service.next_notice(now)
+            if growth_notice:
+                self.motion.react(growth_notice.expression,speaking=True)
+                self.bubble.display(growth_notice)
+                self.position()
 
     def sample(self):
         if self.hidden or self.user_hidden:

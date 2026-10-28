@@ -120,13 +120,36 @@ def check_bundle():
         finally:
             pdf_document.close()
             pdf_device.close()
+        from .growth_content import seed_content,load_catalog
+        from .growth import GrowthEngine,GrowthStore
+        from .business_calendar import BusinessCalendar
+        from .content_editor import ContentEditor
+        from .costumes import CostumeRenderer
+        from datetime import timedelta
+        content=root/'content';seed_content(content);catalog=load_catalog(content)
+        if catalog.errors:raise ValueError('Growth content failed validation')
+        catalog.config['level_thresholds']=[0,.01]
+        catalog.config['exp_interval_seconds']=5
+        clock=[1000.];store=GrowthStore(root/'growth.json');growth=GrowthEngine(store,catalog,lambda:clock[0])
+        clock[0]+=5;growth.step('A',datetime.now().astimezone(),{},BusinessCalendar())
+        growth.equip('A','accessory','base:welcome_pin')
+        if GrowthStore(store.path).data!=store.data:raise ValueError('Growth restore failed')
+        renderer=CostumeRenderer();renderer.configure(catalog,growth.progress('A'),'A')
+        if renderer.compose(character_pixmap('A'),'A',24).isNull():raise ValueError('Costume rendering failed')
+        content_editor=ContentEditor(content)
+        try:
+            content_editor.fields['name'].setText('編集したサンプル')
+            if not content_editor.save() or content_editor.grab().isNull():raise ValueError('Content editor failed')
+            if load_catalog(content).items['lines']['base:company']['name']!='編集したサンプル':raise ValueError('Edited content reload failed')
+        finally:content_editor.hide();content_editor.deleteLater()
     return {'version': VERSION, 'python': platform.python_version(), 'qt': qVersion(),
             'platform': sys.platform, 'success': True, 'character_frames_rendered': rendered,
             'walk_frames_rendered':walk_rendered,
             'topics': len(document['rules']), 'voices': len(document['phrases']),
             'encrypted_zip_checked': True, 'pdf_render_checked': True, 'prop_poses_rendered': prop_rendered,
             'pickup_poses_rendered':pickup_rendered,'note_poses_rendered':notes_rendered,
-            'drop_stages_rendered': 3, 'destination_editor_checked': True, 'shelf_launcher_checked': True}
+            'drop_stages_rendered': 3, 'destination_editor_checked': True, 'shelf_launcher_checked': True,
+            'growth_restore_checked':True,'costume_layers_checked':True,'content_editor_checked':True}
 
 
 def run(output):

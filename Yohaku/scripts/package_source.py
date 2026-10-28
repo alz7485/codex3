@@ -19,6 +19,7 @@ PRIVATE_NAMES = {"settings.json", "history.json", "instance.lock", ".env", "smok
 PRIVATE_NAMES.update({name+suffix for name in ("context_options", "topic_preferences", "one_shot_notifications") for suffix in (".json", ".json.bak", ".json.tmp")})
 PRIVATE_NAMES.update({name+suffix for name in ('file_drop_settings','file_destinations','shelf') for suffix in ('.json','.json.bak','.json.tmp')})
 PRIVATE_NAMES.add('.yohaku.init.lock')
+PRIVATE_NAMES.update({'growth.json','growth.json.bak','growth.json.tmp','.editor.lock'})
 
 
 def source_files(project):

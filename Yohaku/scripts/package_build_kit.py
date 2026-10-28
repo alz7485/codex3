@@ -28,9 +28,11 @@ Yohaku.specとmain.pyが並ぶYohakuフォルダーでPowerShellを開き、次�
 
 Python 3.12の場合は1行目を `py -3.12 -m venv .venv` に変更します。
 出力はdist/Yohaku/Yohaku.exeとYohaku-v{VERSION}-windows-x64-onedir.zipです。
+同じフォルダーに独立した編集ツールYohakuContentEditor.exeも作成します。
 _internalを含むdist/Yohakuフォルダー全体を配布してください。
 
 起動するとYohaku.exeの隣のDataにユーザー設定を保存します。初回にDataがない場合は旧LocalAppDataからコピーします。更新時は使用中のDataも新しいEXEの隣へ持ち越してください。使用中のDataはこのビルド用ZIPやEXEの素材に含めません。
+成長・トロフィー・衣装はタスクトレイの「一緒に過ごした記録・衣装」から確認します。経験値はEXP表記です。独立エディタでパックを保存した後、成長画面の「パックを再読み込み」で反映します。進行はData/growth.json、コンテンツはData/content/<パックID>/pack.jsonに分離しています。詳しくはdocs/GROWTH.mdを参照してください。
 
 ファイル／フォルダーを「預ける」で一時ランチャーに登録できます。本体は移動・削除しません。保持は1日・1週間・1ヶ月・無期限から設定します。
 PDFは吹き出しから預ける・移動・印刷、その他のファイル／フォルダーは預ける・移動を選べます。
