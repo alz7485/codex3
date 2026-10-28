@@ -1,8 +1,8 @@
-# Yohaku v0.31.0
+# Yohaku v0.31.1
 
-**[onedirビルド用ZIP（約14MB）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.31.0-onedir-build.zip)**
+**[onedirビルド用ZIP（約14MB）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.31.1-onedir-build.zip)**
 
-[spec単体](Yohaku.spec) · [5行のコマンド](BUILD_ONEDIR.txt) · [SHA-256](Yohaku-v0.31.0-onedir-build.zip.sha256) · [全ソース](Yohaku-v0.31.0-source.zip)
+[spec単体](Yohaku.spec) · [5行のコマンド](BUILD_ONEDIR.txt) · [SHA-256](Yohaku-v0.31.1-onedir-build.zip.sha256) · [全ソース](Yohaku-v0.31.1-source.zip)
 
 EXP獲得時、キャラの頭付近に「+5 EXP」など実際の獲得量をフェードイン・フェードアウトしながら下から上へ表示します。通常は5分ごとに5 EXPを付与・JSON保存します。同時の実績報酬は合計し、吹き出しや操作を遮りません。[アニメーション](../../Yohaku/docs/growth-exp.gif) · [レベルアップ](../../Yohaku/docs/growth-level-up.png) · [ステータス画面](../../Yohaku/docs/growth-status.png)
 

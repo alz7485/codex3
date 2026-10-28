@@ -14,7 +14,7 @@ DURATION=1.6
 def visual_state(elapsed,animated=True):
     t=max(0.,min(1.,elapsed/DURATION))
     if not animated:return 0.,1.
-    opacity=max(0.,min(1.,elapsed/.20,(DURATION-elapsed)/.50))
+    opacity=max(0.,min(1.,elapsed/.30,(DURATION-elapsed)/.70))
     return 28*t,opacity
 
 

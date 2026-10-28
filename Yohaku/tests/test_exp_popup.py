@@ -2,7 +2,7 @@
 from pathlib import Path
 import unittest
 from PySide6.QtCore import Qt
-from companion.exp_popup import ExpPopup,exp_text
+from companion.exp_popup import ExpPopup,exp_text,visual_state
 from companion.ui import Resident,create_application
 
 class ExpPopupTests(unittest.TestCase):
@@ -24,6 +24,12 @@ class ExpPopupTests(unittest.TestCase):
         self.assertEqual(self.popup.x(),old_x+40)
         self.clock+=1.41;self.popup.advance();self.assertFalse(self.popup.isVisible());self.assertFalse(self.popup.timer.isActive())
     def test_actual_text_fades_in_out_and_green_remains_visible_inside_white_outline(self):
+        # A gentle entrance, then start fading before the final second ends.
+        self.assertAlmostEqual(visual_state(.15)[1],.5)
+        self.assertAlmostEqual(visual_state(.30)[1],1.)
+        self.assertAlmostEqual(visual_state(.90)[1],1.)
+        self.assertLess(visual_state(1.)[1],1.)
+        self.assertEqual(visual_state(1.6),(28.,0.))
         self.popup.show_gain(5);self.assertEqual(self.image_alpha(),0)
         self.clock+=.05;early=self.image_alpha();self.clock+=.55;peak=self.image_alpha()
         image=self.popup.grab().toImage();green=sum(1 for y in range(image.height()) for x in range(image.width())
