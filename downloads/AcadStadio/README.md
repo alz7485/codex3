@@ -1,22 +1,20 @@
-# AcadStadio 1.30.0 — 入力表の作図チェック・試用版28
+# AcadStadio 1.30.1 — 別窓UIを統一・試用版29
 
-**[試用版28 ZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.30.0_TableChecksTrial28.zip)** ／ [SHA256](AcadStadio_v1.30.0_TableChecksTrial28.zip.sha256)
+**[試用版29 ZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.30.1_UnifiedDialogsTrial29.zip)** ／ [SHA256](AcadStadio_v1.30.1_UnifiedDialogsTrial29.zip.sha256)
 
-Excel / CSVの行とコマンドからAutoCAD用SCRを生成するローカルアプリです。ソース版ZIPです。
+Excel / CSVと作図コマンドからAutoCAD用SCRを生成するローカルアプリです。ソース版です。
 
 ## 今回の変更
 
-- 作図対象を入力表左端の「作図」チェックへ統合。チェックを即時反映し、表ごとにJSON保存・Undo/Redoに対応。
-- 全チェック・全解除、見出しクリックによる一括切替、選択行のSpace操作に対応。
-- 独立した作図設定画面・行番号指定・対象行の別窓・適用ボタンを削除。チェックをすべて外した場合はSCRの出力を停止します。
-- 行ハイライトとメインの表示行はプレビュー確認用。作図チェックとは独立しています。
-- 表管理と行編集のボタンを表の上に移動し、アイコン・サイズ・間隔をメイン画面と統一しました。
-
-実色表示、拡大したブロック編集、16種類の分類別コマンド、フォルダ管理も継続しています。
+- メインUIを維持し、別窓のボタンの高さ・余白・アイコン表現を統一。
+- プリセット、ユーザーコマンド、プロジェクト一覧、構成ツリーの操作を一覧上のツールバーへ整理。
+- CAD設定とコマンド引数の追加/削除、検査の再実行、SCRのコピー/再生成を一覧上へ配置。
+- 保存・確定・取消は下へ配置。確定操作は文字を残し、編集ツールは操作名のツールチップで確認できます。
+- 入力表の作図チェック、実色表示、16種類の分類別コマンドなどは継続しています。
 
 ## 起動とonedir EXE化
 
-Python 3.11以降（tkinterを含む）で展開フォルダから実行します。
+Python 3.11以降（tkinterを含む）で、展開したフォルダから実行します。
 
 ```powershell
 py -3 -m pip install -r requirements.txt
@@ -29,12 +27,12 @@ py -3 -m venv .venv
 .\.venv\Scripts\python.exe -m PyInstaller --clean --noconfirm AcadStadio.spec
 ```
 
-出力は `dist/AcadStadio/AcadStadio.exe`。フォルダ全体を配布します。EXE本体は含みません。詳細は同梱のEXE_BUILD_ONEDIR.mdをご覧ください。
+出力は `dist/AcadStadio/AcadStadio.exe`。フォルダ全体を配布します。EXE本体は含みません。
 
 ## 検証
 
-非GUI260件・実Tk GUI250件、合計510件合格。Ruff、スモーク、ZIP CRC/全ファイルSHA256も確認済みです。Windows EXE・AutoCAD実機は未検証。
+非GUI260件・実Tk GUI252件、計512件合格。Ruff・スモーク・ZIP CRC/全ファイルSHA256も確認済み。Windows EXE・AutoCAD実機は未検証。
 
-SHA256: `5bdd26aead6d569bcf467fc1cf17c0019b29a465a8808fd49187249ba9c4b97a`
+SHA256: `863d152a6d868b98d9d215e34291c39df706bf45cb663b947113a468ee0f858f`
 
-[前版Trial27](AcadStadio_v1.29.0_ActualColorsTrial27.zip)
+[前版Trial28](AcadStadio_v1.30.0_TableChecksTrial28.zip)
