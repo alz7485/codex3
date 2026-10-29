@@ -57,3 +57,13 @@ class ShelfTests(unittest.TestCase):
         self.store.set_period('forever',self.now)
         (self.root/'SHELF.JSON.TMP').write_text('private')
         self.assertFalse(source_files(self.root))
+
+    def test_batch_deposit_is_atomic_on_capacity_and_save_failure(self):
+        from unittest.mock import patch
+        first=self.root/'first.txt';second=self.root/'second.txt';first.write_bytes(b'a');second.write_bytes(b'b')
+        before=deepcopy(self.store.data)
+        with patch('companion.shelf.MAX_ITEMS',1),self.assertRaises(ShelfError):self.store.add_many((first,second),self.now)
+        self.assertEqual(self.store.data,before)
+        with patch.object(self.store,'save',side_effect=OSError('full')),self.assertRaises(OSError):self.store.add_many((first,second),self.now)
+        self.assertEqual(self.store.data,before);self.assertEqual(first.read_bytes(),b'a');self.assertEqual(second.read_bytes(),b'b')
+        ids=self.store.add_many((first,second),self.now);self.assertEqual(len(ids),2);self.assertEqual([row['path'] for row in self.store.data['items']],[str(first),str(second)])

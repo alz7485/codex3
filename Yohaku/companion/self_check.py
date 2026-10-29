@@ -88,6 +88,14 @@ def check_bundle():
         result = execute('move_extract', archive_path, rule, datetime(2026, 10, 1))
         if (Path(result['extracted'])/'sample.txt').read_bytes() != b'Yohaku':
             raise ValueError('Archive operation failed')
+        import py7zr
+        seven=root/'encrypted.7z'
+        with py7zr.SevenZipFile(seven,'w',password='check10',header_encryption=True) as archive:
+            archive.writestr(b'Yohaku 7z','seven.txt')
+        seven_rule=deepcopy(rule);seven_rule['actions']=[dict(action='extract',label='解凍する')]
+        result=execute('extract',seven,seven_rule,datetime(2026,10,1))
+        if not seven.exists() or (Path(result['extracted'])/'seven.txt').read_bytes()!=b'Yohaku 7z':
+            raise ValueError('7z archive operation failed')
         from .file_destinations import DestinationStore
         from .destination_editor import DestinationEditor
         targets=DestinationStore(root/'file_destinations.json')
@@ -183,7 +191,7 @@ def check_bundle():
             'platform': sys.platform, 'success': True, 'character_frames_rendered': rendered,
             'walk_frames_rendered':walk_rendered,
             'topics': len(document['rules']), 'voices': len(document['phrases']),
-            'encrypted_zip_checked': True, 'pdf_render_checked': True, 'prop_poses_rendered': prop_rendered,
+            'encrypted_zip_checked': True, 'encrypted_7z_checked': True, 'pdf_render_checked': True, 'prop_poses_rendered': prop_rendered,
             'pickup_poses_rendered':pickup_rendered,'note_poses_rendered':notes_rendered,
             'drop_stages_rendered': 3, 'destination_editor_checked': True, 'shelf_launcher_checked': True,
             'growth_restore_checked':True,'costume_layers_checked':True,'content_editor_checked':True,

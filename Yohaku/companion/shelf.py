@@ -81,16 +81,18 @@ class ShelfStore(ContextOptionsStore):
         items=self.current_items(now)
         if len(items)!=len(self.data['items']):self.save(dict(self.data,items=items))
         return deepcopy(items)
-    def add(self,path,now):
-        self.ready();path=dropped_item(path);kind='folder' if path.is_dir() else 'file'
-        key=ntpath.normcase(ntpath.normpath(str(path)));items=self.current_items(now)
-        existing=next((row for row in items if ntpath.normcase(ntpath.normpath(row['path']))==key),None)
-        if existing:
-            items.remove(existing);identifier=existing['id']
-        else:identifier=uuid4().hex
-        if len(items)>=MAX_ITEMS:raise ShelfError('預けられるのは500件までです。一覧から登録を削除してください。')
-        items.insert(0,dict(id=identifier,path=str(path),kind=kind,added_at=now.isoformat(timespec='seconds')))
-        self.save(dict(self.data,items=items));return identifier
+    def add(self,path,now):return self.add_many((path,),now)[0]
+    def add_many(self,paths,now):
+        from .file_batch import selection
+        self.ready();paths=selection(paths);items=self.current_items(now);added=[]
+        for path in paths:
+            key=ntpath.normcase(ntpath.normpath(str(path)))
+            existing=next((row for row in items if ntpath.normcase(ntpath.normpath(row['path']))==key),None)
+            if existing:items.remove(existing)
+            added.append(dict(id=existing['id'] if existing else uuid4().hex,path=str(path),
+                              kind='folder' if path.is_dir() else 'file',added_at=now.isoformat(timespec='seconds')))
+        if len(items)+len(added)>MAX_ITEMS:raise ShelfError('預けられるのは500件までです。一覧から登録を削除してください。')
+        self.save(dict(self.data,items=added+items));return [row['id'] for row in added]
     def remove(self,identifier):
         self.ready();self.save(dict(self.data,items=[row for row in self.data['items'] if row['id']!=identifier]))
     def set_period(self,period,now):

@@ -1,8 +1,8 @@
 """Small, cached poses with a native dropped-item icon between the hands."""
 from functools import lru_cache
 from pathlib import Path
-from PySide6.QtCore import QFileInfo, QRectF, QSize, Qt
-from PySide6.QtGui import QIcon, QImage, QPainter, QPixmap
+from PySide6.QtCore import QRect, QFileInfo, QRectF, QSize, Qt
+from PySide6.QtGui import QColor, QIcon, QImage, QPainter, QPixmap
 from PySide6.QtWidgets import QApplication, QFileIconProvider, QStyle
 
 
@@ -92,3 +92,18 @@ def prop_frame(character, canvas, kind, icon=None, frame=0):
             dest = QRectF(target.x()+hand.x()*target.width(), target.y()+hand.y()*target.height(), hand.width()*target.width(), hand.height()*target.height())
             p.drawPixmap(dest, artwork, source)
     p.end(); return output
+
+
+def items_icon(paths):
+    """A small stack of native icons with the selection count."""
+    canvas=QPixmap(64,64);canvas.fill(Qt.GlobalColor.transparent)
+    painter=QPainter(canvas)
+    try:
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        for index,path in reversed(list(enumerate(paths[:3]))):
+            painter.drawPixmap(index*6,index*4,item_icon(path).pixmap(44,44))
+        painter.setPen(Qt.PenStyle.NoPen);painter.setBrush(QColor('#315e4c'));painter.drawRoundedRect(24,40,40,23,8,8)
+        painter.setPen(QColor('white'));font=painter.font();font.setPixelSize(15);font.setBold(True);painter.setFont(font)
+        painter.drawText(QRect(24,40,40,23),Qt.AlignmentFlag.AlignCenter,str(len(paths)))
+    finally:painter.end()
+    return QIcon(canvas)

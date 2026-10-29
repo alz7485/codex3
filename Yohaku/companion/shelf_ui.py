@@ -58,6 +58,8 @@ class ShelfController(QObject):
         if self.owner.bubble.isVisible() and self.owner.bubble.current=='shelf':self.show()
     def deposit(self,path):
         self.store.add(path,self.now());self.refresh()
+    def deposit_many(self,paths):
+        self.store.add_many(paths,self.now());self.refresh()
     def lookup(self,identifier):
         return next((row for row in self.store.prune(self.now()) if row['id']==identifier),None)
     def report(self,text):

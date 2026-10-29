@@ -15,3 +15,6 @@ The build script copies license texts available in installed distribution metada
 into `third-party-licenses/` in the onedir folder. Keep that folder with the
 distribution. The executable uses the packaged Qt/Python libraries in `_internal/`.
 The original Yohaku source and build scripts accompany the source ZIP.
+
+7z support uses py7zr (LGPL-2.1-or-later), https://github.com/miurahr/py7zr .
+Its installed compression-library license texts are also copied into third-party-licenses/.
