@@ -176,7 +176,7 @@
   "tests/test_gambler.py": "97a32bdc9c77c7fe33c8547f71333b49d9a0ad46c8dca320a988e738b3b4a72b",
   "tests/test_growth.py": "093b21d8d5ef2d69321c96d90fd7e8a844d9cf12b5b0bf08ca45de40964a6b49",
   "tests/test_growth_content.py": "67303b1a754e9ca84ab23b028f00040d011c7cdb3c92228d5029e7b7f64fead1",
-  "tests/test_growth_expanded.py": "df5ebb2f2c56763c88ac9212b21d98df5e67df1a75ee603012d53d2e93ea4325",
+  "tests/test_growth_expanded.py": "d5ec86a3636e3bd76182153a40642985ab757c97b96ea00a6388422eb19f6261",
   "tests/test_growth_records.py": "86dec7a9326bbc988ab13cc05c04292322056ae7aa01e7f041795c482f510270",
   "tests/test_growth_ui.py": "c08ff7ea75c144cfe6c3c64f7bac5edbf8c5c4cef501ef5e7947d28c5bfc947c",
   "tests/test_level_up_animation.py": "38227206c316ecb4af592653c35866eea5a443b6b71ce88eda1af937d493afd2",

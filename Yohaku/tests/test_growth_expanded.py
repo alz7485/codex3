@@ -64,7 +64,6 @@ class GrowthPacingTests(unittest.TestCase):
     def test_earliest_trophy_needs_three_days_and_sixteen_hours_and_does_not_cluster(self):
         with TemporaryDirectory() as temp:
             root=Path(temp);seed_content(root/'content');seed_examples(root/'content');catalog=load_catalog(root/'content')
-            catalog.items['trophies']={k:v for k,v in catalog.items['trophies'].items() if k in ('daily_trophies:friday','daily_trophies:december')}
             engine=GrowthEngine(GrowthStore(root/'growth.json'),catalog,lambda:1000.)
             now=datetime(2026,12,4,10,tzinfo=timezone.utc)
             p=fresh_progress();p.update(seconds=960*60,days=['2026-12-04'])
