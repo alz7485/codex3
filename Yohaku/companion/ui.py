@@ -84,9 +84,10 @@ QTabWidget::pane { border: 1px solid #dce4dd; background: #fafbf9; }
 QTabBar::tab { background: #edf1ee; padding: 9px 17px; color: #65736a; }
 QTabBar::tab:selected { background: #fafbf9; color: #385c4a; border-top: 2px solid #385c4a; }
 QWidget#speechChoiceRow { background: transparent; }
-QPushButton#speechChoice { background: #e8f0e6; color: #385b43; border: 1px solid #afc4b2; border-radius: 7px; padding: 7px 10px; font-size: 12px; font-weight: 500; text-align: left; }
-QPushButton#speechChoice:hover { background: #d9e8d6; border-color: #7e9e84; }
-QPushButton#speechChoice:pressed { background: #c7dcc3; border-color: #5e8166; }
+QPushButton#speechChoice { background: #ffffff; color: #385b43; border: 1px solid #afc4b2; border-radius: 7px; padding: 7px 10px; font-size: 12px; font-weight: 500; text-align: left; }
+QPushButton#speechChoice:hover { background: #ffffff; border-color: #7e9e84; }
+QPushButton#speechChoice:pressed { background: #ffffff; border-color: #5e8166; }
+QPushButton#speechChoice:disabled { background: #ffffff; color: #9ba59d; border-color: #d6ded8; }
 QPushButton#speechChoice:focus { border: 2px solid #52765c; padding: 6px 9px; }
 QTreeWidget { background: white; border: 1px solid #e1e7e1; border-radius: 10px; outline: none; }
 QTreeWidget::item { padding: 9px 5px; }
@@ -1097,6 +1098,8 @@ class Bubble(QFrame):
                         'calendar': ('#fff3d4', '#cfb16c'), 'notification': ('#e7f1ff', '#8caed1'),
                         'reminder': ('#e7f1ff', '#8caed1'),
                         'departure': ('#fff0dd', '#cf9a61')}[self.kind]
+        if self.kind=='message' and getattr(self,'current',None)=='activity':
+            fill,stroke='#f2f6ef','#b6c9b2'
         painter.setBrush(QColor(fill))
         painter.setPen(QPen(QColor(stroke), 1))
         shape = QPainterPath()

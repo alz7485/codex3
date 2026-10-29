@@ -1,10 +1,12 @@
-# Yohaku v0.37.0
+# Yohaku v0.37.1
 
-**[onedirビルド用ZIP（約14MB）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.37.0-onedir-build.zip)**
+**[onedirビルド用ZIP（約14MB）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.37.1-onedir-build.zip)**
 
-[spec単体](Yohaku.spec) · [5行のコマンド](BUILD_ONEDIR.txt) · [SHA-256](Yohaku-v0.37.0-onedir-build.zip.sha256) · [全ソース](Yohaku-v0.37.0-source.zip)
+[spec単体](Yohaku.spec) · [5行のコマンド](BUILD_ONEDIR.txt) · [SHA-256](Yohaku-v0.37.1-onedir-build.zip.sha256) · [全ソース](Yohaku-v0.37.1-source.zip)
 
-複数ファイル・フォルダーの受け渡しと7z解凍に対応しました。PDFだけ・ZIPと7zだけ・その他や混在で選択肢を切り替え、選んだ処理を全件に順次適用します。途中失敗時は完了分と未処理分を表示します。[使い方と制限](../../Yohaku/docs/FILE_DROP.md)
+吹き出し内の選択肢ボタンを白地に統一しました。濃い文字と枠線で区別し、ホバー・押下・無効状態でも白地を保ちます。[画面例](../../Yohaku/docs/speech-choices.png)
+
+複数ファイル・フォルダーの受け渡しと7z解凍を継続します。[使い方と制限](../../Yohaku/docs/FILE_DROP.md)
 
 初期の育成ペース調整を継続します。[育成条件](../../Yohaku/docs/GROWTH_PACING.md)
 
