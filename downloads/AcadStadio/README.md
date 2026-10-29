@@ -1,8 +1,16 @@
-# AcadStadio 1.32.1 — 詳細設定をコンパクトに・試用版32
+# AcadStadio 1.32.2 — 点参照の図形選択・試用版33
 
-**[試用版32 ZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.32.1_CompactDetailsTrial32.zip)** ／ [SHA256](AcadStadio_v1.32.1_CompactDetailsTrial32.zip.sha256)
+**[試用版33 ZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.32.2_DrawThroughTrial33.zip)** ／ [SHA256](AcadStadio_v1.32.2_DrawThroughTrial33.zip.sha256)
 
 Excel / CSVと作図コマンドからAutoCAD用SCRを生成するローカルアプリのソース版です。
+
+## 点参照プレビューの改善
+
+- 編集中コマンドまでの作図を表示し、参照元を切り替えても表示範囲を切り詰めません。後続コマンドは表示しません。
+- 図形のクリックと参照元のプルダウンを連動。選択したコマンドの図形だけ通常色、その他は暗い色で表示します。
+- 選択図形の始点/中点/終点などから参照点を選択。重なる図形は候補メニューから選べます。
+- 切替時は倍率/パンを維持。編集中の入力が計算できない場合は、有効な先行部分と案内を表示します。
+- 編集中コマンド自体は自己参照を避けるため表示のみです。参照元には同じリストの先行コマンドを選びます。
 
 ## 詳細設定の配置
 
@@ -43,8 +51,8 @@ py -3 -m venv .venv
 
 ## 検証
 
-非GUI268件・実Tk GUI260件、計528件合格。Ruff・スモーク・ZIP CRC/全ファイルSHA256確認。Windows EXE・AutoCAD実機は未検証。
+非GUI268件・実Tk GUI264件、計532件合格。Ruff・スモーク・ZIP CRC/全ファイルSHA256確認。Windows EXE・AutoCAD実機は未検証。
 
-SHA256: `5f9b0025503295fdef63fcc38cc8ef5afe22c5a4867cd0ab38044ed1b22737f1`
+SHA256: `64ff2934e69591d2880556df8b0e051c72ebaf629009a8302b15e2ddd15dbb6a`
 
-[前版Trial31](AcadStadio_v1.32.0_VisualPointsTrial31.zip)
+[前版Trial32](AcadStadio_v1.32.1_CompactDetailsTrial32.zip)
