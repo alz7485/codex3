@@ -1,8 +1,16 @@
-# AcadStadio 1.32.2 — 点参照の図形選択・試用版33
+# AcadStadio 1.33.0 — 前の作図ブロックの点参照・試用版34
 
-**[試用版33 ZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.32.2_DrawThroughTrial33.zip)** ／ [SHA256](AcadStadio_v1.32.2_DrawThroughTrial33.zip.sha256)
+**[試用版34 ZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.33.0_CrossBlockTrial34.zip)** ／ [SHA256](AcadStadio_v1.33.0_CrossBlockTrial34.zip.sha256)
 
 Excel / CSVと作図コマンドからAutoCAD用SCRを生成するローカルアプリのソース版です。
+
+## 前の作図ブロックから点を参照
+
+- 参照元一覧に前の作図ブロックの線・円なども表示。ブロック名/コマンド番号で選択でき、図形クリックとも同期します。
+- ブロックID＋コマンドIDで保持し、同じ線を含む複製ブロックと混同しません。X/Yの個別取得、ずらし量にも対応。
+- 入力表の各行で再計算。前のブロックが条件で作図されない、削除、後ろへ移動した場合は参照エラーです。
+- 元ブロックの識別情報も編集内容として保存/取消/Undo。examples/cross_block_points_project.jsonを同梱。
+- 前のブロックは直接配置した対応コマンドが対象で、繰返しの個別インスタンス指定はありません。
 
 ## 点参照プレビューの改善
 
@@ -10,7 +18,7 @@ Excel / CSVと作図コマンドからAutoCAD用SCRを生成するローカル�
 - 図形のクリックと参照元のプルダウンを連動。選択したコマンドの図形だけ通常色、その他は暗い色で表示します。
 - 選択図形の始点/中点/終点などから参照点を選択。重なる図形は候補メニューから選べます。
 - 切替時は倍率/パンを維持。編集中の入力が計算できない場合は、有効な先行部分と案内を表示します。
-- 編集中コマンド自体は自己参照を避けるため表示のみです。参照元には同じリストの先行コマンドを選びます。
+- 編集中コマンド自体は自己参照を避けるため表示のみです。参照元には前のブロック、または同じリストの先行コマンドを選びます。
 
 ## 詳細設定の配置
 
@@ -51,8 +59,8 @@ py -3 -m venv .venv
 
 ## 検証
 
-非GUI268件・実Tk GUI264件、計532件合格。Ruff・スモーク・ZIP CRC/全ファイルSHA256確認。Windows EXE・AutoCAD実機は未検証。
+非GUI273件・実Tk GUI266件、計539件合格。Ruff・スモーク・ZIP CRC/全ファイルSHA256確認。Windows EXE・AutoCAD実機は未検証。
 
-SHA256: `64ff2934e69591d2880556df8b0e051c72ebaf629009a8302b15e2ddd15dbb6a`
+SHA256: `0238a156f3b1c1a2b7356f758ed773b385a56bb17652d8fe6366ab8252865f64`
 
-[前版Trial32](AcadStadio_v1.32.1_CompactDetailsTrial32.zip)
+[前版Trial33](AcadStadio_v1.32.2_DrawThroughTrial33.zip)
