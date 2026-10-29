@@ -16,7 +16,7 @@ class CallDismissTests(unittest.TestCase):
     def setUpClass(cls):cls.app=create_application()
     def setUp(self):
         self.bubble=InteractionBubble();self.guard=self.bubble.call_dismiss
-        self.resident=Resident(100,character='A');self.resident.show();self.guard.resident=self.resident
+        self.resident=Resident(character='A');self.resident.show();self.guard.resident=self.resident
         self.outside=QPushButton('outside');self.outside.show();self.app.processEvents()
     def tearDown(self):
         self.guard.close()
