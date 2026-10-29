@@ -3051,9 +3051,13 @@ def create_application():
     app.setWindowIcon(QIcon(str(Path(__file__).parent / "assets/app/yohaku.ico")))
     app.setOrganizationName("Yohaku")
     app.setQuitOnLastWindowClosed(False)
-    font = QFont("Yu Gothic UI" if sys.platform == "win32" else "Noto Sans CJK JP", 10)
-    app.setFont(font)
-    app.setStyleSheet(STYLE)
+    # Reusing the application must not repolish every existing widget.
+    if not app.property('yohakuDefaultFontApplied'):
+        font = QFont("Yu Gothic UI" if sys.platform == "win32" else "Noto Sans CJK JP", 10)
+        app.setFont(font)
+        app.setProperty('yohakuDefaultFontApplied', True)
+    if app.styleSheet() != STYLE:
+        app.setStyleSheet(STYLE)
     return app
 
 

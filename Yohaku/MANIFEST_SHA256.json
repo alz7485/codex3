@@ -81,7 +81,7 @@
   "companion/shelf_ui.py": "e6f9876a88bcbda4e0209dfaa197754c61668ea63cc62ced17c28f7ee195577a",
   "companion/storage.py": "f8f5dcbcd1c6dbc3b1403053443cf514dc5784f8fa54a7e652e1e146812fa89e",
   "companion/system_dialogue.py": "6aa7c2ef00f43124bb51a1e2f19976dd78e511cf04c76da20a5e64c5c0ddacc8",
-  "companion/ui.py": "5e47e55d70d57b3796515aa9c04421718d2c1d64c5b77f742d57a02b4928927c",
+  "companion/ui.py": "fb13c8e03c9fb893eadc198954e316463b5e049b0d7a4a90a115162bba31098f",
   "companion/walk_animation.py": "2549093f0177cba9795e3daf5ba837bb8450b823e50a7d148e85738b41fbd8ed",
   "content_editor_main.py": "7c65e9009178a2ade050a1e09b6796b978ed8e0387d1ce0c3414251b03f1d860",
   "docs/ACTION_POSES.md": "4ece00c89ef526f4f0400a9b8b875e9aa0af84dc0594783e69d71fdc439b9b5c",
