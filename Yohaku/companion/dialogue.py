@@ -221,6 +221,8 @@ def upgrade_system_phrases(document):
         for voice,bank in result['system_phrases'].items():
             if voice in stock and isinstance(bank,dict):
                 for key in ('extracted_only','extract_destination'):bank.setdefault(key,stock[voice][key])
+                former=[line.replace('圧縮ファイル','ZIP') for line in stock[voice]['extracted_only']]
+                if bank.get('extracted_only')==former:bank['extracted_only']=deepcopy(stock[voice]['extracted_only'])
     # Keep a valid document at its size limit readable; runtime has stock speech.
     return result if document_size(result)<=MAX_BYTES else document
 

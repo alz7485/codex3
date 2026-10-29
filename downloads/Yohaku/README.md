@@ -1,10 +1,12 @@
-# Yohaku v0.36.0
+# Yohaku v0.37.0
 
-**[onedirビルド用ZIP（約14MB）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.36.0-onedir-build.zip)**
+**[onedirビルド用ZIP（約14MB）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.37.0-onedir-build.zip)**
 
-[spec単体](Yohaku.spec) · [5行のコマンド](BUILD_ONEDIR.txt) · [SHA-256](Yohaku-v0.36.0-onedir-build.zip.sha256) · [全ソース](Yohaku-v0.36.0-source.zip)
+[spec単体](Yohaku.spec) · [5行のコマンド](BUILD_ONEDIR.txt) · [SHA-256](Yohaku-v0.37.0-onedir-build.zip.sha256) · [全ソース](Yohaku-v0.37.0-source.zip)
 
-育成ペースを調整しました。初回・短時間の4トロフィーを廃止し、標準13件は起動3日・累計16時間以降に獲得します。序盤のレベルアップは約8時間に1回です。旧標準設定の自動移行とバックアップにも対応します。[条件と更新時の扱い](../../Yohaku/docs/GROWTH_PACING.md)
+複数ファイル・フォルダーの受け渡しと7z解凍に対応しました。PDFだけ・ZIPと7zだけ・その他や混在で選択肢を切り替え、選んだ処理を全件に順次適用します。途中失敗時は完了分と未処理分を表示します。[使い方と制限](../../Yohaku/docs/FILE_DROP.md)
+
+初期の育成ペース調整を継続します。[育成条件](../../Yohaku/docs/GROWTH_PACING.md)
 
 トロフィー条件34種類と、ZIPの解凍・移動・キャンセルを継続します。[追加条件とZIP処理](../../Yohaku/docs/GROWTH_EXPANDED.md)
 

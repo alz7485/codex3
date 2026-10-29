@@ -13,7 +13,7 @@ import tempfile
 from .context_options import ContextOptionsStore
 
 ACTIONS = {'move': '移動する', 'print_pdf': 'PDFを印刷する', 'move_extract': '移動して解凍する', 'extract': '解凍する'}
-ARCHIVE_EXTENSIONS = {'.zip'}
+ARCHIVE_EXTENSIONS = {'.zip','.7z'}
 MAX_ENTRIES = 10000
 MAX_EXPANDED_BYTES = 1024 ** 3
 
@@ -28,7 +28,7 @@ def defaults():
                     actions=[{'action': action, 'label': ACTIONS[action]} for action in actions])
     return {'schema_version': 1, 'enabled': True, 'rules': [
         rule('pdf', 'PDF', ['.pdf'], ['move', 'print_pdf']),
-        rule('zip', 'ZIP', ['.zip'], ['move_extract']),
+        rule('zip', 'ZIP / 7z', ['.zip','.7z'], ['move_extract']),
         rule('other', 'その他のファイル', ['*'], ['move']),
         rule('folder', 'フォルダー', ['<folder>'], ['move'])]}
 
@@ -106,6 +106,10 @@ class FileDropStore(ContextOptionsStore):
         for rule in self.data['rules']:
             if extension in rule['extensions']:
                 return deepcopy(rule)
+        if extension=='.7z':
+            rule=next((deepcopy(row) for row in self.data['rules'] if '.zip' in row['extensions']),None)
+            if rule is not None:
+                rule['extensions']=['.7z'];return rule
         rule = next((deepcopy(rule) for rule in self.data['rules'] if rule['extensions'] == ['*']), None)
         if extension == '<folder>' and rule:
             rule['actions'] = [row for row in rule['actions'] if row['action'] == 'move']
@@ -313,22 +317,26 @@ def move_extract(source, rule, now, move_source=True):
     try:
         with tempfile.TemporaryDirectory(prefix='.yohaku-extract-', dir=folder) as temporary:
             stage = Path(temporary)/'content'; stage.mkdir()
-            with pyzipper.AESZipFile(source) as archive:
-                members = archive_members(archive); written = 0
-                for member, relative in members:
-                    output = stage.joinpath(*relative.parts)
-                    if member.is_dir():
-                        output.mkdir(parents=True, exist_ok=True); continue
-                    output.parent.mkdir(parents=True, exist_ok=True)
-                    with archive.open(member, pwd=password) as reader, output.open('xb') as writer:
-                        file_bytes = 0
-                        for block in iter(lambda: reader.read(1024 * 1024), b''):
-                            written += len(block); file_bytes += len(block)
-                            if written > MAX_EXPANDED_BYTES or file_bytes > member.file_size:
-                                raise FileDropError('解凍サイズの上限を超えています。')
-                            writer.write(block)
-                        if file_bytes != member.file_size:
-                            raise FileDropError('圧縮データのサイズが不正です。')
+            if source.suffix.lower()=='.7z':
+                from .seven_zip import extract_7z
+                extract_7z(source,stage,password.decode('utf-8') if password else '')
+            else:
+                with pyzipper.AESZipFile(source) as archive:
+                    members = archive_members(archive); written = 0
+                    for member, relative in members:
+                        output = stage.joinpath(*relative.parts)
+                        if member.is_dir():
+                            output.mkdir(parents=True, exist_ok=True); continue
+                        output.parent.mkdir(parents=True, exist_ok=True)
+                        with archive.open(member, pwd=password) as reader, output.open('xb') as writer:
+                            file_bytes = 0
+                            for block in iter(lambda: reader.read(1024 * 1024), b''):
+                                written += len(block); file_bytes += len(block)
+                                if written > MAX_EXPANDED_BYTES or file_bytes > member.file_size:
+                                    raise FileDropError('解凍サイズの上限を超えています。')
+                                writer.write(block)
+                            if file_bytes != member.file_size:
+                                raise FileDropError('圧縮データのサイズが不正です。')
             if source.is_symlink() or file_identity(source) != before:
                 raise FileDropError('処理中に圧縮ファイルが変更されました。中止しました。')
             moved = move_file(source, target) if move_source else source

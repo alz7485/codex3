@@ -11,7 +11,7 @@ class FileDropEditor(QDialog):
         super().__init__(parent);self.store=store;self.dirty=False
         self.setWindowTitle('Yohaku — ドロップしたファイルの処理');self.resize(560,300)
         layout=QVBoxLayout(self)
-        intro=QLabel('PDFは移動・印刷、その他のファイルとフォルダーは移動を選べます。処理は吹き出しで選んで実行します。')
+        intro=QLabel('複数項目も渡せます。PDFだけなら印刷、ZIP・7zだけなら解凍も選べます。その他・混在は預ける・移動に対応します。')
         intro.setWordWrap(True);layout.addWidget(intro)
         self.enabled=QCheckBox('キャラへのファイル・フォルダーのドロップを受け付ける');layout.addWidget(self.enabled)
         self.enabled.toggled.connect(lambda:setattr(self,'dirty',True))

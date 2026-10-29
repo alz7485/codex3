@@ -84,7 +84,7 @@ class FileDropUITests(unittest.TestCase):
         self.c.bubble.drop_buttons['extract'].click();self.assertIn('解凍',self.c.bubble.text.text())
         self.c.bubble.drop_extra_buttons['destination:out'].click();self.wait_worker()
         self.assertTrue(source.exists());self.assertEqual((self.output/'archive/note.txt').read_bytes(),b'content')
-        self.assertFalse((self.output/'archive.zip').exists());self.assertIn('ZIP',self.c.bubble.text.text())
+        self.assertFalse((self.output/'archive.zip').exists());self.assertIn('圧縮ファイル',self.c.bubble.text.text())
 
     def test_drop_does_not_execute_until_the_user_chooses_move_and_executes_only_once(self):
         source = self.file('資料.txt')
@@ -137,9 +137,9 @@ class FileDropUITests(unittest.TestCase):
             self.assertEqual(document.status(),QPdfDocument.Status.Ready);self.assertEqual(document.pageCount(),1)
         finally:document.close();device.close()
 
-    def test_remote_urls_and_multiple_files_do_not_run_but_folders_offer_only_move(self):
+    def test_remote_urls_do_not_run_but_folders_offer_move(self):
         one = self.file('one.txt'); two = self.file('two.txt')
-        for urls in ([QUrl('https://example.invalid/a.zip')], [QUrl('file:relative.txt')], [QUrl.fromLocalFile(str(one)), QUrl.fromLocalFile(str(two))]):
+        for urls in ([QUrl('https://example.invalid/a.zip')], [QUrl('file:relative.txt')]):
             enter, drop = self.gesture(urls)
             self.assertFalse(enter.isAccepted()); self.assertFalse(drop.isAccepted())
         self.c.file_drop_service.drop(self.output)
@@ -457,3 +457,67 @@ class FileDropUITests(unittest.TestCase):
             self.c.tick();self.assertTrue(next_notice.call_args.kwargs['allow_reminders'])
         self.assertIs(self.c.bubble.notice,notice);self.assertEqual(len(self.c.shelf_service.store.data['items']),1)
         self.c.shelf_service.expire();self.assertIs(self.c.bubble.notice,notice)
+
+    def test_batch_pdf_gesture_offers_print_and_submits_every_file_with_one_paper_choice(self):
+        paths=(self.file('one.pdf'),self.file('two.PDF'));service=self.c.file_drop_service
+        enter,drop=self.gesture([QUrl.fromLocalFile(str(p)) for p in paths])
+        self.assertTrue(enter.isAccepted());self.assertTrue(drop.isAccepted());self.assertEqual(service.pending_items,paths)
+        self.assertIn('2項目',self.c.bubble.text.text());self.assertFalse(self.c.resident.held_icon.isNull())
+        with patch('companion.pdf_print.print_pdf',return_value=True) as printing:
+            self.c.bubble.drop_buttons['print_pdf'].click();self.c.bubble.drop_extra_buttons['paper:auto'].click();self.wait_worker()
+            self.assertEqual([call.args for call in printing.call_args_list],[(p,'auto') for p in paths])
+        self.assertIn('2/2',self.c.bubble.text.text());self.assertTrue(all(p.exists() for p in paths))
+        service.drop(paths)
+        with patch('companion.pdf_print.print_pdf') as printing:
+            service.run('print_pdf');self.c.bubble.drop_cancel.click();service.run('paper:a4');printing.assert_not_called()
+
+    def test_mixed_files_and_folders_only_offer_deposit_move_and_cancel(self):
+        paths=(self.file('one.pdf'),self.file('two.zip'),self.root/'folder');paths[-1].mkdir()
+        service=self.c.file_drop_service;service.drop(paths)
+        self.assertTrue(self.c.bubble.drop_buttons['shelve'].isVisible());self.assertEqual(self.c.bubble.drop_buttons['shelve'].text(),'預ける')
+        for action in ('print_pdf','extract','move_extract'):
+            if action in self.c.bubble.drop_buttons:self.assertFalse(self.c.bubble.drop_buttons[action].isVisible())
+            service.run(action);self.assertEqual(service.stage,'action')
+        service.run('shelve');self.assertEqual(len(self.c.shelf_service.store.data['items']),3)
+        self.assertTrue(all(p.exists() for p in paths));self.assertEqual(list(self.output.iterdir()),[])
+
+    def test_batch_move_uses_one_destination_for_every_item_once(self):
+        paths=(self.file('one.txt'),self.file('two.pdf'),self.root/'folder');paths[-1].mkdir();(paths[-1]/'inside').write_bytes(b'keep')
+        service=self.c.file_drop_service;service.drop(paths);service.run('move');service.run('destination:out');service.run('destination:out');self.wait_worker()
+        self.assertTrue(all(not p.exists() for p in paths));self.assertTrue(all((self.output/p.name).exists() for p in paths))
+        self.assertEqual((self.output/'folder/inside').read_bytes(),b'keep');self.assertIn('3/3',self.c.bubble.text.text())
+
+    def test_batch_zip_and_7z_offer_only_extract_move_cancel_and_extract_both_with_password(self):
+        import pyzipper,py7zr
+        password='prefix'+datetime.now().astimezone().strftime('%m');z=self.root/'one.zip';seven=self.root/'two.7z'
+        with pyzipper.AESZipFile(z,'w',encryption=pyzipper.WZ_AES) as archive:archive.setpassword(password.encode());archive.writestr('note.txt',b'zip')
+        with py7zr.SevenZipFile(seven,'w',password=password,header_encryption=True) as archive:archive.writestr(b'seven','note.txt')
+        service=self.c.file_drop_service;document=service.store.data
+        for rule in document['rules']:
+            if '.zip' in rule['extensions']:rule['password_template']='prefix{month}'
+        service.store.save(document);service.drop((z,seven))
+        self.assertTrue(self.c.bubble.drop_buttons['extract'].isVisible());self.assertFalse(self.c.bubble.drop_buttons['shelve'].isVisible());service.run('shelve');self.assertEqual(service.stage,'action')
+        service.run('extract');service.run('destination:out');self.wait_worker()
+        self.assertTrue(z.exists() and seven.exists());self.assertEqual((self.output/'one/note.txt').read_bytes(),b'zip');self.assertEqual((self.output/'two/note.txt').read_bytes(),b'seven')
+        self.assertIn('2/2',self.c.bubble.text.text())
+
+    def test_changed_member_blocks_entire_batch_before_move(self):
+        paths=(self.file('one.txt'),self.file('two.txt'));service=self.c.file_drop_service;service.drop(paths);service.run('move')
+        paths[1].write_bytes(b'changed');service.run('destination:out');self.wait_worker()
+        self.assertTrue(all(p.exists() for p in paths));self.assertEqual(list(self.output.iterdir()),[]);self.assertIn('変更',self.c.bubble.text.text())
+
+    def test_batch_target_collisions_do_not_partially_move(self):
+        first=self.root/'one';second=self.root/'two';first.mkdir();second.mkdir();a=first/'same.txt';b=second/'same.txt';a.write_bytes(b'a');b.write_bytes(b'b')
+        service=self.c.file_drop_service;service.drop((a,b));service.run('move');service.run('destination:out');self.wait_worker()
+        self.assertTrue(a.exists() and b.exists());self.assertEqual(list(self.output.iterdir()),[]);self.assertIn('0/2',self.c.bubble.text.text())
+
+    def test_batch_runtime_failure_reports_completed_and_remaining_without_retrying(self):
+        from companion.file_drop import execute,FileDropError
+        paths=(self.file('one.txt'),self.file('two.txt'),self.file('three.txt'));service=self.c.file_drop_service;service.drop(paths);service.run('move')
+        def operation(action,path,rule,now):
+            if path==paths[1]:raise FileDropError('テストの失敗')
+            return execute(action,path,rule,now)
+        with patch('companion.file_drop_ui.execute',side_effect=operation) as run:
+            service.run('destination:out');self.wait_worker();self.assertEqual(run.call_count,2)
+        self.assertTrue((self.output/'one.txt').exists());self.assertFalse(paths[0].exists());self.assertTrue(paths[1].exists() and paths[2].exists())
+        text=self.c.bubble.text.text();self.assertIn('1/3',text);self.assertIn('two.txt',text);self.assertIn('three.txt',text)

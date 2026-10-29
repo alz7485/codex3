@@ -378,6 +378,13 @@ class Mascot(QWidget):
         self.held_frame = prop_frame(self.character, character_pixmap(self.character), 'file', self.held_icon)
         self.transition_prop(previous, self.visible_prop())
 
+    def hold_items(self, paths):
+        if len(paths)==1:self.hold_item(paths[0]);return
+        from .props import items_icon,prop_frame
+        previous=self.visible_prop();self.held_icon=items_icon(paths)
+        self.held_frame=prop_frame(self.character,character_pixmap(self.character),'file',self.held_icon)
+        self.transition_prop(previous,self.visible_prop())
+
     def raise_mail(self):
         previous = self.visible_prop()
         from .props import prop_frame
@@ -909,7 +916,7 @@ class Resident(Mascot):
     context_requested = Signal(object)
     dragged = Signal(object)
     drag_finished = Signal()
-    file_dropped = Signal(str)
+    file_dropped = Signal(object)
 
     def __init__(self, character="A"):
         super().__init__(82, character=character)
@@ -930,34 +937,36 @@ class Resident(Mascot):
         self.setAcceptDrops(True)
 
     @staticmethod
+    def dropped_paths(event):
+        from .file_batch import MAX_DROP_ITEMS
+        urls=event.mimeData().urls() if event.mimeData().hasUrls() else []
+        if not 1<=len(urls)<=MAX_DROP_ITEMS:return ()
+        if any(not url.isLocalFile() for url in urls):return ()
+        paths=tuple(url.toLocalFile() for url in urls)
+        return paths if all(path and Path(path).is_absolute() for path in paths) else ()
+
+    @staticmethod
     def dropped_path(event):
-        urls = event.mimeData().urls() if event.mimeData().hasUrls() else []
-        path = urls[0].toLocalFile() if len(urls) == 1 and urls[0].isLocalFile() else ''
-        return path if path and Path(path).is_absolute() else ''
+        urls=event.mimeData().urls() if event.mimeData().hasUrls() else []
+        paths=tuple(url.toLocalFile() for url in urls if url.isLocalFile()) if len(urls)==1 else ()
+        return paths[0] if len(paths)==1 and paths[0] and Path(paths[0]).is_absolute() else ''
 
     def dragEnterEvent(self, event):
-        if self.drop_allowed() and self.dropped_path(event) and event.possibleActions() & Qt.DropAction.CopyAction:
-            self.level_up.cancel()
-            self.drop_hover = True
-            event.setDropAction(Qt.DropAction.CopyAction); event.accept()
-        else:
-            self.drop_hover = False
-            event.ignore()
+        if self.drop_allowed() and self.dropped_paths(event) and event.possibleActions() & Qt.DropAction.CopyAction:
+            self.level_up.cancel();self.drop_hover=True
+            event.setDropAction(Qt.DropAction.CopyAction);event.accept()
+        else:self.drop_hover=False;event.ignore()
 
-    def dragMoveEvent(self, event):
-        self.dragEnterEvent(event)
+    def dragMoveEvent(self, event):self.dragEnterEvent(event)
 
-    def dragLeaveEvent(self, event):
-        self.drop_hover = False; event.accept()
+    def dragLeaveEvent(self, event):self.drop_hover=False;event.accept()
 
     def dropEvent(self, event):
-        self.drop_hover = False
-        path = self.dropped_path(event)
-        if self.drop_allowed() and path and event.possibleActions() & Qt.DropAction.CopyAction:
-            event.setDropAction(Qt.DropAction.CopyAction); event.accept()
-            self.file_dropped.emit(path)
-        else:
-            event.ignore()
+        self.drop_hover=False;paths=self.dropped_paths(event)
+        if self.drop_allowed() and paths and event.possibleActions() & Qt.DropAction.CopyAction:
+            event.setDropAction(Qt.DropAction.CopyAction);event.accept()
+            self.file_dropped.emit(paths[0] if len(paths)==1 else paths)
+        else:event.ignore()
 
     def mousePressEvent(self, event):
         self.level_up.cancel()
@@ -1452,8 +1461,12 @@ class InteractionBubble(Bubble):
             self.calendar_presented.emit()
 
     def show_drop_stage(self, path, stage, destinations=(), error=''):
+        from .file_batch import group_kind
+        paths=tuple(path) if isinstance(path,(tuple,list)) else (path,)
+        group=group_kind(paths);multiple=len(paths)>1
         prompts={'action':'drop_action','destination':'drop_destination','paper':'drop_paper','extract_destination':'extract_destination'}
-        text=path.name+'\n'+self.system_phrase(prompts[stage])
+        names=('全'+str(len(paths))+'項目\n'+'\n'.join('・'+item.name for item in paths)) if multiple else paths[0].name
+        text=names+'\n'+self.system_phrase(prompts[stage])
         if error:text+='\n\n'+error
         self.display(Notice('',text));self.current='file_drop';self.interactive=True;self.set_kind('menu');self.timer.stop()
         self.drop_notice.clear();self.drop_notice.hide()
@@ -1463,9 +1476,9 @@ class InteractionBubble(Bubble):
         self.drop_extra_buttons={};self.drop_targets_scroll.hide();self.drop_settings_button.hide()
         self.drop_cancel.setEnabled(True)
         if stage=='action':
-            choices={'shelve':'フォルダを預ける' if path.is_dir() else 'ファイルを預ける','move':'移動する'}
-            if not path.is_dir() and path.suffix.lower()=='.zip':choices={'extract':'解凍する','move':'移動する'}
-            if not path.is_dir() and path.suffix.lower()=='.pdf':choices['print_pdf']='印刷する'
+            choices={'shelve':'預ける' if multiple else 'フォルダを預ける' if paths[0].is_dir() else 'ファイルを預ける','move':'移動する'}
+            if group=='archive':choices={'extract':'解凍する','move':'移動する'}
+            if group=='pdf':choices['print_pdf']='印刷する'
             for key,title in choices.items():
                 if key not in self.drop_buttons:
                     self.drop_buttons[key]=button(title,lambda checked=False,action=key:self.file_action_requested.emit(action),'speechChoice')
