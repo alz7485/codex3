@@ -72,6 +72,10 @@ def check_bundle():
         bubble.hide(); bubble.deleteLater(); app.processEvents()
     # Exercise the added libraries from the packaged EXE using disposable files,
     # without touching user settings, user documents, printers or Outlook.
+    from .call_dismiss import NativeClickHook
+    native_click=NativeClickHook()
+    if sys.platform=='win32' and not native_click.start():raise ValueError('Call-menu mouse hook could not be installed')
+    native_click.stop()
     import tempfile
     from datetime import datetime
     import pyzipper
@@ -191,7 +195,7 @@ def check_bundle():
             'platform': sys.platform, 'success': True, 'character_frames_rendered': rendered,
             'walk_frames_rendered':walk_rendered,
             'topics': len(document['rules']), 'voices': len(document['phrases']),
-            'encrypted_zip_checked': True, 'encrypted_7z_checked': True, 'pdf_render_checked': True, 'prop_poses_rendered': prop_rendered,
+            'call_click_hook_checked': True, 'encrypted_zip_checked': True, 'encrypted_7z_checked': True, 'pdf_render_checked': True, 'prop_poses_rendered': prop_rendered,
             'pickup_poses_rendered':pickup_rendered,'note_poses_rendered':notes_rendered,
             'drop_stages_rendered': 3, 'destination_editor_checked': True, 'shelf_launcher_checked': True,
             'growth_restore_checked':True,'costume_layers_checked':True,'content_editor_checked':True,

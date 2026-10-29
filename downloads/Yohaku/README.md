@@ -1,10 +1,12 @@
-# Yohaku v0.37.1
+# Yohaku v0.37.2
 
-**[onedirビルド用ZIP（約14MB）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.37.1-onedir-build.zip)**
+**[onedirビルド用ZIP（約14MB）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.37.2-onedir-build.zip)**
 
-[spec単体](Yohaku.spec) · [5行のコマンド](BUILD_ONEDIR.txt) · [SHA-256](Yohaku-v0.37.1-onedir-build.zip.sha256) · [全ソース](Yohaku-v0.37.1-source.zip)
+[spec単体](Yohaku.spec) · [5行のコマンド](BUILD_ONEDIR.txt) · [SHA-256](Yohaku-v0.37.2-onedir-build.zip.sha256) · [全ソース](Yohaku-v0.37.2-source.zip)
 
-吹き出し内の選択肢ボタンを白地に統一しました。濃い文字と枠線で区別し、ホバー・押下・無効状態でも白地を保ちます。[画面例](../../Yohaku/docs/speech-choices.png)
+呼び出しの吹き出しは、ボタン以外のクリックで閉じます。デスクトップや他アプリのクリックにも対応し、選択肢ボタンは通常どおり操作できます。入力フォームやファイル処理の選択中には適用しません。[呼び出しの操作](../../Yohaku/docs/CALL_MENU.md)
+
+白い選択肢ボタンを継続します。[画面例](../../Yohaku/docs/speech-choices.png)
 
 複数ファイル・フォルダーの受け渡しと7z解凍を継続します。[使い方と制限](../../Yohaku/docs/FILE_DROP.md)
 

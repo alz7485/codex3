@@ -1336,6 +1336,8 @@ class InteractionBubble(Bubble):
         self.resize_text()
         for widget in [self, *self.findChildren(QWidget)]:
             widget.installEventFilter(self)
+        from .call_dismiss import CallDismissGuard
+        self.call_dismiss = CallDismissGuard(self)
 
     def eventFilter(self, watched, event):
         if getattr(self,'current',None)=='shelf' and watched in (self.file_links,self.file_links.viewport()):
@@ -1431,6 +1433,7 @@ class InteractionBubble(Bubble):
         self.raise_()
         self.activateWindow()
         self.buttons["shelf"].setFocus()
+        self.call_dismiss.start()
 
     def content(self, key, heading, text):
         self.display(Notice(heading, text, kind="calendar" if key == "calendar" else "message"))
@@ -1858,6 +1861,7 @@ class Controller(QObject):
         self.menu.addAction("Outlookから切断", self.disconnect)
         self.menu.addSeparator()
         self.menu.addAction("Yohakuを終了", self.request_quit)
+        self.bubble.call_dismiss.resident = self.resident
         self.resident.context_requested.connect(lambda _: self.open_choices())
         self.bubble.call_requested.connect(self.open_choices)
         self.bubble.attendance_requested.connect(self.open_attendance)
@@ -2480,6 +2484,7 @@ class Controller(QObject):
         self.position()
 
     def shutdown(self):
+        self.bubble.call_dismiss.close()
         self.growth_service.shutdown()
         self.shelf_service.timer.stop()
         self.shelf_service.cancel_mail()
