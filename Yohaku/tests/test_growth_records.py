@@ -1,3 +1,4 @@
+from tests.growth_fixture import add_test_trophy
 """Growth views are read-only, and trial equipment commits all slots together."""
 from copy import deepcopy
 from datetime import datetime,timezone
@@ -23,7 +24,7 @@ class GrowthRecordsTests(unittest.TestCase):
     def setUpClass(cls):cls.app=create_application()
     def setUp(self):
         self.temp=TemporaryDirectory();self.addCleanup(self.temp.cleanup);self.root=Path(self.temp.name)
-        seed_content(self.root/'content');self.catalog=load_catalog(self.root/'content');self.store=GrowthStore(self.root/'growth.json')
+        seed_content(self.root/'content');self.catalog=load_catalog(self.root/'content');add_test_trophy(self.catalog);self.store=GrowthStore(self.root/'growth.json')
         self.engine=GrowthEngine(self.store,self.catalog,lambda:1000.);self.p=fresh_progress()
         self.engine.data['characters']['A']=self.p;self.settings=Settings(context_enabled=False)
         self.service=SimpleNamespace(engine=self.engine,store=self.store,host=SimpleNamespace(settings=self.settings,
