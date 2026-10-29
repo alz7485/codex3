@@ -259,13 +259,17 @@ def seed_content(root):
     """Install a sample once. Never overwrite an existing user-edited base pack."""
     root = Path(root); root.mkdir(parents=True, exist_ok=True)
     _seed_packs(root,('base',))
+    from .growth_migration import upgrade_pacing
+    upgrade_pacing(root)
 
 
 def seed_examples(root):
     root=Path(root);marker=root/'.daily-trophies-installed'
-    if marker.exists():return
-    _seed_packs(root,('daily_trophies',))
-    marker.touch(exist_ok=True)
+    if not marker.exists():
+        _seed_packs(root,('daily_trophies',))
+        marker.touch(exist_ok=True)
+    from .growth_migration import upgrade_pacing
+    upgrade_pacing(root)
 
 
 def _seed_packs(root,names):

@@ -1,3 +1,4 @@
+from tests.growth_fixture import add_test_trophy
 """Synthetic awake-time and durable, character-local progress contracts."""
 from copy import deepcopy
 from datetime import datetime,timedelta,timezone
@@ -13,7 +14,7 @@ from companion.growth_content import load_catalog,seed_content
 class GrowthTests(unittest.TestCase):
     def setUp(self):
         self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup);self.root=Path(self.temp.name)
-        seed_content(self.root/'content');self.catalog=load_catalog(self.root/'content');self.assertFalse(self.catalog.errors)
+        seed_content(self.root/'content');self.catalog=load_catalog(self.root/'content');add_test_trophy(self.catalog);self.assertFalse(self.catalog.errors)
         self.catalog.config['exp_interval_seconds']=5
         self.store=GrowthStore(self.root/'growth.json');self.clock=1000.;self.now=datetime(2026,10,27,9,tzinfo=timezone(timedelta(hours=9)))
         self.calendar=BusinessCalendar(dict(japanese_holidays=False));self.engine=GrowthEngine(self.store,self.catalog,lambda:self.clock,lambda:0.)

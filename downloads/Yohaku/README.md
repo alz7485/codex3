@@ -1,10 +1,12 @@
-# Yohaku v0.35.0
+# Yohaku v0.36.0
 
-**[onedirビルド用ZIP（約14MB）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.35.0-onedir-build.zip)**
+**[onedirビルド用ZIP（約14MB）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.36.0-onedir-build.zip)**
 
-[spec単体](Yohaku.spec) · [5行のコマンド](BUILD_ONEDIR.txt) · [SHA-256](Yohaku-v0.35.0-onedir-build.zip.sha256) · [全ソース](Yohaku-v0.35.0-source.zip)
+[spec単体](Yohaku.spec) · [5行のコマンド](BUILD_ONEDIR.txt) · [SHA-256](Yohaku-v0.36.0-onedir-build.zip.sha256) · [全ソース](Yohaku-v0.36.0-source.zip)
 
-トロフィー条件24種類と達成例16件を追加しました。ZIPは解凍・移動・キャンセルから選び、解凍では元ZIPを残します。[追加条件とZIP処理](../../Yohaku/docs/GROWTH_EXPANDED.md)
+育成ペースを調整しました。初回・短時間の4トロフィーを廃止し、標準13件は起動3日・累計16時間以降に獲得します。序盤のレベルアップは約8時間に1回です。旧標準設定の自動移行とバックアップにも対応します。[条件と更新時の扱い](../../Yohaku/docs/GROWTH_PACING.md)
+
+トロフィー条件34種類と、ZIPの解凍・移動・キャンセルを継続します。[追加条件とZIP処理](../../Yohaku/docs/GROWTH_EXPANDED.md)
 
 育成のステータス画面をリニューアルしました。キャラ・レベル・EXPのカード、成長の数字、解放予定と衣装の案内をまとめています。
 

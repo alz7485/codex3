@@ -14,7 +14,7 @@ class ContentTests(unittest.TestCase):
     def save(self):atomic_json(self.path,self.doc)
     def test_shipped_pack_validates_with_small_samples_for_all_characters_and_seven_voices(self):
         c=load_catalog(self.root);self.assertFalse(c.errors);self.assertEqual(c.config['exp_per_hour'],60)
-        self.assertEqual(len(c.items['costumes']),1);self.assertEqual(len(c.items['trophies']),1)
+        self.assertEqual(len(c.items['costumes']),1);self.assertEqual(len(c.items['trophies']),0)
         self.assertEqual(len(self.doc['lines'][0]['texts']),7)
     def test_seed_never_overwrites_user_edited_or_corrupt_base(self):
         self.path.write_text('{broken');seed_content(self.root);self.assertEqual(self.path.read_text(),'{broken')
