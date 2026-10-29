@@ -1,8 +1,18 @@
-# AcadStadio 1.33.0 — 前の作図ブロックの点参照・試用版34
+# AcadStadio 1.34.0 — ガイドブロック・試用版35
 
-**[試用版34 ZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.33.0_CrossBlockTrial34.zip)** ／ [SHA256](AcadStadio_v1.33.0_CrossBlockTrial34.zip.sha256)
+**[試用版35 ZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.34.0_GuideBlocksTrial35.zip)** ／ [SHA256](AcadStadio_v1.34.0_GuideBlocksTrial35.zip.sha256)
 
 Excel / CSVと作図コマンドからAutoCAD用SCRを生成するローカルアプリのソース版です。
+
+## ガイドブロック
+
+- コマンド一覧の「ガイド化」アイコンで、元を残して最上位のガイドへコピー。プレビューは薄い線、SCRには出力しません。
+- ガイドは1つだけで「G」を表示し、フォルダの外・先頭に固定。必要な点の依存元も先にコピーします。
+- 並べ替えで参照元が後ろになる場合、ガイドへコピーし参照切替／リンク保持で警告表示／並べ替え取消を確認。
+- 警告を残した場合も、右クリック「点参照の順序を確認…」から後でガイドへ切替可能。編集の取消・Undo・JSON保存に対応。
+- docs/GUIDES.mdとexamples/guide_reference_project.jsonを同梱。コピー後は独立した式で、元のコマンドを後から編集しても自動同期しません。表の値は各行で再計算します。
+
+ガイドはCAD実体を作成しません。CADの図形を選択するコマンドは対象の実体が先に作図済みである必要があります。繰返しの値に依存する図形・制御コマンドはガイド化の対象外です。
 
 ## 前の作図ブロックから点を参照
 
@@ -59,8 +69,8 @@ py -3 -m venv .venv
 
 ## 検証
 
-非GUI273件・実Tk GUI266件、計539件合格。Ruff・スモーク・ZIP CRC/全ファイルSHA256確認。Windows EXE・AutoCAD実機は未検証。
+非GUI280件・実Tk GUI270件、計550件合格。Ruff・スモーク・ZIP CRC/全ファイルSHA256確認。Windows EXE・AutoCAD実機は未検証。
 
-SHA256: `0238a156f3b1c1a2b7356f758ed773b385a56bb17652d8fe6366ab8252865f64`
+SHA256: `0ef1fbcecccbdbbb9dca426707c612f7597b8588e07e2e430946e7f9ffd16c77`
 
-[前版Trial33](AcadStadio_v1.32.2_DrawThroughTrial33.zip)
+[前版Trial34](AcadStadio_v1.33.0_CrossBlockTrial34.zip)
