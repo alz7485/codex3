@@ -503,7 +503,7 @@ class FileDropUITests(unittest.TestCase):
 
     def test_changed_member_blocks_entire_batch_before_move(self):
         paths=(self.file('one.txt'),self.file('two.txt'));service=self.c.file_drop_service;service.drop(paths);service.run('move')
-        paths[1].write_bytes(b'changed');service.run('destination:out');self.wait_worker()
+        paths[1].write_bytes(b'changed file content');service.run('destination:out');self.wait_worker()
         self.assertTrue(all(p.exists() for p in paths));self.assertEqual(list(self.output.iterdir()),[]);self.assertIn('変更',self.c.bubble.text.text())
 
     def test_batch_target_collisions_do_not_partially_move(self):

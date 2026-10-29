@@ -36,6 +36,6 @@ class FileBatchTests(unittest.TestCase):
         folder=self.root/'one';self.assertTrue(self.run_batch((folder,a),perform)['error']);perform.assert_not_called()
         self.assertEqual((self.out/a.name).read_bytes(),b'keep')
     def test_changed_member_is_detected_before_any_operation(self):
-        paths=(self.file('a'),self.file('b'));ids=tuple(file_identity(p) for p in paths);paths[1].write_bytes(b'changed')
+        paths=(self.file('a'),self.file('b'));ids=tuple(file_identity(p) for p in paths);paths[1].write_bytes(b'changed file content')
         perform=Mock();result=execute_batch(paths,ids,'move',self.rules(paths),datetime.now(),perform)
         self.assertEqual(result['completed'],[]);self.assertEqual(result['remaining'],['a','b']);perform.assert_not_called()
