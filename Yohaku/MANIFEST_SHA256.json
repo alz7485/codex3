@@ -197,6 +197,6 @@
   "tests/test_source_check.py": "ab8cce35e3acb46d4470a6ebf504a01537e46f825c7bd3d286833d22f24308ce",
   "tests/test_storage.py": "9d07a9d2e7908cb891b033d3e626d57c08f3ca3a4819e9e64fac87c3ae4c301f",
   "tests/test_system_dialogue.py": "d7f6150a26b1c36bff110be563dc335c5892c9d8af8c0d9ca236220de6b2cef5",
-  "tests/test_ui.py": "12275abe330e4f31e39fbef796dac86ccebcf736e89edbb9d7491b3575e86882",
+  "tests/test_ui.py": "b2a4c444d0d688c7ed1a7b90804aa55e3e8105959cfeb3531bf0678a5d8ec371",
   "tests/test_walk_animation.py": "e1b5024b2ca29e3c7381cf55751ab126ae5e65b7e140d1ea39258cf1bf66bd52"
 }
