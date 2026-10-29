@@ -1,6 +1,6 @@
 # Yohaku
 
-v0.37.1では、吹き出し内の選択肢ボタンを白地に統一しました。濃い文字色と枠線を使い、マウスを重ねたときや押したときも白地を保ちます。複数ファイルと7zへの対応も継続しています。[操作方法](docs/FILE_DROP.md)
+v0.37.2では、呼び出しの吹き出しをボタン以外のクリックで閉じるようにしました。デスクトップや他アプリのクリックにも対応し、選択肢ボタンは通常どおり操作できます。[呼び出しの操作](docs/CALL_MENU.md)
 
 v0.34.1では、育成のステータス画面を見直しました。キャラとレベル・EXPをまとめたカード、記録のカード、次の解放と衣装への案内を、淡いグリーンと落ち着いた余白で整えました。[画面例と使い方](docs/GROWTH.md)
 
@@ -18,7 +18,7 @@ EXPの頭上フェード表示、衣装の連続プレビュー、報酬の名�
 
 **仕事に、ひと呼吸。** 予定とファイル履歴をそっと知らせる、デスクトップの小さな同僚です。
 
-[onedirビルド用ZIP（1つ）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.37.1-onedir-build.zip) · [specファイル](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku.spec)
+[onedirビルド用ZIP（1つ）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.37.2-onedir-build.zip) · [specファイル](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku.spec)
 
 **ビルド用ZIPだけを新しいフォルダーに展開してください。** testsは不要で、同梱のONEDIR_COMMAND.txtの5行でEXEを作れます。テキスト化していません。
 
@@ -258,12 +258,12 @@ py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements-build.txt
 .\.venv\Scripts\python.exe -m PyInstaller --noconfirm --clean Yohaku.spec
 .\.venv\Scripts\python.exe scripts\collect_licenses.py dist\Yohaku
-.\.venv\Scripts\python.exe -c "import shutil; shutil.make_archive('Yohaku-v0.37.1-windows-x64-onedir', 'zip', 'dist', 'Yohaku')"
+.\.venv\Scripts\python.exe -c "import shutil; shutil.make_archive('Yohaku-v0.37.2-windows-x64-onedir', 'zip', 'dist', 'Yohaku')"
 ```
 
 Python 3.12の場合は、1行目を `py -3.12 -m venv .venv` に変更します。
 
-3行目がonedirを作るコマンドです。`Yohaku.spec`にフォルダー形式、アイコン、3体とアニメーション素材、製品名・版を定義しています。出力は `dist\Yohaku\Yohaku.exe`。5行目で作るZIPは作業フォルダー直下の `Yohaku-v0.37.1-windows-x64-onedir.zip` です。
+3行目がonedirを作るコマンドです。`Yohaku.spec`にフォルダー形式、アイコン、3体とアニメーション素材、製品名・版を定義しています。出力は `dist\Yohaku\Yohaku.exe`。5行目で作るZIPは作業フォルダー直下の `Yohaku-v0.37.2-windows-x64-onedir.zip` です。
 
 | 同梱ファイル | 用途 |
 |---|---|
@@ -281,7 +281,7 @@ Python 3.12の場合は、1行目を `py -3.12 -m venv .venv` に変更します
 py -3.11 scripts/build_onedir.py
 ```
 
-ビルドヘルパーの場合の出力は `dist\Yohaku\Yohaku.exe` と `release\Yohaku-v0.37.1-windows-x64-onedir.zip` です。**EXEだけを取り出さず、ZIPをすべて展開して実行してください。** DLL・Qt・画像は同じフォルダーの`_internal`に入ります。配布物には依存ソフトウェアのライセンス文書もコピーします。署名・社内パッケージ化は含みません。LinuxからWindows EXEを作ったものではありません。
+ビルドヘルパーの場合の出力は `dist\Yohaku\Yohaku.exe` と `release\Yohaku-v0.37.2-windows-x64-onedir.zip` です。**EXEだけを取り出さず、ZIPをすべて展開して実行してください。** DLL・Qt・画像は同じフォルダーの`_internal`に入ります。配布物には依存ソフトウェアのライセンス文書もコピーします。署名・社内パッケージ化は含みません。LinuxからWindows EXEを作ったものではありません。
 
 ビルド素材の確認だけなら `python scripts/build_onedir.py --check`、ビルド環境の準備だけなら `py -3.11 scripts/build_onedir.py --setup-only` を使います。Windows用ビルドはWindows上で実行してください。
 
