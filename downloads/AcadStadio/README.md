@@ -1,8 +1,12 @@
-# AcadStadio 1.32.0 — 視覚的な点選択・試用版31
+# AcadStadio 1.32.1 — 詳細設定をコンパクトに・試用版32
 
-**[試用版31 ZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.32.0_VisualPointsTrial31.zip)** ／ [SHA256](AcadStadio_v1.32.0_VisualPointsTrial31.zip.sha256)
+**[試用版32 ZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.32.1_CompactDetailsTrial32.zip)** ／ [SHA256](AcadStadio_v1.32.1_CompactDetailsTrial32.zip.sha256)
 
 Excel / CSVと作図コマンドからAutoCAD用SCRを生成するローカルアプリのソース版です。
+
+## 詳細設定の配置
+
+レイヤー＋線種、色＋線種尺度を2項目ずつ横並びに変更。文字/寸法スタイルも半幅とし、実行条件は全幅を確保しました。参照一覧を開いて入力領域が狭まると1列へ自動切替。入力値を維持します。色見本ボタンも共通のカラーパレットアイコンへ整理しました。
 
 ## 視覚的な点選択と座標入力
 
@@ -39,8 +43,8 @@ py -3 -m venv .venv
 
 ## 検証
 
-非GUI268件・実Tk GUI259件、計527件合格。Ruff・スモーク・ZIP CRC/全ファイルSHA256確認。Windows EXE・AutoCAD実機は未検証。
+非GUI268件・実Tk GUI260件、計528件合格。Ruff・スモーク・ZIP CRC/全ファイルSHA256確認。Windows EXE・AutoCAD実機は未検証。
 
-SHA256: `b85ed1ed77b67a5f73826f0469fd1de7158aab7e4be39eaa2bfa4f28a49e230d`
+SHA256: `5f9b0025503295fdef63fcc38cc8ef5afe22c5a4867cd0ab38044ed1b22737f1`
 
-[前版Trial30](AcadStadio_v1.31.0_CommandPointsTrial30.zip)
+[前版Trial31](AcadStadio_v1.32.0_VisualPointsTrial31.zip)
