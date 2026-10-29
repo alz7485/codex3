@@ -1,20 +1,24 @@
-# AcadStadio 1.30.1 — 別窓UIを統一・試用版29
+# AcadStadio 1.31.0 — コマンドの点参照・試用版30
 
-**[試用版29 ZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.30.1_UnifiedDialogsTrial29.zip)** ／ [SHA256](AcadStadio_v1.30.1_UnifiedDialogsTrial29.zip.sha256)
+**[試用版30 ZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.31.0_CommandPointsTrial30.zip)** ／ [SHA256](AcadStadio_v1.31.0_CommandPointsTrial30.zip.sha256)
 
-Excel / CSVと作図コマンドからAutoCAD用SCRを生成するローカルアプリです。ソース版です。
+Excel / CSVと作図コマンドからAutoCAD用SCRを生成するローカルアプリのソース版です。
 
-## 今回の変更
+## 点参照
 
-- メインUIを維持し、別窓のボタンの高さ・余白・アイコン表現を統一。
-- プリセット、ユーザーコマンド、プロジェクト一覧、構成ツリーの操作を一覧上のツールバーへ整理。
-- CAD設定とコマンド引数の追加/削除、検査の再実行、SCRのコピー/再生成を一覧上へ配置。
-- 保存・確定・取消は下へ配置。確定操作は文字を残し、編集ツールは操作名のツールチップで確認できます。
-- 入力表の作図チェック、実色表示、16種類の分類別コマンドなどは継続しています。
+座標欄の「表・変数 ▾」→「別コマンドの始点・中点・終点から選ぶ…」を使います。
+
+- 同じリストの先行コマンドを指定し、始点・中点・終点などのX/Yを個別に取得。
+- Xだけ取得した場合、Yは変更しません。ずらし量 -10 や表の列/変数の式にも対応。
+- 寸法の測定点を線へ合わせ、入力値の変更に追従。登録コマンドの引数にも使用可能。
+- 表示はコマンド番号、保存は内部ID。削除・後続へ移動・未作図の参照先はエラーとして検出。
+- docs/COMMAND_POINTS.mdと、線＋寸法の examples/line_dimension_points_project.json を同梱。
+
+座標によるCADオブジェクト選択に使えますが、図形が同じ選択点に重なる場合は一意に区別できません。X−10で元の線から外れる場合もあります。SCR生成時に解決する点参照です。
 
 ## 起動とonedir EXE化
 
-Python 3.11以降（tkinterを含む）で、展開したフォルダから実行します。
+Python 3.11以降（tkinterを含む）で展開フォルダから実行します。
 
 ```powershell
 py -3 -m pip install -r requirements.txt
@@ -31,8 +35,8 @@ py -3 -m venv .venv
 
 ## 検証
 
-非GUI260件・実Tk GUI252件、計512件合格。Ruff・スモーク・ZIP CRC/全ファイルSHA256も確認済み。Windows EXE・AutoCAD実機は未検証。
+非GUI268件・実Tk GUI255件、計523件合格。Ruff・スモーク・ZIP CRC/全ファイルSHA256確認。Windows EXE・AutoCAD実機は未検証。
 
-SHA256: `863d152a6d868b98d9d215e34291c39df706bf45cb663b947113a468ee0f858f`
+SHA256: `7b3d42493a787ca681e1476916f135b488d16e853c3b9c9191ac4f519819c90d`
 
-[前版Trial28](AcadStadio_v1.30.0_TableChecksTrial28.zip)
+[前版Trial29](AcadStadio_v1.30.1_UnifiedDialogsTrial29.zip)
