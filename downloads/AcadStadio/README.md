@@ -1,8 +1,14 @@
-# AcadStadio 1.37.2 — 試用版49
+# AcadStadio 1.37.3 — 試用版50
 
-**[試用版49 ZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.37.2_PointSelectionCardsTrial49.zip)** ／ [SHA256](AcadStadio_v1.37.2_PointSelectionCardsTrial49.zip.sha256)
+**[試用版50 ZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.37.3_ButtonBordersTrial50.zip)** ／ [SHA256](AcadStadio_v1.37.3_ButtonBordersTrial50.zip.sha256)
 
 Excel / CSVの行と作図コマンドから、AutoCAD用SCRを生成するローカルアプリです。プロジェクト → ブロック → コマンドの順に管理します。
+
+## ボタンの枠線
+
+- 選択/参照/確定/キャンセル/編集履歴のボタンに明示的な枠線を設定。
+- 未選択は薄い青灰色、選択/主操作は青。選択ボタン同士にも小さな間隔を設定。
+- 見た目のみ変更し、操作や作図処理は維持。
 
 ## 点選択のカード表示
 
@@ -67,8 +73,8 @@ py -3 -m venv .venv
 
 ## 検証と制限
 
-Trial48で非GUI286件・実Tk GUI282件、合計568件合格。Trial49の表示変更後も関連GUI6件合格。処理の不変性、Ruff、ZIP CRC/全manifest SHA256、展開ソースの実Tk起動を確認しています。
+Trial48で非GUI286件・実Tk GUI282件、合計568件合格。Trial49/50の表示変更後も関連GUI6件合格。処理の不変性、Ruff、ZIP CRC/全manifest SHA256、展開ソースの実Tk起動を確認しています。
 
 Windows EXEの実行とAutoCAD実機は未検証です。方式ごとの未使用の入力メモは編集画面内で保持し、プロジェクトへ保存するのは選択中の方式です。
 
-SHA256: `c11a5f72a9df1d0a655b6cef150e3fa4dbfab70137f47a49b973628bb9e762a7`
+SHA256: `91e402779eae499d68139c5d0e981f8d00c171f1ce63ffabbb1aea2d1c851d94`
