@@ -1,7 +1,7 @@
 # AcadStadio
 
-[Trial52 ZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.38.1_LabelSpacingTrial52.zip)
+[Trial53 ZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.39.0_ConsistentUITrial53.zip)
 
-メイン画面の見出し下の間隔を4px広げました。ソースZIP・Windows onedirビルド手順同梱。
+入力表・CAD設定・プリセット・プロジェクト管理などを、メイン画面と共通の白い領域・青灰色の枠線・青い選択色に統一。GUI282件・コア286件合格。ソースZIP・Windows onedirビルド手順同梱。Windows EXEとAutoCAD実機は未検証。
 
-90a05fd98388cbb6246c649e5309898f4b390cee43ee452246e74f63f405542a  AcadStadio_v1.38.1_LabelSpacingTrial52.zip
+1e1fc2f27f897d8904d02414fb1e6ac91022daeb1aa811ff68e48865069c147d  AcadStadio_v1.39.0_ConsistentUITrial53.zip
