@@ -164,7 +164,7 @@
   "tests/test_call_dismiss.py": "e482c24d5ba6ce4341c4ac7d787bc40e906dafc4a05c6807db1aae452354f16e",
   "tests/test_characters.py": "10fb22de81f9f631254dd8f8f0b6298c66c6c161519b3e99946c2bf5a8d33478",
   "tests/test_click_reactions.py": "337457b83042d8a30955784f498af33cdf6fe320adf37be35b67350baaf1e047",
-  "tests/test_comfort_features.py": "1612eb194ad9efc12aff6fad455fc0ca9bbf745e3fa01ed67eb27e11bd8da6e8",
+  "tests/test_comfort_features.py": "07987c5b6429fe961f6392fa62857cac3a6cc689a2d4774cbcef9c1a46e9bce8",
   "tests/test_context.py": "96f46af75902a23cd5749785db6715d40a763c35e4051d8ec8542956ab6d39c3",
   "tests/test_conversation.py": "6cbcbce8bb445e728240c1bb99f94be2e0e4881a32c0bf84245ff9aaf35fbc5c",
   "tests/test_core.py": "3ad982614846d3d3960291e626c98fc27e79f1fc72ae37a35817dccc96b2ad18",
