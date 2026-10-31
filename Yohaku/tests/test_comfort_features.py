@@ -24,7 +24,7 @@ class ComfortLogicTests(unittest.TestCase):
         # Resetting the short burst must not erase the 30-second cooldown.
         self.assertEqual([clicks.click(31 + i / 10, options) for i in range(4)][-1], 'click_concern')
 
-    def test_walk_looks_and_leans_before_moving_then_settles_to_front(self):
+    def test_walk_looks_and_leans_before_moving_then_rests_facing_side(self):
         motion = Motion(uniform=lambda a, b: a)
         motion.wait, motion.distance = 0, 8
         x, first_move, phases = 100.0, None, set()
@@ -42,7 +42,8 @@ class ComfortLogicTests(unittest.TestCase):
         self.assertGreaterEqual(first_move, .30)
         self.assertLessEqual(first_move, .4)
         self.assertTrue({'look', 'lean', 'walk', 'settle', 'idle'} <= phases)
-        self.assertEqual(motion.frame(), 24)
+        self.assertEqual(motion.frame(), 0)
+        self.assertEqual(motion.facing, -1)
         self.assertAlmostEqual(x, 92, delta=.1)
 
     def test_interaction_cancels_walk_preparation_without_movement(self):

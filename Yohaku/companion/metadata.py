@@ -1,5 +1,5 @@
 APP_NAME = "Yohaku"
 APP_SLUG = "Yohaku"
 APP_DISPLAY_NAME = "Yohaku"
-VERSION = "0.37.2"
+VERSION = "0.37.3"
 DESCRIPTION = "デスクトップの小さな同僚"

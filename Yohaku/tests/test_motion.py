@@ -3,6 +3,61 @@ from companion.motion import Motion
 
 
 class MotionTests(unittest.TestCase):
+    def test_short_rests_and_pointer_pauses_do_not_flash_front_during_a_stroll(self):
+        for pick in (lambda a, b: a, lambda a, b: b):
+            motion = Motion(uniform=pick)
+            x = 75.0
+            started = False
+            resting_frames = 0
+            turns = 0
+            previous_direction = motion.facing
+            for step in range(3000):
+                # Includes screen-edge turns, idle gestures and a transient
+                # hover pause, all without an explicit face-front request.
+                x = motion.advance(.02, x, 0, 100, not (300 <= step < 310))
+                started = started or motion.walking
+                if started:
+                    self.assertLess(motion.frame(), 24)
+                    if not motion.walking:
+                        resting_frames += 1
+                    if motion.facing != previous_direction:
+                        turns += 1
+                previous_direction = motion.facing
+            self.assertGreater(resting_frames, 20)
+            self.assertGreater(turns, 5)
+
+    def test_resuming_walk_clears_old_front_hold_before_the_next_rest(self):
+        motion = Motion(uniform=lambda a, b: a)
+        motion.react('front', 8)
+        motion.face_front(8)
+        motion.start_soon()
+        self.assertEqual(motion.frame(), 24)
+        x = 100.0
+        walked = False
+        for _ in range(400):
+            x = motion.advance(.02, x, 0, 300, True)
+            walked = walked or motion.walking
+            if walked:
+                self.assertLess(motion.frame(), 24)
+                if not motion.walking:
+                    self.assertLess(motion.elapsed, 8)
+                    break
+        else:
+            self.fail('Expected a short rest within the old front hold')
+
+    def test_explicit_interaction_still_faces_front_after_a_stroll(self):
+        motion = Motion(uniform=lambda a, b: a)
+        x = 100.0
+        for _ in range(100):
+            x = motion.advance(.02, x, 0, 300, True)
+        self.assertTrue(motion.side_idle)
+        motion.react('front', 8)
+        motion.face_front(8)
+        motion.advance(.02, x, 0, 300, False)
+        self.assertEqual(motion.frame(), 24)
+        motion.react('angry', seconds=float('inf'))
+        self.assertEqual(motion.frame(), 27)
+
     def test_uninterrupted_idle_has_frequent_short_walks_without_long_front_holds(self):
         for pick in (lambda a, b: a, lambda a, b: b):
             with self.subTest(range_end=pick(0, 1)):

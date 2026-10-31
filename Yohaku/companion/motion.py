@@ -74,8 +74,10 @@ class Motion:
         self.phase = 'idle'
         self.phase_elapsed = 0.0
         self.was_blocked = False
+        self.side_idle = False
 
     def face_front(self, seconds=8.0):
+        self.side_idle = False
         self.front_until = self.elapsed + seconds
         self.walking = False
         self.phase = 'idle'
@@ -128,6 +130,13 @@ class Motion:
                     elif x <= lower + 4:
                         self.direction = 1
                     self.facing = self.direction
+                    # A short rest belongs to the same stroll. Do not flash
+                    # the front artwork between trips, including a stale
+                    # face-front hold left over from the last interaction.
+                    self.side_idle = True
+                    self.front_until = 0.0
+                    if self.expression in ('front', 'front_blink'):
+                        self.expression_until = self.elapsed
                     self.phase, self.phase_elapsed = 'look', 0.0
                 self.phase_elapsed += dt
                 if self.phase == 'look' and self.phase_elapsed >= 0.18:
@@ -180,6 +189,8 @@ class Motion:
             return EXPRESSION_FRAMES["talk"]
         if self.expression and self.elapsed < self.expression_until:
             return EXPRESSION_FRAMES[self.expression]
+        if self.side_idle:
+            return 0
         return 25 if self.elapsed % 5.2 > 5.02 else 24
 
     def pose(self):
