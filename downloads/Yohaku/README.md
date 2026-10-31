@@ -1,8 +1,10 @@
-# Yohaku v0.37.2
+# Yohaku v0.37.3
 
-**[onedirビルド用ZIP（約14MB）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.37.2-onedir-build.zip)**
+**[onedirビルド用ZIP（約14MB）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.37.3-onedir-build.zip)**
 
-[spec単体](Yohaku.spec) · [5行のコマンド](BUILD_ONEDIR.txt) · [SHA-256](Yohaku-v0.37.2-onedir-build.zip.sha256) · [全ソース](Yohaku-v0.37.2-source.zip)
+[spec単体](Yohaku.spec) · [5行のコマンド](BUILD_ONEDIR.txt) · [SHA-256](Yohaku-v0.37.3-onedir-build.zip.sha256) · [全ソース](Yohaku-v0.37.3-source.zip)
+
+歩き回る合間の小休止で正面の絵が一瞬混ざる動作を修正しました。横向きを保ちながら休止・方向転換し、呼び出しなどの操作では正面を向きます。[動きの仕様](../../Yohaku/docs/TIMING_MOTION.md)
 
 呼び出しの吹き出しは、ボタン以外のクリックで閉じます。デスクトップや他アプリのクリックにも対応し、選択肢ボタンは通常どおり操作できます。入力フォームやファイル処理の選択中には適用しません。[呼び出しの操作](../../Yohaku/docs/CALL_MENU.md)
 
