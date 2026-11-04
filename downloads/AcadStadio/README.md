@@ -1,8 +1,7 @@
-# AcadStadio Trial58
+# AcadStadio Trial59
 
-[最新版ソースZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.43.0_StandardLinetypesTrial58.zip)
+[最新版ソースZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.43.1_TableHeaderTrial59.zip)
 
-- 入力表の窓を1360×820に拡大。左一覧を広げ、上の操作ボタンを1行に統合し、押しやすいサイズに拡大。
-- AutoCAD標準線種45種類から選択して追加。CAD初期設定ONの場合、SCR実行時に未登録の線種を標準ライブラリから読み込みます。
-- 全GUI300件、最終関連GUI35件、コア292件合格。
-- Windows EXE・AutoCAD実機は未検証。ソースZIPにonedir EXE化コマンドを同梱。
+入力表の上部を「表名・件数」「操作ボタン・一括チェック」の2行に集約。表の表示領域を拡大し、ボタンの大きさ・枠線・高さを統一しました。左一覧の大きいボタンと標準線種の追加機能を含みます。
+
+関連GUIテスト合格。通常・最小サイズで実画面を確認。Windows EXE・AutoCAD実機は未検証。onedir EXE化コマンド同梱のソースZIPです。
