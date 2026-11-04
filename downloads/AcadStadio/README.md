@@ -1,7 +1,8 @@
-# AcadStadio
+# AcadStadio Trial58
 
-[Trial57 ZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.42.1_BlockApplyFixTrial57.zip)
+[最新版ソースZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.43.0_StandardLinetypesTrial58.zip)
 
-コマンド選択・追加の後に「ブロックを反映」が反応しなくなる不具合を修正。編集画面全体へ操作の受付先を戻します。反映ボタンのマウス押下を含む関連GUI29件合格。Windows実機は未検証。Windows onedirビルド手順同梱。
-
-5f5d46a843ad06d71b4fb5c41d046b66bffd461b6d5cca02cfd5f09e9119d3be  AcadStadio_v1.42.1_BlockApplyFixTrial57.zip
+- 入力表の窓を1360×820に拡大。左一覧を広げ、上の操作ボタンを1行に統合し、押しやすいサイズに拡大。
+- AutoCAD標準線種45種類から選択して追加。CAD初期設定ONの場合、SCR実行時に未登録の線種を標準ライブラリから読み込みます。
+- 全GUI300件、最終関連GUI35件、コア292件合格。
+- Windows EXE・AutoCAD実機は未検証。ソースZIPにonedir EXE化コマンドを同梱。
