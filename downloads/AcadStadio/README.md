@@ -1,7 +1,7 @@
 # AcadStadio
 
-[Trial55 ZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.41.0_ProjectDataTrial55.zip)
+[Trial56 ZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.42.0_ReferenceInputsTrial56.zip)
 
-アプリ隣のDataフォルダと対応するプロジェクト階層、フォルダ操作・ドラッグ移動・外部構成変更の反映に対応。「移動量」へ表・変数を選ぶボタンを追加。GUI295件・コア288件合格、追加の対象テスト4件合格。利用者のDataは配布ZIPに含みません。Windows onedirビルド手順同梱。Windows EXE・AutoCAD実機は未検証。
+セル／列の強調範囲を修正。移動量の入力欄を2段に整理し、参照元コマンドの表・変数と現在値をクリックして式へ挿入できます。GUI297件・コア290件合格、最終参照UI2件再確認済み。Windows onedirビルド手順同梱。Windows EXE・AutoCAD実機は未検証。
 
-48d9d53821c4b689828a1c9d0a9a7f3ba3ad638798574e0ef7ef6f41c8774441  AcadStadio_v1.41.0_ProjectDataTrial55.zip
+28a6ee2f3bd1a446914f21fea6f815a1781bd990b45930f4a0f29f6d6b546dee  AcadStadio_v1.42.0_ReferenceInputsTrial56.zip
