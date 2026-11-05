@@ -1,9 +1,11 @@
-# AcadStadio Trial64
+# AcadStadio Trial65
 
-[最新版ソースZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.48.0_SelectAndTransformsTrial64.zip)
+[最新版ソースZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.48.1_CommandPaletteTrial65.zip)
 
-SELECTで複数の点・窓・交差をまとめて選択し、コピーなどから選択名で再利用します。重複は1図形として扱い、選択した図形を強調表示。回転、回転複写、並べて複写、分解、CADブロック化、尺度変更、MTEXTを追加しました。TEXTは単一行、MTEXTは複数行です。サンプルJSONと操作説明を同梱。
+コマンド追加を「線・形状」「編集・複写」「文字・寸法」「制御」の4分類へ整理。全33コマンドを専用アイコンにし、追加画面とコマンド一覧で共通化しました。SELECT・回転・配列などは「編集・複写」から選べます。CAD設定の線種一覧は追加画面と同じ「線種名・イメージ・用途／倍率」の3列です。
 
-全GUI315件・最終関連GUI13件・コア329件合格。Windows EXE・AutoCAD実機は未検証。Windows版AutoCADのActiveX / Visual LISPが必要です。外部DWGだけの図形や未対応の編集結果はCADで確認してください。SELECTの再評価・複製・参照の仕様は同梱 docs/SELECT.md、コマンドの対応範囲は docs/DRAWING_COMMANDS.md を参照。
+全GUI315件・コア329件合格。保存形式・SCRの動作は維持。Trial64のSELECT、変形編集、TEXT/MTEXT、サンプルJSONと操作説明も含みます。
 
-onedir EXE化コマンド同梱のソースZIPです。実行ファイルの配布ではありません。プロジェクトのDataフォルダは含みません。
+Windows EXE・AutoCAD実機は未検証。Windows版AutoCADのActiveX / Visual LISPが必要です。対応範囲は同梱 docs/DRAWING_COMMANDS.md、SELECTの操作は docs/SELECT.md を参照してください。
+
+onedir EXE化コマンド同梱のソースZIPです。プロジェクトのDataは含みません。
