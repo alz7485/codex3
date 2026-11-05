@@ -1,8 +1,10 @@
-# Yohaku v0.37.3
+# Yohaku v0.37.4
 
-**[onedirビルド用ZIP（約14MB）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.37.3-onedir-build.zip)**
+**[onedirビルド用ZIP（約14MB）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.37.4-onedir-build.zip)**
 
-[spec単体](Yohaku.spec) · [5行のコマンド](BUILD_ONEDIR.txt) · [SHA-256](Yohaku-v0.37.3-onedir-build.zip.sha256) · [全ソース](Yohaku-v0.37.3-source.zip)
+[spec単体](Yohaku.spec) · [5行のコマンド](BUILD_ONEDIR.txt) · [SHA-256](Yohaku-v0.37.4-onedir-build.zip.sha256) · [全ソース](Yohaku-v0.37.4-source.zip)
+
+クリック後は約3秒正面を向いて静止し、その後に歩行を再開します。再クリック時は3秒を数え直します。ZIPはログイン不要の通常リンクからダウンロードできます。[動きの仕様](../../Yohaku/docs/TIMING_MOTION.md)
 
 歩き回る合間の小休止で正面の絵が一瞬混ざる動作を修正しました。横向きを保ちながら休止・方向転換し、呼び出しなどの操作では正面を向きます。[動きの仕様](../../Yohaku/docs/TIMING_MOTION.md)
 

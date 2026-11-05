@@ -20,7 +20,7 @@ EXPの頭上フェード表示、衣装の連続プレビュー、報酬の名�
 
 **仕事に、ひと呼吸。** 予定とファイル履歴をそっと知らせる、デスクトップの小さな同僚です。
 
-[onedirビルド用ZIP（ActionsのYohaku-onedir-build-kit）](https://github.com/alz7485/codex3/actions/workflows/yohaku-windows.yml) · [specファイル](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku.spec)
+[onedirビルド用ZIP（1つ・ログイン不要）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku-v0.37.4-onedir-build.zip) · [specファイル](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/Yohaku/Yohaku.spec)
 
 **ビルド用ZIPだけを新しいフォルダーに展開してください。** testsは不要で、同梱のONEDIR_COMMAND.txtの5行でEXEを作れます。テキスト化していません。
 
