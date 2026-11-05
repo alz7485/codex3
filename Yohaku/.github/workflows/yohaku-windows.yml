@@ -115,8 +115,14 @@ jobs:
             if (-not $normal.HasExited) { Stop-Process -Id $normal.Id -Force }
             $normal.WaitForExit(5000) | Out-Null
           }
+      - name: Package build kit from checked source
+        working-directory: ${{ env.YOHAKU_PROJECT }}
+        shell: pwsh
+        run: |
+          $version = python -c "from companion.metadata import VERSION; print(VERSION)"
+          python scripts/package_build_kit.py --output "release/Yohaku-v$version-onedir-build.zip"
+          if ($LASTEXITCODE -ne 0) { throw 'Kit packaging failed.' }
       - name: Build the downloadable kit without tests
-        if: ${{ hashFiles('downloads/Yohaku/*onedir-build.zip') != '' }}
         shell: pwsh
         env:
           QT_QPA_PLATFORM: offscreen
@@ -124,12 +130,12 @@ jobs:
           LOCALAPPDATA: ${{ runner.temp }}/Yohaku-kit-check
         run: |
           $version = python -c "import sys; sys.path.insert(0, r'$env:YOHAKU_PROJECT'); from companion.metadata import VERSION; print(VERSION)"
-          $kitArchive = Join-Path $env:GITHUB_WORKSPACE "downloads/Yohaku/Yohaku-v$version-onedir-build.zip"
+          $kitArchive = Join-Path $env:YOHAKU_PROJECT "release/Yohaku-v$version-onedir-build.zip"
           $destination = Join-Path $env:RUNNER_TEMP 'Yohaku-download-kit'
           Expand-Archive -LiteralPath $kitArchive -DestinationPath $destination
           $kit = Join-Path $destination 'Yohaku'
           if (Test-Path (Join-Path $kit 'tests')) { throw 'The build kit must not require or include tests.' }
-          $standalone = Join-Path $env:GITHUB_WORKSPACE 'downloads/Yohaku/Yohaku.spec'
+          $standalone = Join-Path $env:YOHAKU_PROJECT 'Yohaku.spec'
           if ((Get-FileHash $standalone).Hash -ne (Get-FileHash (Join-Path $kit 'Yohaku.spec')).Hash) { throw 'Standalone spec differs from kit.' }
           Push-Location $kit
           try {
@@ -151,6 +157,15 @@ jobs:
       - name: Package source ZIP
         working-directory: ${{ env.YOHAKU_PROJECT }}
         run: python scripts/package_source.py
+      - name: Upload build kit separately
+        uses: actions/upload-artifact@v4
+        with:
+          name: Yohaku-onedir-build-kit
+          path: |
+            ${{ env.YOHAKU_PROJECT }}/release/*onedir-build.zip
+            ${{ env.YOHAKU_PROJECT }}/release/*onedir-build.zip.sha256
+          if-no-files-found: error
+          retention-days: 90
       - name: Upload ZIPs and checksums
         uses: actions/upload-artifact@v4
         with:
