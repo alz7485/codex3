@@ -1,24 +1,15 @@
-# ExLauncher v1.0.11
+# ExLauncher v1.0.12
 
-[カテゴリ展開の待ち時間・改善版ソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/ExLauncher/ExLauncher_Codex_Handoff_v1.0.11_Faster_Expand.zip)
+[Classicの展開待ち・改善版ソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/ExLauncher/ExLauncher_Codex_Handoff_v1.0.12_Classic_Expand.zip)
 
-Modernの初回展開で、登録件数分の個別ファイル/フォルダアイコンの取得を待っていた処理を改善しました。まず汎用またはキャッシュ済みアイコンで開き、展開後に個別アイコンへ順次切り替えます。同じパスの取得と再展開はキャッシュで再利用します。アニメーションの時間と既存の速度設定は維持します。
+Classicも個別ファイル/フォルダアイコンの取得を待たずに一覧を展開し、後から順次更新します。同じパスと再展開ではキャッシュを利用します。Modernのv1.0.11までの改善も含みます。
 
-113テスト成功（Linux/Qt offscreen）。追加9件は100%と200%で成功しています。OS取得1件20msの遅延を入れた模擬条件では、10件の展開完了が456→254ms、50件が1293→269msでした（各3回の中央値）。遅延を入れないLinuxの10件は252→251msです。Windows実機の測定値ではありません。個別取得は展開後に1件ずつ行いますが、単一の遅いOS取得中の入力待ちが残る場合があります。
+116テスト成功（Linux/Qt offscreen）。Windows実機・Windows EXEは未検証です。OSアイコン1件の取得が非常に遅い場合、展開後の取得中に入力待ちが残ることがあります。
 
-長い名前のメニュー表示修正、保存失敗対策・大量一覧の可視行描画、設定UIの段階表示、編集開始時の開閉状態維持、VS Code・ビルド環境を引き継いでいます。Windows実機・Windows EXE・独立した正式な修正後監査は未検証です。
+ZIPをすべて展開し、main.pyと.vscodeがあるフォルダをVS Codeで開いてください。初回は `python scripts/build_onedir.py --setup-only` で準備し、`.venv\Scripts\python.exe` を選択します。MicrosoftのPython/Python Debugger拡張を使い、F5で起動、Ctrl+Shift+BでEXE作成です。
 
-1. ZIPをすべて展開し、main.pyと.vscodeがあるフォルダをVS Codeで開きます。Microsoftの「Python」「Python Debugger」拡張を使用します。
-2. VS Codeのターミナルで初回の準備を実行します。
+[詳しい手順](VSCODE_GUIDE.md)。Windows用EXEの出力先は `dist\ExLauncher\ExLauncher.exe` です。ソースZIPであり、ビルド済みEXEは含みません。旧版へ戻す前に未確定の復旧記録を解決し、手動削除しないでください。
 
-```powershell
-python scripts/build_onedir.py --setup-only
-```
+SHA-256: `5a1d8edb875e48af92d8aa0c0004de09ea04877ce6f5075de9a293b84c0d39bd`
 
-3. Pythonインタープリターに `.venv\Scripts\python.exe` を選びます。**F5で起動・デバッグ**、**Ctrl+Shift+BでEXE作成**です。
-
-[詳しい手順](VSCODE_GUIDE.md)。Windows用EXEの出力先は `dist\ExLauncher\ExLauncher.exe` です。ソースZIPであり、ビルド済みEXEは含みません。旧版へ戻す前に未確定の復旧記録を解決し、記録を手動削除しないでください。
-
-SHA-256: `85936f886bb33b230bdb9408fcf4ea44414c096ad5fd8885c2f57f142f53844a`
-
-[前版 v1.0.10（長い名前のメニュー表示修正）](ExLauncher_Codex_Handoff_v1.0.10_Long_Names.zip)
+[前版 v1.0.11（Modern展開待ち改善）](ExLauncher_Codex_Handoff_v1.0.11_Faster_Expand.zip)
