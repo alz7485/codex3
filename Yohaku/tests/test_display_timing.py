@@ -29,20 +29,21 @@ class TimingMigrationTests(unittest.TestCase):
                 updated['options']['bubble_seconds'] = 60
                 self.assertEqual(upgrade(updated)['options']['bubble_seconds'], 60)
 
-    def test_click_restart_discards_long_wait_but_retains_smooth_takeoff(self):
+    def test_click_restart_holds_front_then_discards_long_wait_with_smooth_takeoff(self):
         motion = Motion(uniform=lambda a, b: b)
         motion.wait = 55
-        motion.face_front()
+        motion.face_front(3, hold_seconds=3)
         motion.start_soon()
         x, first_move = 200., None
-        for step in range(50):
+        for step in range(200):
             before = x
             x = motion.advance(.02, x, 0, 500, True)
             self.assertLessEqual(abs(x-before), 20*.02)
             if x != before and first_move is None:
                 first_move = (step+1)*.02
         self.assertIsNotNone(first_move)
-        self.assertLessEqual(first_move, .7)
+        self.assertGreaterEqual(first_move, 3)
+        self.assertLessEqual(first_move, 3.7)
 
     def test_timing_migration_at_size_limit_keeps_valid_document_and_edits(self):
         document = defaults()
@@ -102,7 +103,7 @@ class BubbleTimingTests(unittest.TestCase):
         c.bubble.open_choices()
         self.assertEqual(c.bubble.timer.interval(), 20000)
 
-    def test_passive_click_message_moves_within_one_second_even_under_stationary_pointer(self):
+    def test_click_message_holds_front_three_seconds_then_walks_under_stationary_pointer(self):
         c = self.c
         c.settings.walking = True
         c.motion = Motion(uniform=lambda a, b: b)
@@ -114,6 +115,11 @@ class BubbleTimingTests(unittest.TestCase):
              patch.object(c.resident, 'underMouse', return_value=True):
             c.show_message()
             self.assertTrue(c.bubble.isVisible())
+            for _ in range(149):
+                clock[0] += .02
+                c.animate()
+                self.assertEqual(c.motion_x, 200.)
+                self.assertIn(c.resident.frame_index, (24, 25))
             for _ in range(50):
                 clock[0] += .02
                 c.animate()
