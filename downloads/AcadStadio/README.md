@@ -1,11 +1,9 @@
-# AcadStadio Trial65
+# AcadStadio Trial66
 
-[最新版ソースZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.48.1_CommandPaletteTrial65.zip)
+[最新版ソースZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.49.0_JISPipingTrial66.zip)
 
-コマンド追加を「線・形状」「編集・複写」「文字・寸法」「制御」の4分類へ整理。全33コマンドを専用アイコンにし、追加画面とコマンド一覧で共通化しました。SELECT・回転・配列などは「編集・複写」から選べます。CAD設定の線種一覧は追加画面と同じ「線種名・イメージ・用途／倍率」の3列です。
+エルボ・レジューサ・ティー・キャップの編集可能なJIS B 2312継手サンプルを追加しました。出典掲載寸法から角度・形式別1,681候補を収録。ファイルメニューから読み込めます。種類別JSONと先頭行SCR、出典・近似形状の説明を同梱。
 
-全GUI315件・コア329件合格。保存形式・SCRの動作は維持。Trial64のSELECT、変形編集、TEXT/MTEXT、サンプルJSONと操作説明も含みます。
+JISフランジ全形式・全呼び径への対応は未完了です。継手の一部の成形輪郭は模式図です。詳細は同梱 docs/JIS_PIPING_SAMPLES.md を参照してください。
 
-Windows EXE・AutoCAD実機は未検証。Windows版AutoCADのActiveX / Visual LISPが必要です。対応範囲は同梱 docs/DRAWING_COMMANDS.md、SELECTの操作は docs/SELECT.md を参照してください。
-
-onedir EXE化コマンド同梱のソースZIPです。プロジェクトのDataは含みません。
+コア333件・実Tk GUI317件合格。Windows EXE・AutoCAD実機は未検証。onedir EXE化コマンド同梱。ユーザープロジェクトのDataは含みません。
