@@ -71,14 +71,16 @@ class Motion:
         self.talk_until = 0.0
         self.idle_at = 5.0
         self.front_until = 0.0
+        self.front_hold_until = 0.0
         self.phase = 'idle'
         self.phase_elapsed = 0.0
         self.was_blocked = False
         self.side_idle = False
 
-    def face_front(self, seconds=8.0):
+    def face_front(self, seconds=8.0, hold_seconds=0.0):
         self.side_idle = False
         self.front_until = self.elapsed + seconds
+        self.front_hold_until = self.elapsed + max(0.0, hold_seconds)
         self.walking = False
         self.phase = 'idle'
         self.speed = 0.0
@@ -99,6 +101,9 @@ class Motion:
         dt = max(0.0, min(0.1, dt))  # Never jump after sleep/resume.
         self.elapsed += dt
         self.walking = False
+        # A click's front pose must finish before preparing another walk.
+        # Keep this deadline separate from short hover/menu resume delays.
+        walk_allowed = walk_allowed and self.elapsed >= self.front_hold_until
         if self.elapsed >= self.idle_at:
             if self.elapsed >= self.expression_until:
                 gestures = ("think", "curious", "relaxed", "nod", "wink", "stretch", "proud")

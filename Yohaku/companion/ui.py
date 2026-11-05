@@ -2524,11 +2524,11 @@ class Controller(QObject):
             notice = self.engine.conversation(now, self.events, fresh)
         if notice is None:
             notice = Notice(CHARACTERS[self.settings.character], self.engine.phrase('no_conversation'), expression='think')
-        seconds = self.dialogue.data['options']['click_recovery_seconds'] if reacting else 8
+        seconds = self.dialogue.data['options']['click_recovery_seconds'] if reacting else 3
         if reacting:
             self.pending_reaction = notice
         self.motion.react(notice.expression, seconds=float('inf') if reacting else seconds, speaking=True)
-        self.motion.face_front(seconds if not reacting else 0)
+        self.motion.face_front(seconds if not reacting else 0, hold_seconds=3 if not reacting else 0)
         if not reacting:
             self.motion.start_soon()
         # Show the requested pose immediately, including with animation off.

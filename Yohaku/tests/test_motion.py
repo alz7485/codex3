@@ -3,6 +3,46 @@ from companion.motion import Motion
 
 
 class MotionTests(unittest.TestCase):
+    def test_click_holds_front_for_three_seconds_then_resumes_without_flash(self):
+        motion = Motion(uniform=lambda a, b: a)
+        motion.phase = 'walk'
+        motion.walking = True
+        motion.distance = 30
+        motion.react('happy', 3, speaking=True)
+        motion.face_front(3, hold_seconds=3)
+        motion.start_soon()  # Controller's normal click path.
+        x = 100.0
+        for _ in range(149):
+            x = motion.advance(.02, x, 0, 300, True)
+            self.assertEqual(x, 100.0)
+            self.assertIn(motion.frame(), (24, 25))
+            self.assertEqual(motion.phase, 'idle')
+        for _ in range(40):
+            x = motion.advance(.02, x, 0, 300, True)
+            if motion.walking:
+                break
+        self.assertTrue(motion.walking)
+        self.assertGreaterEqual(motion.elapsed, 3)
+        self.assertLess(motion.elapsed, 3.8)
+        self.assertLess(motion.frame(), 24)
+
+    def test_new_click_restarts_front_hold_and_hover_release_does_not_shorten_it(self):
+        motion = Motion(uniform=lambda a, b: a)
+        motion.face_front(3, hold_seconds=3)
+        motion.start_soon()
+        for _ in range(20):
+            motion.advance(.1, 100, 0, 300, False)
+        motion.face_front(3, hold_seconds=3)
+        motion.start_soon()
+        for step in range(29):
+            self.assertEqual(motion.advance(.1, 100, 0, 300, step > 1), 100)
+            self.assertIn(motion.frame(), (24, 25))
+        for _ in range(10):
+            motion.advance(.1, 100, 0, 300, True)
+            if motion.walking:
+                break
+        self.assertTrue(motion.walking)
+
     def test_short_rests_and_pointer_pauses_do_not_flash_front_during_a_stroll(self):
         for pick in (lambda a, b: a, lambda a, b: b):
             motion = Motion(uniform=pick)
