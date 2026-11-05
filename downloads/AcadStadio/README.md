@@ -1,7 +1,7 @@
-# AcadStadio Trial59
+# AcadStadio Trial60
 
-[最新版ソースZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.43.1_TableHeaderTrial59.zip)
+[最新版ソースZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.44.0_UnifiedUITrial60.zip)
 
-入力表の上部を「表名・件数」「操作ボタン・一括チェック」の2行に集約。表の表示領域を拡大し、ボタンの大きさ・枠線・高さを統一しました。左一覧の大きいボタンと標準線種の追加機能を含みます。
+UI全体のボタンの高さ・枠線・ホバー色とカード境界を統一。メニュー型ボタンの標準テーマ残りを修正し、狭いツールバーの横幅調整を見直しました。プレビューや色見本など意味のある配色は維持。
 
-関連GUIテスト合格。通常・最小サイズで実画面を確認。Windows EXE・AutoCAD実機は未検証。onedir EXE化コマンド同梱のソースZIPです。
+GUI302件・コア292件合格。実画面24枚を確認。Windows EXE・AutoCAD実機は未検証。onedir EXE化コマンド同梱のソースZIPです。
