@@ -1,9 +1,9 @@
-# AcadStadio Trial70
+# AcadStadio Trial71
 
-[最新版ソースZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.51.0_CornerTreatmentTrial70.zip)
+[最新版ソースZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.51.1_ReferenceDropdownTrial71.zip)
 
-「編集・複写」に日本語表記の「面取り」「角丸め」を追加。2本の独立した直線を選択し、面取り距離1・2／丸め半径を指定します。処理後の線・円弧をプレビューし、元の線と作成した図形への点参照も更新します。専用アイコンとサンプルJSON／SCRを同梱。対応範囲は docs/DRAWING_COMMANDS.md を参照してください。
+参照点の「参照元コマンドで使用している表・変数」を、ボタン一覧から1つのプルダウンへ集約しました。現在行の値を表示し、選ぶと入力中の移動量や角度の式へ参照を挿入します。確認行・参照元の変更にも追従します。
 
-ポリラインは新規2点・閉じない（0）で開始。2点では閉じないのみ選択でき、3点目を追加すると閉じる（1）を初期選択します。3点以上では切り替えや変数・式を使用可能。3点以上の範囲では明示的な選択を保持し、2点へ戻すと0に戻ります。
+関連実Tk GUI13件合格。直前Trial70の全体確認はコア350件・GUI327件合格。保存形式・生成エンジンは変更していません。
 
-コア350件・実Tk GUI327件、すべて合格。前点ボタン・点参照拡張、フランジと継手の部分サンプルも含みます。Windows EXE・AutoCAD実機は未検証。onedir EXE化コマンド同梱。ユーザープロジェクトのDataは含みません。
+面取り・角丸め、点数に応じたポリライン閉じる設定、前点ボタン、点参照、フランジ・継手の部分サンプルも含みます。Windows EXE・AutoCAD実機は未検証。onedir EXE化コマンド同梱。ユーザープロジェクトのDataは含みません。
