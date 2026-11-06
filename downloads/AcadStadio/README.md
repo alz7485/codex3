@@ -1,9 +1,9 @@
-# AcadStadio Trial69
+# AcadStadio Trial70
 
-[最新版ソースZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.50.1_ClosedButtonsTrial69.zip)
+[最新版ソースZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.51.0_CornerTreatmentTrial70.zip)
 
-ポリラインの「閉じる」入力欄へ「閉じる」（1）・「閉じない」（0）ボタンを追加。変数ボタンの左側に置き、選択中の方を青く表示します。変数・式の入力も維持します。
+「編集・複写」に日本語表記の「面取り」「角丸め」を追加。2本の独立した直線を選択し、面取り距離1・2／丸め半径を指定します。処理後の線・円弧をプレビューし、元の線と作成した図形への点参照も更新します。専用アイコンとサンプルJSON／SCRを同梱。対応範囲は docs/DRAWING_COMMANDS.md を参照してください。
 
-実Tkで切り替え・変数入力・Undo・SCR生成と2つの窓サイズを確認。関連GUI3件合格。直前Trial68の全体テストはコア345件・GUI324件合格。
+ポリラインは新規2点・閉じない（0）で開始。2点では閉じないのみ選択でき、3点目を追加すると閉じる（1）を初期選択します。3点以上では切り替えや変数・式を使用可能。3点以上の範囲では明示的な選択を保持し、2点へ戻すと0に戻ります。
 
-Trial68の前点ボタン・点参照拡張、フランジと継手の部分サンプルも含みます。Windows EXE・AutoCAD実機は未検証。onedir EXE化コマンド同梱。ユーザープロジェクトのDataは含みません。
+コア350件・実Tk GUI327件、すべて合格。前点ボタン・点参照拡張、フランジと継手の部分サンプルも含みます。Windows EXE・AutoCAD実機は未検証。onedir EXE化コマンド同梱。ユーザープロジェクトのDataは含みません。
