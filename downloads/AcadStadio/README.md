@@ -1,11 +1,9 @@
-# AcadStadio Trial68
+# AcadStadio Trial69
 
-[最新版ソースZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.50.0_PointReferencesTrial68.zip)
+[最新版ソースZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.50.1_ClosedButtonsTrial69.zip)
 
-座標欄の「前点」ボタンで前点.X／前点.Yをワンクリック挿入できます。続けて +100 などを入力して連続点を指定します。
+ポリラインの「閉じる」入力欄へ「閉じる」（1）・「閉じない」（0）ボタンを追加。変数ボタンの左側に置き、選択中の方を青く表示します。変数・式の入力も維持します。
 
-円の四半円点＋回転角度、各頂点・区間中点、長方形の四隅・辺中点、楕円の軸端点、円弧の角度指定点を追加。交点（単一線分／円）・接点（円と外側の点）はプレビューで候補を選択し、候補が消えた場合はエラーにします。操作と対応範囲は同梱 docs/COMMAND_POINTS.md を参照してください。
+実Tkで切り替え・変数入力・Undo・SCR生成と2つの窓サイズを確認。関連GUI3件合格。直前Trial68の全体テストはコア345件・GUI324件合格。
 
-Trial67のWN・SW・SO・BL部分サンプル4プロジェクト（50Aの24行）と照合用201行CSV、Trial66の継手1,681候補も含みます。フランジの全形式・全呼び径は未完成です。
-
-コア345件・実Tk GUI324件合格。Windows EXE・AutoCAD実機は未検証。onedir EXE化コマンド同梱。ユーザープロジェクトのDataは含みません。
+Trial68の前点ボタン・点参照拡張、フランジと継手の部分サンプルも含みます。Windows EXE・AutoCAD実機は未検証。onedir EXE化コマンド同梱。ユーザープロジェクトのDataは含みません。
