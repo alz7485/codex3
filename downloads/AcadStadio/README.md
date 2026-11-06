@@ -1,9 +1,7 @@
-# AcadStadio Trial74
+# AcadStadio Trial75
 
-[最新版ソースZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.53.0_InlinePointReferenceTrial74.zip)
+[最新版ソースZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.53.1_PointAxisToggleTrial75.zip)
 
-プレビューの先行する線・円などをクリックすると、点参照モードに入ります。専用の大きなフォームをなくし、左側へコンパクトに統合しました。種類・点・取得座標はプルダウンで1行、移動X/Yも1行にまとめています。参照欄はモード中だけ表示し、必要な角度・交点や接点の相手だけを追加表示します。
+点参照の取得座標を「XY・X・Y」のトグルに変更しました。種類・点のプルダウンと同じ行に収め、選択中を青く表示します。点参照欄はプレビューの参照元クリック、上部「コマンド」、既存の点参照の編集時だけ表示。通常の表・変数入力では表示しません。
 
-上部の表・変数ボタンで、編集中の移動量・角度に参照を入れられます。プレビューで参照元・白い点をクリックし、「この点を使用」で反映。Escで取消し。通常の「コマンドを反映」でも参照とコマンドをまとめて確定できます。詳しくは同梱の docs/COMMAND_POINTS.md を参照してください。
-
-コア355件・実Tk GUI337件合格。onedir EXE化コマンド、フランジ・継手の部分サンプルを同梱。Windows EXE・AutoCAD実機は未検証。ユーザープロジェクトのDataは含みません。
+関連実Tk GUI30件合格。直前Trial74の全体確認はコア355件・GUI337件合格。onedir EXE化コマンド、フランジ・継手の部分サンプルを同梱。Windows EXE・AutoCAD実機は未検証。ユーザープロジェクトのDataは含みません。
