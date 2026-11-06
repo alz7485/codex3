@@ -1,9 +1,9 @@
-# AcadStadio Trial66
+# AcadStadio Trial67
 
-[最新版ソースZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.49.0_JISPipingTrial66.zip)
+[最新版ソースZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.49.1_FlangeSamplesTrial67.zip)
 
-エルボ・レジューサ・ティー・キャップの編集可能なJIS B 2312継手サンプルを追加しました。出典掲載寸法から角度・形式別1,681候補を収録。ファイルメニューから読み込めます。種類別JSONと先頭行SCR、出典・近似形状の説明を同梱。
+WN・SW・SO・BLの4プロジェクトを同梱し、入力表はレーティング別にしました。ファイルメニューの「JISフランジサンプルを開く…」から選択できます。50Aの24行を収録。SO・5KとBL・20Kは平面／断面、ほかは外周・ボルト穴などの部分図で、未収録箇所を図中に明記します。照合用の寸法表201行CSVも同梱。全形式・全呼び径の完成版ではありません。
 
-JISフランジ全形式・全呼び径への対応は未完了です。継手の一部の成形輪郭は模式図です。詳細は同梱 docs/JIS_PIPING_SAMPLES.md を参照してください。
+詳細は docs/JIS_FLANGE_SAMPLES.md を参照してください。Trial66のエルボ・レジューサ・ティー・キャップ1,681候補も含みます。
 
-コア333件・実Tk GUI317件合格。Windows EXE・AutoCAD実機は未検証。onedir EXE化コマンド同梱。ユーザープロジェクトのDataは含みません。
+コア334件・実Tk GUI319件合格。Windows EXE・AutoCAD実機は未検証。onedir EXE化コマンド同梱。ユーザープロジェクトのDataは含みません。
