@@ -1,9 +1,9 @@
-# AcadStadio Trial78
+# AcadStadio
 
-[最新版ソースZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.56.0_PreviewDirectEditTrial78.zip)
+最新: **v1.57.0-beta80 — 紐づけ支援**
 
-メイン画面のプレビューで図形をダブルクリックすると、対応するコマンド編集を直接開けます。確定するとメイン画面へ戻り、ブロック編集画面は挟みません。ブロック編集のプレビューから開いた場合は、その画面へ戻って変更を保持します。
+[更新ZIP](AcadStadio_v1.57.0_LinkAssistanceTrial80.zip) / [SHA256](AcadStadio_v1.57.0_LinkAssistanceTrial80.zip.sha256)
 
-重なった図形は編集元のコマンド・行を候補から選択。条件分岐・繰り返し内の作図コマンド、クリックした図形の確認行にも対応。取消し、Undo／Redo、メイン画面の表示範囲の維持をテストしています。使い方は docs/PREVIEW_DIRECT_EDIT.md。
+DWG/DXF読込後に、入力表の基準行から同じ値の列を検索し、参照式へ置き換えられます。半径・直径の換算、任意の照合式、コマンドの点参照、XY/X/Y、移動量、寸法両端の一括紐づけに対応。固定値の確認状況を保存し、通常の入力表にも列ごとの使用コマンド数と使用先一覧を表示します。詳細設定のヒントは「現在値」で統一しています。
 
-コア373件・実Tk GUI347件合格。DWG／DXF読込の対応範囲は前版と同じで、スプライン読込は未対応です。onedirビルド設定と合成DXFサンプルを同梱。Windows EXE・AutoCAD実機は未検証。ユーザーのDataは含みません。
+コア389件・GUI352件、計741件が通過。ソースとWindows onedir EXEビルド手順を同梱。Windows実機のAutoCAD実行・EXE動作は未確認です。読込の未対応項目や繰り返し・後方参照の制限は同梱ドキュメントを参照してください。
