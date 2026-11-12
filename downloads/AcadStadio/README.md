@@ -1,12 +1,11 @@
 # AcadStadio
 
-最新: **1.60.0-beta87**
+最新: **1.60.1-beta88**
 
-[ソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.60.0_AppearanceCommandTrial87.zip)
+[ソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.60.1_PointHeadersTrial88.zip)
 
-コマンド編集の詳細設定を「制御」分類の「作図属性を設定」コマンドへ移動しました。レイヤー・色・線種・線種尺度・文字スタイル・寸法スタイルをまとめて設定し、後続の作図へ引き継ぎます。空欄は変更しません。既存ブロックの編集時は個別指定を設定コマンドへ展開します（ガイドを除く）。実行条件と、点参照小窓の交点・接点の詳細は残します。
+点入力枠の見出しを薄い青色の1行に統一しました。線分・ポリラインのみ「▼ 始点／▶ 始点」の見出しクリックで開閉できます。点の削除ボタンは右端です。中心点・寸法の測定点など他のコマンドには折りたたみ機能を付けません。
 
-ブロック分割・結合ボタン、円弧出力修正、TILEMODE=1・OSNAPCOORD=1と終了時復元、連続点参照を含みます。
+作図属性設定コマンド、ブロック分割・結合、円弧出力修正、終了時のCAD設定復元を含みます。
 
-検証: コア401件、関連GUI10件成功。GUI全体の再実行、Windows/AutoCAD実機確認は未実施です。
-ソース、サンプル、onedir EXE化コマンド同梱。
+検証: 今回の関連GUI4件成功。前版コア401件成功。GUI全体の再実行、Windows/AutoCAD実機確認は未実施です。ソース、サンプル、onedir EXE化コマンド同梱。
