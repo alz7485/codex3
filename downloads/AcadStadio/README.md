@@ -1,15 +1,13 @@
 # AcadStadio
 
-最新: **1.64.1-beta94**
+最新: **1.65.0-beta95**
 
-[ソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.64.1_QuickPointMenuTrial94.zip)
+[ソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.65.0_RepeatCirclePointTrial95.zip)
 
-重なる点の候補を、右クリックメニューと同じ簡易ポップアップへ変更しました。
+円・点の入力欄の下に＋を追加しました。入力中の図形を確定し、同じ枠で次の図形を入力します。追加済みの図形はプレビューに残ります。円の半径／直径の指定と値を引き継ぎ、次の中心Xを全選択します。追加分は個別の標準コマンドとして保存します。
 
-- マウスを合わせた候補の図形を強調。交点は2図形を強調。
-- 項目を1クリックで候補を決定。説明・表見出し・確認ボタンなし。
-- Esc／外側クリックで元の表示へ戻る。単独候補は従来どおり自動選択。
+追加済みがある場合、キャンセルは入力中のみ取り消します。詳しくは同梱docs/CONTINUOUS_FIGURES.mdを参照してください。
 
-**コア423件・全GUI393件（68ファイル）成功**。実際のマウス移動・クリック・閉じる操作を含めて確認し、フルログとdocs/VALIDATION.mdを同梱しています。Trial93のGUI監査修正も含みます。
+候補選択は右クリックメニューと同じ簡易ポップアップです。マウスを合わせると図形を強調し、1クリックで候補を決定します。交点は2図形を強調。
 
-交点は単一線分・円の組み合わせに対応します。Windows/AutoCAD実機確認は未実施です。ソース、サンプル、onedir EXE化コマンド同梱。
+**コア423件・全GUI398件（69ファイル）成功**。フルログ・docs/VALIDATION.mdを同梱しています。Trial93のGUI監査修正も含みます。交点は単一線分・円に対応。Windows/AutoCAD実機確認は未実施です。ソース、サンプル、onedir EXE化コマンド同梱。
