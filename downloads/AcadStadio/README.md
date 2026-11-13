@@ -1,5 +1,23 @@
 # AcadStadio
 
+## 最新：1.66.0-beta96 — モデル・レイアウトのフォルダ
+
+[Trial96 ソースZIPを直接ダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.66.0_SpaceFoldersTrial96.zip)
+
+- ブロック一覧のCtrl+Aで、折りたたみも含め検索に一致するブロックを全選択。
+- 「モデル」フォルダを初期作成し、削除・改名・移動を禁止。「未分類」を廃止。
+- 低いモデルタブの横の「＋」でレイアウトを作成し、同名のフォルダとタブを追加。
+- タブ選択時は対応フォルダだけを展開。フォルダの改名にタブ名も追従。
+- レイアウト削除は件数を確認し、配下のブロックとタブも削除。Undo／Redoに対応。
+- レイアウトフォルダとブロックを右クリック／Ctrl+Dでコピー。点ID・選択セットIDとコピー内の直接参照を更新。
+- ブロック編集下部の分割・結合ボタンを削除。
+
+コア438件・全GUI403件成功。空レイアウトの作図先候補を含む関連34件も追加確認。Windows／AutoCAD実機は未確認です。Python版は `python -m pip install -r requirements.txt` を実行してください。EXEは含みません。詳しい操作説明とログをZIPに同梱しています。
+
+## 以前の配布版
+
+# AcadStadio
+
 ## 文字プレビュー・表の列追加の修正版（1.65.1-beta95）
 
 [ソースZIPを直接ダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.65.1_TextPreviewMetricsTrial95.zip)
