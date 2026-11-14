@@ -1,6 +1,23 @@
 # AcadStadio
 
-## 最新：1.66.0-beta96 — モデル・レイアウトのフォルダ
+## 最新：1.68.0-beta98 — 文字と線種の修正
+
+[Trial98 ソースZIPを直接ダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.68.0_TextAndLinetypeTrial98.zip)
+
+- 直径・度・±記号を表示と文字幅・FIT配置の計算へ反映。
+- 元フォントの検索、ISO系代替書体、小さい文字の描画を改善。
+- 単純線種を図形の長さに基づく線片として描き、255画素制限による崩れを修正。
+- Trial97の寸法文字の中央揃え・CAD読込表示の修正も含みます。
+
+コア457件・全GUI405件成功。最終の文字縮小処理後に関連GUI21件も成功。元の文字高さ・LTSCALEは任意に変更していません。SHXなどの代替表示、未対応のLEADER／複数境界HATCH読込の制限は残ります。Windows／AutoCAD実機・SCR実行は未確認です。
+
+Pythonソース版（EXEなし）。依存関係は `python -m pip install -r requirements.txt` で導入してください。検証ログと詳しい制限はZIPに同梱しています。
+
+SHA256: `4ebfc09164e9c0a3abd4b97bd5a93b917a46659e7dd5fbc7f79d118511d5a2ec`
+
+## 以前の配布版
+
+## 1.66.0-beta96 — モデル・レイアウトのフォルダ
 
 [Trial96 ソースZIPを直接ダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.66.0_SpaceFoldersTrial96.zip)
 
