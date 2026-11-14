@@ -1,6 +1,26 @@
 # AcadStadio
 
-## 最新：1.68.1-beta99 — 高倍率表示の継承ヒント修正
+## 最新：1.69.0-beta100 — DWG読込後の表作成・Excel割当サンプル
+
+[テストデータだけをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_ImportTableTestData_Trial100.zip)
+
+[サンプル同梱のTrial100アプリソースZIP](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.69.0_ImportTableSamplesTrial100.zip)
+
+テストデータの `plate_base.dwg` と `plate_values.xlsx` から始めてください。Excel先頭行と同じ幅160・高さ100・4穴φ12の固定図面、変更用2行、3部品の比較用DWG/DXF/PDF、読込直後／Excel読込済み／割当完成のJSON、SCR、手順書を同梱しています。DXFでも同じ試験ができます。
+
+- Excelなしで数値から列を作り、セルへ値を入れる試験。
+- Excelの穴径÷2を半径へ割り当て、品番文字を品番列へ割り当てる試験。
+- 完成例の3行分57図形は、独立して作図した期待図面と数値・配置が一致。
+- 読込文字の内部表記がExcelの文字列と一致しない問題を修正。品番の割当にはTrial100以降を使用してください。
+- コア468件・全GUI408件成功。実DXF読込・実xlsx読込からのGUI操作も検証しています。
+
+DWGはGNU LibreDWGの構築APIで生成したAC1015形式です。再変換して基準19図形・期待57図形の数値と配置の一致を確認。Windows／AutoCAD実機でのDWG読込・SCR実行は未確認です。寸法注記は試験用の線と文字で、ネイティブDIMENSIONではありません。
+
+アプリZIPはPythonソース版（EXEなし）。SHA256は各ZIPの隣の `.sha256` ファイルを参照してください。今後の配布はGitHubのみです。
+
+## 以前の配布版
+
+## 1.68.1-beta99 — 高倍率表示の継承ヒント修正
 
 [Trial99 ソースZIPを直接ダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.68.1_InheritedHintDpiTrial99.zip)
 
