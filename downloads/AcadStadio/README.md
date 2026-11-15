@@ -1,5 +1,9 @@
 # AcadStadio
 
+[Trial100のUI画像18枚・HTMLギャラリーをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_UIReview_Trial100.zip)
+
+ZIPを展開してindex.htmlを開くと、番号付きで各画面を原寸確認できます。Linux / Tk 8.6での実画面です。アプリのUIは変更していません。
+
 ## 最新：1.69.0-beta100 — DWG読込後の表作成・Excel割当サンプル
 
 [テストデータだけをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_ImportTableTestData_Trial100.zip)
