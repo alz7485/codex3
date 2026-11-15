@@ -1,4 +1,21 @@
-# AcadStadio — 最新 1.72.1-beta106
+# AcadStadio — 最新 1.72.2-beta107
+
+[Trial107 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.72.2_PreviewTabsTrial107.zip)
+
+[画面例：モデル・レイアウト・＋と「名前」列](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/UI_Trial107_PreviewTabs.png)
+
+- プレビューの「＋」を常に最後へ配置。モデル → 各レイアウト → ＋の順になり、追加・複製・改名・削除・Undo後も右端を維持。
+- ブロック一覧の列見出し「ブロック名」を「名前」に変更。列キーとデータ構造は維持。
+
+関連GUI15件成功。実画面でモデル・A4・A3・＋の順と「名前」見出しを確認、画面例外0。小さな表示変更のためコア・全GUIの再実行は行っていません。Trial106までの機能と試用データを含みます。
+
+Pythonソース版（EXEなし）。Windows／AutoCAD実機は未確認。配布はGitHubのみ。
+
+SHA256: `fbde99395e842ddf3c0ed4c5a172f3fdc43e7bda2aa5e5aab745a33a1e7588c5`
+
+## 以前の配布・UI画像
+
+# AcadStadio — 1.72.1-beta106
 
 [Trial106 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.72.1_BlockOrderDisplayTrial106.zip)
 
