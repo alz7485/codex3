@@ -1,4 +1,22 @@
-# AcadStadio — 最新 1.72.0-beta105
+# AcadStadio — 最新 1.72.1-beta106
+
+[Trial106 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.72.1_BlockOrderDisplayTrial106.zip)
+
+画面例：[親フォルダ名と順番](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/UI_Trial106_ParentAndOrder.png) ／ [解放後](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/UI_Trial106_Released.png)
+
+フォルダを先頭に固定していたため、フォルダ化したブロックの「4・5・6」が「1・2・3」より先に見える問題を修正しました。フォルダの表示位置は含まれる最初の実行ブロックに合わせ、作図データとSCRの順序は変えません。
+
+「順」の同じ列内に、番号の左へ親フォルダ名を表示します（例：モデル 1、部品A 4）。列は増やしません。長い名前は表示だけを省略し、ガイドGは維持します。
+
+コア500件・全GUI425件成功。Trial105の旧表示順を保存したデータでも追加3件が成功し、実画面も確認しました。表示修正でデータやSCRが変わらず、解放でも作図順を維持することを検証しています。Trial105の機能・試用データも含みます。
+
+Pythonソース版（EXEなし）。Windows／AutoCAD実機は未確認。配布はGitHubのみ。
+
+SHA256: `e0bf6afa166c426b5b7ba1569917dda079b0a4d3694d5b19e6b3972386491d77`
+
+## 以前の配布・UI画像
+
+# AcadStadio — 1.72.0-beta105
 
 [Trial105 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.72.0_PreviewFigureFoldersTrial105.zip)
 
