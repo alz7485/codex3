@@ -1,4 +1,22 @@
-# AcadStadio — 最新 1.70.1-beta102
+# AcadStadio — 最新 1.71.0-beta103
+
+[Trial103 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.71.0_LocalSettingReferencesTrial103.zip)
+
+同ブロック内の作図属性・システム変数（単体／複数）・レイヤー編集を参照できます。ブロック編集で設定を選択し、右クリック →「参照を追加」。参照からの編集は正本を編集し、使用箇所へ反映します。再作図は対象外です。
+
+- 分割時に正本が別ブロックへ離れた場合、最初の参照を正本化し、後続の参照を付け替え。
+- 正本削除は「すべて正本化」「最初だけ正本化して残りを付け替え」「キャンセル」。削除・置換はUndo 1回分。
+- 複製と参照を選べます。正本と参照を一緒に複製すると、複製した正本へ付け替えます。
+- `examples/設定参照テスト` に3カテゴリ、1行9図形の実行例と操作手順を同梱。
+- コア487件、全GUI414件成功。最後の分割・入れ子削除補強後にも関連21件（新規1件を含む）が成功。検証時点の詳細はZIP内docs/VALIDATION.md。
+
+Pythonソース版（EXEなし）。Windows／AutoCAD実機は未確認。配布はGitHubのみ。
+
+SHA256: `948fb3cec6e32d739e2551537703ee7b65c0bc23ed671249a0a22f7bdc050aff`
+
+## 以前の配布・UI画像
+
+# AcadStadio — 1.70.1-beta102
 
 [Trial102 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.70.1_AppearanceDedupTrial102.zip)
 
