@@ -1,4 +1,23 @@
-# AcadStadio — 最新 1.71.0-beta103
+# AcadStadio — 最新 1.71.1-beta104
+
+[Trial104 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.71.1_SettingReferenceNavigationTrial104.zip)
+
+[参照件数と使用箇所の強調の画面例](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/UI_Trial104_SettingReferenceNavigation.png)
+
+- 右クリック →「参照先へ移動」で正本行を選択して表示。入れ子内は正本を含む行へ移動し、内部の場所を案内。
+- 「この正本の使用箇所を強調」で正本を青、参照を黄色に表示。「強調を解除」で戻せます。
+- 正本と参照の詳細に「参照○件」を表示。追加・正本化・削除・Undo後も更新。
+- 表示操作は保存データ・SCR・Undo履歴を変更しません。対象は同ブロック内の作図属性・システム変数・レイヤー編集。再作図は対象外です。
+
+コア487件・全GUI418件成功。実画面も確認しました。Trial103の分割・正本削除時の選択・設定参照サンプルを含みます。
+
+Pythonソース版（EXEなし）。Windows／AutoCAD実機は未確認。配布はGitHubのみ。
+
+SHA256: `b67fe0abaefe3549fe89b3c15288114b2bf79eba826921e884aea9e2fa5b5f3e`
+
+## 以前の配布・UI画像
+
+# AcadStadio — 1.71.0-beta103
 
 [Trial103 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.71.0_LocalSettingReferencesTrial103.zip)
 
