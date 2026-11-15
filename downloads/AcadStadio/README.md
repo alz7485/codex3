@@ -1,10 +1,27 @@
+# AcadStadio — 最新 1.70.0-beta101
+
+[Trial101 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.70.0_UiAndScriptPreviewTrial101.zip)
+
+[変更後のUI画像・HTMLギャラリー](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_UIReview_Trial101.zip)
+
+- 01：上段をプロジェクト一覧、開く、保存、プロジェクト名、Undo／Redoの順へ。検査・SCR関連は右側。
+- 11：点参照小窓の詳細ボタン・座標結果行を削除しコンパクト化。交点・接点は直接選択と右クリックから設定。
+- 15：レイヤー一覧の色欄に実色の四角を表示。
+- 18：SCRにプレビュー表示ボタン。選択行の命令までの作図状態と、その命令の黄色い強調。選択解除で最終状態。複数行命令は完了時の状態と行範囲を表示。
+
+コア471件・全GUI410件成功。画像は実Linux / Tk 8.6。Pythonソース版（EXEなし）、Windows／AutoCAD実機は未確認。SCRプレビューはアプリの対応作図範囲です。配布はGitHubのみ。
+
+SHA256（本体）：`dcf9b2102fbf64057841b33e1b3fcfe4aed6c314c12728da4c924533a10ccbca`
+
+## 以前の配布・画像
+
 # AcadStadio
 
 [Trial100のUI画像18枚・HTMLギャラリーをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_UIReview_Trial100.zip)
 
 ZIPを展開してindex.htmlを開くと、番号付きで各画面を原寸確認できます。Linux / Tk 8.6での実画面です。アプリのUIは変更していません。
 
-## 最新：1.69.0-beta100 — DWG読込後の表作成・Excel割当サンプル
+## 1.69.0-beta100 — DWG読込後の表作成・Excel割当サンプル
 
 [テストデータだけをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_ImportTableTestData_Trial100.zip)
 
