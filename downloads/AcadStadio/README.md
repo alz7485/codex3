@@ -1,4 +1,25 @@
-# AcadStadio — 最新 1.71.1-beta104
+# AcadStadio — 最新 1.72.0-beta105
+
+[Trial105 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.72.0_PreviewFigureFoldersTrial105.zip)
+
+画面例：[範囲選択](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/UI_Trial105_Selection.png) ／ [フォルダ化・専用アイコン](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/UI_Trial105_Folder.png) ／ [フォルダ解放](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/UI_Trial105_Released.png)
+
+- プレビューを囲んで追加・解除し、同じモデル／レイアウト配下にフォルダを作成。作図・寸法・テキストへ分類し、空の種類は省略。寸法は一体で選択。
+- 読込時・フォルダ化時は図形ごとの属性を保持。フォルダまたはブロックを右クリックして「属性順に整理」したときだけ、並び替えと重複属性の削除を実行。
+- ブロック一覧の「フォルダを解放」で、内容を一階層上の元の表示位置へ展開。作図順・コマンド・SCRを維持。各操作はUndo 1回分。
+- モデルは立方体、レイアウトは用紙の専用アイコン。通常フォルダと区別でき、ルートは解放不可。
+- 表の式と点参照を維持・補修し、処理前後の図形と属性を照合。選択は元コマンド単位で表の全行へ反映します。
+- `examples/範囲フォルダ化テスト` に3部品・30図形のDXF（ネイティブ寸法を含む）、選択前・フォルダ化後・整理後のJSONと手順を同梱。
+
+コア500件・全GUI424件成功。凡例の最後の並び順補強後、関連25件も成功。実画面は例外0。詳細な検証時点と範囲はZIP内docs/VALIDATION.mdを参照してください。条件・繰返し・変数・図形編集操作を含むブロックの部分移動は対象外です。
+
+Pythonソース版（EXEなし）。Windows／AutoCAD実機は未確認。配布はGitHubのみ。
+
+SHA256: `00eb98bfa98bc7b3ab0f35e42fd0f0157ad45416940d85ab6a07acc1472a9f6b`
+
+## 以前の配布・UI画像
+
+# AcadStadio — 1.71.1-beta104
 
 [Trial104 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.71.1_SettingReferenceNavigationTrial104.zip)
 
