@@ -1,4 +1,19 @@
-# AcadStadio — 最新 1.70.0-beta101
+# AcadStadio — 最新 1.70.1-beta102
+
+[Trial102 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.70.1_AppearanceDedupTrial102.zip)
+
+DWG／DXFから読み込んだ値を作図属性コマンドへ分ける際、直前と同じ属性ならコマンドを作成しません。最初の設定と、色・レイヤー・線種・尺度・文字／寸法スタイルが変わる箇所は残します。
+
+- 同梱サンプルは19図形分の属性を5コマンドに集約。図形の座標・属性・文字は維持。
+- 保存・再編集後も重複しません。手入力だけのブロックは従来どおりです。
+- コア477件・全GUI411件成功。実DXF読込後の編集・保存・再編集を含めて検証。
+- Trial101のUI改善とSCR選択行プレビューを含みます。
+
+Pythonソース版（EXEなし）。Windows／AutoCAD実機は未確認。配布はGitHubのみです。
+
+## 以前の配布・UI画像
+
+# AcadStadio — 1.70.0-beta101
 
 [Trial101 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.70.0_UiAndScriptPreviewTrial101.zip)
 
