@@ -1,4 +1,18 @@
-# AcadStadio — 最新 1.72.2-beta107
+# AcadStadio — 最新 1.72.3-beta108
+
+[Trial108 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.72.3_PointAxisFlowTrial108.zip)
+
+点参照の確定後は **X → Y → 次の点のXY**、**XY → 次の点のXY** と進みます。参照元・選んだ参照点を引き継ぎ、最後の点を確定すると終了します。
+
+関連GUI30件成功。ボタン・Enter・テンキーEnter・右クリックメニュー、3頂点の連続入力とキャンセルを検証しました。小さな入力先切替の変更のためコア・全GUIは再実行していません。
+
+Pythonソース版（EXEなし）。Windows／AutoCAD実機は未確認。配布はGitHubのみ。SELECTの新機能はこの版には含みません。
+
+SHA256: `27e5671519aea71ba0303bd560bcb89d0f9c68e59a1f32473cdb15f2634773df`
+
+## 以前の配布・UI画像
+
+# AcadStadio — 1.72.2-beta107
 
 [Trial107 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.72.2_PreviewTabsTrial107.zip)
 
