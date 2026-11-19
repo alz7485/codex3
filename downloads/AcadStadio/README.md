@@ -1,4 +1,20 @@
-# AcadStadio — 最新 1.76.0-beta122
+# AcadStadio — 最新 1.76.1-beta123
+
+[Trial123 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.76.1_CommandPointTrial123.zip)
+
+作図位置の指定は「図形をクリック → 表示されたコマンドの点をクリック」の2段階です。
+
+図形本体を選んだだけではXYを確定しません。選択した線分の始点・中点・終点、円の中心・上下左右などを水色の丸と名前で表示します。点をクリックするとX・Yを点参照として保存し、元コマンドの変更に追従します。点の選択待ち中は空白クリックでXYを追加せず、Escで解除できます。
+
+寸法の測定対象・HATCH境界・TRIM等の対象指定は従来の操作を維持。関連GUI24件・コア31件、スモーク検証成功。全件の今回の再実行は行っていません。
+
+Trial122以前の修正を含むPythonソース版（EXEなし）。Windows実操作・AutoCAD実機は未確認です。詳しくはZIP内docs/PREVIEW_INPUT.mdとdocs/VALIDATION.mdを参照してください。
+
+SHA256: `8f6bdeee9d9275f647bc41b14a4978f7f43a65ac21bc96ff4ae0e959e0c7a342`
+
+## 以前の配布版
+
+# AcadStadio — 1.76.0-beta122
 
 [Trial122 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.76.0_PointSnapTrial122.zip)
 
