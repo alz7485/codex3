@@ -1,4 +1,20 @@
-# AcadStadio — 最新 1.75.3-beta121
+# AcadStadio — 最新 1.76.0-beta122
+
+[Trial122 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.76.0_PointSnapTrial122.zip)
+
+プレビューで既存コマンドの端点・中点・円中心などに近づくと、スナップ枠と「コマンド／点名（点参照）」を表示します。クリックした点のX・Yを点参照として保存し、元コマンドの変更に追従します。
+
+同一図形の同じ位置にある別名候補は統合し、別図形の重なりは候補を選べます。空白位置の座標指定とAltによるスナップ解除も維持しています。
+
+関連GUI29件・関連コア31件、スモーク検証成功。保存した参照と参照元変更への追従を照合しました。全件の今回の再実行はしていません。詳しくはZIP内docs/VALIDATION.mdとdocs/PREVIEW_INPUT.mdを参照してください。
+
+Trial121以前の修正を含むPythonソース版（EXEなし）。Windows実操作・AutoCAD実機は未確認です。
+
+SHA256: `fe14ceb14e7aa5f5db4d38a1eb872d1a4628a50905441bdc589bf67605d82290`
+
+## 以前の配布版
+
+# AcadStadio — 1.75.3-beta121
 
 [Trial121 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.75.3_PreviewSpaceTrial121.zip)
 
