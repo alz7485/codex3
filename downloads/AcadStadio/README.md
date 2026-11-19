@@ -1,4 +1,20 @@
-# AcadStadio — 最新 1.77.1-beta126
+# AcadStadio — 最新 1.77.2-beta127
+
+[Trial127 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.77.2_GuidePointTrial127.zip)
+
+ガイド化した灰色の図形が点参照の候補から除外され、クリックしてもコマンドの点を選べない問題を修正しました。
+
+ガイド本体をクリック → 表示された始点・中点・終点・中心・円の仮想交点などをクリックすると、点参照として保存します。ガイドのブロック/コマンドIDを参照するため、元ガイドの変更にも追従します。SELECTによる図形操作からガイドを除外する仕様は維持しています。
+
+関連GUI31件・関連コア15件、スモーク検証成功。保存・JSON再読込後の追従とガイド円の仮想交点も確認。全件の今回の再実行はしていません。
+
+Trial126以前の修正を含むPythonソース版（EXEなし）。Windows実操作・AutoCAD実機・EXEビルドは未確認です。
+
+SHA256: `1601b0304903a0c0de5be06607d3ae68a37a8228a5e3a41772fe209485eedaab`
+
+## 以前の配布版
+
+# AcadStadio — 1.77.1-beta126
 
 [Trial126 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.77.1_ProjectListTrial126.zip)
 
