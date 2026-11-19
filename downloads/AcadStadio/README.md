@@ -1,4 +1,20 @@
-# AcadStadio — 最新 1.77.2-beta127
+# AcadStadio — 最新 1.77.3-beta128
+
+[Trial128 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.77.3_WindowsSnapTrial128.zip)
+
+WindowsでNumLockがONのとき、Alt押下と誤判定してスナップ・コマンド選択が解除され、クリック位置が数値になる問題を修正しました。
+
+NumLockがONでも「図形本体を選択 → 表示されたコマンドの点を選択 → 点参照として保存」ができます。プレビューで暗い色に表示される通常図形は、自動ガイド化されたものではありません。ガイド図形も点参照の参照元として選べます。
+
+コア581件・関連GUI32件、スモーク検証成功。WindowsのNumLockイベント状態をLinux/Tk上で再現して検証しています。Windows実機・AutoCAD実機・EXEビルドは未確認です。詳細はZIP内docs/VALIDATION.mdを参照してください。
+
+Trial127以前の修正を含むPythonソース版（EXEなし）。
+
+SHA256: `05ddf6eac37b24ff9b79437349bb6297939e42ae14c9d934c3b6763064f8fd0a`
+
+## 以前の配布版
+
+# AcadStadio — 1.77.2-beta127
 
 [Trial127 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.77.2_GuidePointTrial127.zip)
 
