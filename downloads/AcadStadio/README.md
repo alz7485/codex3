@@ -1,4 +1,21 @@
-# AcadStadio — 最新 1.76.1-beta123
+# AcadStadio — 最新 1.77.0-beta125
+
+[Trial125 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.77.0_ViewportInputTrial125.zip)
+
+- ビューポートの画面指定前に初期値の仮枠が表示される問題を修正。用紙の2角とモデルの表示中心を指定して作成します。
+- 角の点をドラッグ：枠サイズ。中心の点をドラッグ：枠移動。枠内をドラッグ：モデルの表示内容を移動。
+- 中ボタンのパン・ズーム後に点や補助表示が図形とずれる問題を修正。
+- 円の上下左右における接線同士の交点を、仮想交点・左上／右上／左下／右下として選択できます。円を選ぶと補助枠を表示し、中心・半径・直径変更にも追従する点参照として保存します。
+
+コア580件・関連GUI40件、スモーク検証成功。GUI全件の今回の再実行はしていません。操作・検証範囲はZIP内README.md、docs/PREVIEW_INPUT.md、docs/VALIDATION.mdを参照してください。
+
+Pythonソース版（EXEなし）。Windows実操作・AutoCAD実機・EXEビルドは未確認です。
+
+SHA256: `1df84e2f5945a38c665c77fafc255dd69f558160724fe96cf52a2d2de77fe989`
+
+## 以前の配布版
+
+# AcadStadio — 1.76.1-beta123
 
 [Trial123 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.76.1_CommandPointTrial123.zip)
 
