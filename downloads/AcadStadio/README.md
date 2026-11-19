@@ -1,4 +1,22 @@
-# AcadStadio — 最新 1.72.3-beta108
+# AcadStadio — 最新 1.75.2-beta120
+
+[Trial120 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.75.2_PreviewClickTrial120.zip)
+
+- メインのコマンド一覧から追加すると、プレビューの点指定が自動で始まるよう修正。点を2つクリックして線分を作成できます。
+- 作図・編集のプレビュー入力と、数値・式の詳細表示を含みます。
+- LEADER/MULTILEADERの矢印・注記の読み込み、%%Cのφ表示、MTEXTの文字高さ倍率・上下公差表示も含みます。引出線は描画要素へ分解して読み込みます。
+
+関連GUI3ファイル・33件、スモーク検証が成功。コア・GUI全件の今回の再実行は行っていません。詳細はZIP内 docs/VALIDATION.md と docs/CAD_TEXT.md を参照してください。
+
+Pythonソース版（EXEなし）。依存は `python -m pip install -r requirements.txt` で導入し、`python src/main.py` で起動してください。Windowsのマウス実操作・AutoCAD実機・EXEビルドは未確認です。
+
+SHA256: `0c9e2787868103ec4100043408513be8aa99d817f3de6e55f4600cf774dc3fec`
+
+[SHA256ファイル](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.75.2_PreviewClickTrial120.zip.sha256)
+
+## 以前の配布版
+
+# AcadStadio — 1.72.3-beta108
 
 [Trial108 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.72.3_PointAxisFlowTrial108.zip)
 
