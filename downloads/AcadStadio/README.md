@@ -1,4 +1,18 @@
-# AcadStadio — 最新 1.75.2-beta120
+# AcadStadio — 最新 1.75.3-beta121
+
+[Trial121 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.75.3_PreviewSpaceTrial121.zip)
+
+作図先が「コマンドに従う」「モデル」のとき、実際のタブ名と一致せず、プレビューのクリックが拒否される問題を修正しました。
+
+X11のOSマウスイベントでコマンド追加→2点クリック→線分保存を確認。関連GUI5ファイル・37件、スモーク検証成功。コア・GUI全件の今回の再実行は行っていません。Trial120以前の文字書式・SELECT・レイアウト・プレビュー入力も含みます。
+
+Pythonソース版（EXEなし）。Windows・AutoCAD実機・EXEビルドは未確認です。操作と検証範囲はZIP内のREADME.mdとdocs/VALIDATION.mdを参照してください。
+
+SHA256: `3df1365e63562b14173179edac193cb3d3b25918acf4274781ed5c795711fdd0`
+
+## 以前の配布版
+
+# AcadStadio — 1.75.2-beta120
 
 [Trial120 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.75.2_PreviewClickTrial120.zip)
 
