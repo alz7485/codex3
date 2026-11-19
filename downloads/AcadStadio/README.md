@@ -1,4 +1,22 @@
-# AcadStadio — 最新 1.77.0-beta125
+# AcadStadio — 最新 1.77.1-beta126
+
+[Trial126 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.77.1_ProjectListTrial126.zip)
+
+[画面例：プロジェクト一覧と右クリックメニュー（Linux/Tk）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/UI_Trial126_ProjectList.png)
+
+- プロジェクト一覧の上部を新規作成・フォルダ作成・削除の3操作に整理。「開く」「保存」「別名保存」を一覧から削除しました。
+- プロジェクトはリストから開きます。右クリックで移動・名前変更・削除を行えます。右クリックしただけでは開きません。
+- フォルダの移動時も編集中プロジェクトの保存先を追従。同名ファイルを上書きせず、取消時はデータを維持します。
+
+関連GUI24件・関連コア8件、スモーク検証成功。最終のボタン表示調整後も関連GUI5件が成功しました。全件の今回の再実行はしていません。前版までのビューポート・パン・点参照・円の仮想交点の修正も含みます。
+
+Pythonソース版（EXEなし）。Windows実操作・AutoCAD実機・EXEビルドは未確認です。
+
+SHA256: `220bd1c2e72408119212cebd58dbda27e0d9c4239c28bdd41ab7167f402e7d00`
+
+## 以前の配布版
+
+# AcadStadio — 1.77.0-beta125
 
 [Trial125 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.77.0_ViewportInputTrial125.zip)
 
