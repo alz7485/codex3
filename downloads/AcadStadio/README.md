@@ -1,4 +1,24 @@
-# AcadStadio — 最新 1.77.3-beta128
+# AcadStadio — 最新 1.78.0-beta129
+
+[Trial129 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.78.0_WorkflowUiTrial129.zip)
+
+- 新規ブロック名に、重複しない「新しいブロック(n)」を初期入力。
+- 「選択したコマンドまで表示」で範囲の行を薄く塗る表示を撤去。
+- コマンド一覧・ブロック一覧でCtrl+↑/↓により表示中の先頭/末尾へ移動。
+- 作図先の選択欄を撤去し、ブロック一覧の所属モデル/レイアウトを入力先に固定。SPACEは新規作成から除外。保存済みデータの読み込み互換を維持。
+- VIEWPORTを「線・形状」へ移し、「設定・制御」を統合。
+- 入力表の窓を1600×940（画面範囲内）へ拡大。
+- 参照は正本と同じコマンド名・アイコンに［参照］を付けて表示。
+
+コア581件成功。GUI全86ファイル・480件を実行し、修正後の関連46件の再検証も成功。最終的に失敗・時間切れなし。スモーク成功。詳しくはZIP内docs/WORKFLOW_UI.mdとdocs/VALIDATION.mdを参照してください。
+
+Pythonソース版（EXEなし）。Windows実操作・AutoCAD実機・EXEビルドは未確認です。
+
+SHA256: `6b81218674c20b2995412946a4d99e80b72eec1843bb01d33e573fd476c0e08a`
+
+## 以前の配布版
+
+# AcadStadio — 1.77.3-beta128
 
 [Trial128 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.77.3_WindowsSnapTrial128.zip)
 
