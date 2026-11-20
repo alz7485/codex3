@@ -2,6 +2,8 @@
 
 [Trial129 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.78.0_WorkflowUiTrial129.zip)
 
+[画面例：ブロック編集（Linux/Tk）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/UI_Trial129_BlockEditor.png) ／ [カテゴリ選択（Linux/Tk）](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/UI_Trial129_CommandCategories.png)
+
 - 新規ブロック名に、重複しない「新しいブロック(n)」を初期入力。
 - 「選択したコマンドまで表示」で範囲の行を薄く塗る表示を撤去。
 - コマンド一覧・ブロック一覧でCtrl+↑/↓により表示中の先頭/末尾へ移動。
