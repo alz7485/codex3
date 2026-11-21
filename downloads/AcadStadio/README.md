@@ -1,4 +1,20 @@
-# AcadStadio — 最新 1.78.0-beta129
+# AcadStadio — 最新 1.78.1-beta130
+
+[Trial130 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.78.1_CircleAngleTrial130.zip)
+
+円を選択した後、円周の途中をクリックすると角度入力の小窓が開きます。クリック位置の角度を初期値とし、右向き0°・反時計回り正で入力できます。「この点を使用」で確定すると、元円と角度の点参照として保存し、中心・半径の変更にも追従します。キャンセル時は点を追加しません。
+
+従来の中心・四半円点・仮想交点の直接選択も維持。角度には数値・数式・表参照を使用できます。
+
+コア583件・関連GUI35件、スモーク検証成功。最終調整後の関連コア2件・GUI2件も成功。GUI全件の今回の再実行はしていません。詳細はZIP内docs/VALIDATION.mdとdocs/PREVIEW_INPUT.mdを参照してください。
+
+Pythonソース版（EXEなし）。Windows実操作・AutoCAD実機・EXEビルドは未確認です。
+
+SHA256: `18fece396f01e207bc6f73038d87e009ee3a5bad8a90294c8f78319f55ad9948`
+
+## 以前の配布版
+
+# AcadStadio — 1.78.0-beta129
 
 [Trial129 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.78.0_WorkflowUiTrial129.zip)
 
