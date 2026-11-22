@@ -1,4 +1,20 @@
-# AcadStadio — 最新 1.80.1-beta133
+# AcadStadio — 最新 1.81.0-beta134
+
+[Trial134 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.81.0_VariableUiTrial134.zip)
+
+変数画面の「＋」が入力欄を空にするだけだった操作を見直し、「＋ 変数を追加」で編集可能な行を追加する方式に変更しました。重複しない「新しい変数1」等と値0を初期入力し、名前と値・式を一覧で直接編集できます。続けて追加しても入力済みの値は残ります。
+
+参照メニューから表の列・セルや他の変数を指定でき、確認値と入力エラーを表示します。「適用して閉じる」でまとめて反映し、取消・Undo／Redoも利用できます。行がないプロジェクトでも定数を追加できます。共通のコンパクトなボタンサイズを維持しています。
+
+コア583件・関連GUI6ファイル75件・スモーク検証成功。GUI全件の今回の再実行はしていません。操作はZIP内docs/VARIABLES.md、検証範囲はdocs/VALIDATION.mdを参照してください。
+
+メイン画面の整理、全UIのコンパクトなボタン、Enter2回の点入力・コマンド確定も含みます。Pythonソース版（EXEなし）。Windows実操作・AutoCAD実機・EXEビルドは未確認です。
+
+SHA256: `6fdf2d77b0c823b459d11b121220498c675595c6c51d9af2250ff6fc009c1888`
+
+## 以前の配布版
+
+# AcadStadio — 1.80.1-beta133
 
 [Trial133 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.80.1_EnterConfirmTrial133.zip)
 
