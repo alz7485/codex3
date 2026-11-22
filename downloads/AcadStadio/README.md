@@ -1,4 +1,20 @@
-# AcadStadio — 最新 1.80.0-beta132
+# AcadStadio — 最新 1.80.1-beta133
+
+[Trial133 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.80.1_EnterConfirmTrial133.zip)
+
+線分・ポリラインなどで、点を順にクリック → Enterで点指定を確定 → もう一度Enterでコマンドを追加・反映して閉じる流れに対応しました。通常EnterとテンキーEnterを使えます。
+
+点数不足では追加せず、数値欄の操作・複数行文字の改行・別コマンドの点選択の確定を維持。WindowsでEnterを押し続けたキーリピートだけでは追加しません。点参照の追従とUndo、従来のマウス操作も維持します。
+
+コア583件・関連GUI7ファイル63件・スモーク検証成功。GUI全件の今回の再実行はしていません。操作はZIP内docs/PREVIEW_INPUT.md、検証範囲はdocs/VALIDATION.mdを参照してください。
+
+メイン画面の整理と全UIのコンパクトなボタンを含みます。Pythonソース版（EXEなし）。Windows実操作・AutoCAD実機・EXEビルドは未確認です。
+
+SHA256: `238c0b34279c652b84b4b145860b872e0472256b4875f4fbc03a62d8cde2df22`
+
+## 以前の配布版
+
+# AcadStadio — 1.80.0-beta132
 
 [Trial132 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.80.0_MainUiTrial132.zip)
 
