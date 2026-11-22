@@ -1,4 +1,20 @@
-# AcadStadio — 最新 1.79.0-beta131
+# AcadStadio — 最新 1.80.0-beta132
+
+[Trial132 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.80.0_MainUiTrial132.zip)
+
+メイン画面の左側をブロック一覧に集約し、入力表・確認行をプレビュー上部へ移しました。設定は右上、検査・SCR表示は出力の詳細に整理しています。図形をクリックすると、選択したコマンドの編集・紐づけ支援へ進めます。重なりの候補選択、パン、従来のダブルクリック編集を維持しています。
+
+ボタンのコンパクト化はメインだけでなく、入力表・コマンド追加と編集・CAD設定・プリセット・紐づけ支援など全UIに反映。文字サイズ・20pxアイコンを保ち、余白と不要な最小幅を縮めました。Linuxの確認環境では標準ボタンの高さが約28pxです。Windowsの表示倍率やフォントで実寸は変わります。
+
+コア583件、GUI全88ファイル493件（スキップなし）、スモーク検証成功。最終調整後の関連7ファイル59件も成功。操作はZIP内docs/MAIN_UI.md、検証範囲はdocs/VALIDATION.mdを参照してください。
+
+Pythonソース版（EXEなし）。Windows実操作・AutoCAD実機・EXEビルドは未確認です。
+
+SHA256: `a1bbc608da2c05ceb44f353caa685afc6fadf8c583e2498ccfe6c2c0453272b2`
+
+## 以前の配布版
+
+# AcadStadio — 1.79.0-beta131
 
 [Trial131 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.79.0_LinkUiTrial131.zip)
 
