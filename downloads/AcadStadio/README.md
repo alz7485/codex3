@@ -1,4 +1,20 @@
-# AcadStadio — 最新 1.78.1-beta130
+# AcadStadio — 最新 1.79.0-beta131
+
+[Trial131 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.79.0_LinkUiTrial131.zip)
+
+紐づけ支援を「1 変更する図形と項目 → 2 参照元を選ぶ → 3 確認して適用」に整理しました。プレビューで図形を選び、表の列または参照元の図形・点を選択します。図形だけでは点を自動決定せず、点を明示選択してから適用できます。
+
+変更前後の確認欄はスクロールしても見える位置に固定。一覧・全項目・確認状況・表の全列表示は必要なときだけ開きます。適用前の試算とUndoを維持しています。
+
+コア583件・関連GUI4ファイル12件・スモーク検証成功。GUI全件の今回の再実行はしていません。操作はZIP内docs/LINK_ASSISTANCE.md、検証範囲はdocs/VALIDATION.mdを参照してください。
+
+Pythonソース版（EXEなし）。Windows実操作・AutoCAD実機・EXEビルドは未確認です。
+
+SHA256: `a81fd9c4c4e53ff7b52d146aff4f7951ddcae54144aad99af89e820d578c5de6`
+
+## 以前の配布版
+
+# AcadStadio — 1.78.1-beta130
 
 [Trial130 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.78.1_CircleAngleTrial130.zip)
 
