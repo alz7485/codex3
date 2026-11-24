@@ -1,4 +1,20 @@
-# AcadStadio — 最新 1.81.0-beta134
+# AcadStadio — 最新 1.82.0-beta135
+
+[Trial135 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.82.0_CadOutputTrial135.zip)
+
+楕円のSCRを一括作成する方式へ変更し、対話コマンドの点指定待ちへ進む経路をなくしました。日本語のSCRはCP932を維持し、CP932外のBMP文字はAutoLISPの文字列式で復元します。この追加変換を使う場合はAutoCAD 2021以降とLISPSYS=1または2（変更後にAutoCAD再起動）が必要です。変換できない文字や長すぎる行では既存SCRを上書きせず案内します。
+
+寸法文字の中央配置、%%C／%%cのφ、H倍率とSの上下公差を詳細プレビューで表示。寸法スタイルの矢印形状、DIMPOST／DIMTIH／DIMTOH／DIMTOLJと、文字スタイルのビッグフォント使用チェック・ファイル名を読み込み、編集・出力へ保持します。読込後に変更したスタイル項目は寸法の個別設定を残して反映します。ブロックの複数同時削除・取消・Undo／Redoにも対応しました。
+
+コア596件・GUI全91ファイル515件・スモーク成功。操作・制約はZIP内docs/CAD_OUTPUT135.md、検証範囲はdocs/VALIDATION.mdを参照してください。「スライド寸法」は対象コマンドの確認待ちで、今回の追加対応には含みません。
+
+Pythonソース版（EXEなし）。SHX／ビッグフォントの字形は代替表示です。Windows実操作・AutoCAD実機でのSCR実行・EXEビルドは未確認です。変数UI、コンパクトな共通ボタン、Enter2回の点入力・コマンド確定など従来の修正も含みます。
+
+SHA256: `63c3ba9e8c18dad15d6aef4ccd4332cef945a5c02a011a9b9b4c1c681524ace9`
+
+## 以前の配布版
+
+# AcadStadio — 1.81.0-beta134
 
 [Trial134 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.81.0_VariableUiTrial134.zip)
 
