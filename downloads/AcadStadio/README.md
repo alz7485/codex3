@@ -1,4 +1,20 @@
-# AcadStadio — 最新 1.82.0-beta135
+# AcadStadio — 最新 1.82.1-beta136
+
+[Trial136 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.82.1_DimensionObliqueTrial136.zip)
+
+「文字・寸法」に「DIMEDIT · 寸法スライド」を追加しました。直前にSELECTがなければ先に選択画面を開き、プレビューで長さ寸法・平行寸法をクリック／囲みで選択します。続いて2点で補助線の方向を指定できます。角度の直接入力と「直角に戻す」にも対応します。
+
+角度はX軸基準の方向として扱い、水平・垂直・平行寸法へ反映します。測定値・文字書式・個別寸法設定・手動文字位置を保持し、DXF group52の読込・座標編集後の再生成にも対応。SCRはDIMEDITのObliqueへ2点で方向を指定します。対象を事前確認し、処理中のエラーはUndoグループで戻します。取消では自動SELECTを含む追加全体を取り消せます。
+
+コア609件・GUI全92ファイル522件・スモーク成功。操作と制約はZIP内docs/DIMENSION_OBLIQUE.md、検証範囲はdocs/VALIDATION.mdを参照してください。
+
+Pythonソース版（EXEなし）。Windows実操作・AutoCAD実機でのSCR実行／DWG COM読込・EXEビルドは未確認です。Trial135の楕円出力・CP932・寸法書式・矢印・ビッグフォント設定・複数ブロック削除、以前のUI修正も含みます。
+
+SHA256: `72a0c37213ab028184f39aa6a9a5586a073395b3458a46f30e71e49748c23b1b`
+
+## 以前の配布版
+
+# AcadStadio — 1.82.0-beta135
 
 [Trial135 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.82.0_CadOutputTrial135.zip)
 
