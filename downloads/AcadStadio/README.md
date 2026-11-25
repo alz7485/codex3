@@ -1,4 +1,20 @@
-# AcadStadio — 最新 1.82.1-beta136
+# AcadStadio — 最新 1.83.0-beta137
+
+[Trial137 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.83.0_TextViewportTrial137.zip)
+
+TEXTでも%%C／%%cのφ、H倍率とSの上下公差をプレビューします。TEXT／MTEXTの作成・編集に文字幅係数を追加し、プレビューとSCRへ反映。MTEXTの部分W書式にも対応しました。書式付きTEXTはCAD出力時にMTEXTとして作成します。特殊記号を持たない指定フォントでは代替フォントを使用します。
+
+ビューポート矩形をAddPViewport、直径／半径寸法をAddDimDiametric／AddDimRadialで直接作成する方式へ変更し、対話入力や一時円の削除へ依存する経路をなくしました。CAD読込完了時は読込画面へ、読込画面を閉じる時はメイン画面へフォーカスを戻します。
+
+コア615件・GUI全93ファイル524件・スモーク成功。操作・制約はZIP内docs/TEXT_VIEWPORT137.md、検証範囲はdocs/VALIDATION.mdを参照してください。
+
+Pythonソース版（EXEなし）。Windowsでの前面復帰・AutoCAD実機での今回のSCR実行・EXEビルドは未確認です。Windowsの制限によって自動的に前面へ戻せない場合があります。以前のDIMEDIT寸法スライド、CP932、寸法設定、UI修正も含みます。
+
+SHA256: `1cdec6e28c17ba099060ba27089929e1a1b97ac2a1ddb5c9bfb0a854601cd811`
+
+## 以前の配布版
+
+# AcadStadio — 1.82.1-beta136
 
 [Trial136 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.82.1_DimensionObliqueTrial136.zip)
 
