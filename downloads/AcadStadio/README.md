@@ -1,4 +1,20 @@
-# AcadStadio — 最新 1.83.1-beta138
+# AcadStadio — 最新 1.84.0-beta139
+
+[Trial139 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.84.0_UnusedCadSettingsTrial139.zip)
+
+CAD設定の一覧と図面読込のCAD設定タブへ「使用状態」を追加しました。使用中・未使用・要確認を表示し、未使用の行を灰色にします。使用先の一覧は表示しません。
+
+レイヤー・線種・文字スタイル・寸法スタイルを対象に、現在のプロジェクト内の参照と使用中設定からの依存を確認します。未使用の定義からの参照だけでは使用中にしません。式・カスタムコマンド・未解決のCADブロックなどは要確認とします。元DWGでの過去の使用回数を取得する機能ではありません。
+
+コア625件・関連GUI6ファイル27件・スモーク成功。GUI全件は今回再実行していません。操作はZIP内docs/CAD_UNUSED139.md、検証範囲はdocs/VALIDATION.mdを参照してください。
+
+Pythonソース版（EXEなし）。Windows実操作・AutoCAD実機での今回の再検証・EXEビルドは未確認です。以前のビューポート表示中心・文字書式・寸法等の修正も含みます。
+
+SHA256: `adc7d6ddae456be24a97ce024c7f01a173de92d95e455af56cf8d62e811ca3a7`
+
+## 以前の配布版
+
+# AcadStadio — 1.83.1-beta138
 
 [Trial138 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.83.1_ViewportCenterTrial138.zip)
 
