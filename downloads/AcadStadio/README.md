@@ -1,4 +1,18 @@
-# AcadStadio — 最新 1.83.0-beta137
+# AcadStadio — 最新 1.83.1-beta138
+
+[Trial138 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.83.1_ViewportCenterTrial138.zip)
+
+ビューポートの新規作成後と「表示中心・尺度」に残っていたMSPACE→ZOOM Centerの対話入力をZoomCenter APIへ置き換えました。中心をWCSの3D点で直接渡し、モデル側の表示高さを枠高さ÷尺度で指定します。対象をActivePViewportで選び、ロックを一時解除・復元します。新規作成後はペーパー空間へ戻ります。
+
+コア618件・関連GUI6ファイル39件・スモーク成功。GUI全件は今回は再実行していません。操作と制約はZIP内docs/VIEWPORT_CENTER138.md、検証範囲はdocs/VALIDATION.mdを参照してください。
+
+Pythonソース版（EXEなし）。Windows実操作・AutoCAD実機での今回のSCR実行・EXEビルドは未確認です。以前の文字書式・幅係数・APIによる直径寸法作成・DIMEDIT等の修正も含みます。
+
+SHA256: `e4316dcc23173efa41620e70a4fd495311c69204fd88f4d1174d2c7c39903a6c`
+
+## 以前の配布版
+
+# AcadStadio — 1.83.0-beta137
 
 [Trial137 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.83.0_TextViewportTrial137.zip)
 
