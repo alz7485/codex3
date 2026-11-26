@@ -1,4 +1,20 @@
-# AcadStadio — 最新 1.84.0-beta139
+# AcadStadio — 最新 1.84.1-beta140
+
+[Trial140 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.84.1_PreviewSelectionTrial140.zip)
+
+入力表の複数行選択を解除した際、古い行の図形が長く残る更新遅延を修正しました。行選択処理と更新予約の内部で、CAD文字の強調表示などより先に180msのタイマーを開始します。
+
+元のtest_gui_linked_preview.pyはTrial132と同一のまま維持。表示情報と強調表示へ120msの負荷を入れる新規回帰2件を追加し、Trial139の隔離コピーでは両方で行インデックス2が残り、修正版では両方成功することを確認しました。本環境で元の未変更テストだけによる失敗は再現していません。
+
+コア625件・GUI全95ファイル529件を最終コードで実行し、初回すべて成功。スモークと、同梱のGUI検証スクリプトによる対象2ファイル9件の再確認も成功しました。検証範囲・警告・環境依存の扱いはZIP内docs/VALIDATION.md、原因と変更はdocs/PREVIEW_SELECTION140.mdを参照してください。
+
+Pythonソース版（EXEなし）。Windows実操作・AutoCAD実機・EXEビルドは未確認です。別VMのフォント寸法差やスナップ不安定を解消したという主張ではありません。以前の未使用CAD設定・文字書式・ビューポート等の修正も含みます。
+
+SHA256: `e2f97333ba6a885d0baf7e4d63b2b9834c6d7b39c9a4a31c8da778c4b4f1770b`
+
+## 以前の配布版
+
+# AcadStadio — 1.84.0-beta139
 
 [Trial139 アプリソースZIPをダウンロード](https://github.com/alz7485/codex3/raw/refs/heads/main/downloads/AcadStadio/AcadStadio_v1.84.0_UnusedCadSettingsTrial139.zip)
 
